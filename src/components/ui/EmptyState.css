@@ -1,0 +1,30 @@
+/* EmptyState - Estado vacío */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  background: var(--color-white);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  color: #555;
+  font-size: 14px;
+  margin: 0;
+}

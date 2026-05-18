@@ -1,0 +1,137 @@
+/* FilterButtonGroup - Grupo de botones de filtro */
+.filter-button-group {
+  margin-bottom: 16px;
+}
+
+.filter-button-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+}
+
+.filter-btn:hover:not(.active) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(91, 136, 6, 0.15);
+}
+
+.filter-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(91, 136, 6, 0.3);
+}
+
+/* Variante: Validado */
+.filter-btn-validated:not(.active):hover {
+  border-color: var(--color-success-dark);
+  color: var(--color-success-dark);
+}
+
+.filter-btn-validated.active {
+  background: var(--color-success-dark);
+  border-color: var(--color-success-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(56, 142, 60, 0.3);
+}
+
+.filter-btn-validated.active:hover {
+  background: var(--color-success-darker);
+  border-color: var(--color-success-darker);
+  color: var(--color-white);
+}
+
+/* Variante: No validado / Pendiente */
+.filter-btn-not-validated:not(.active):hover {
+  border-color: var(--color-warning-dark);
+  color: var(--color-warning-dark);
+}
+
+.filter-btn-not-validated.active {
+  background: var(--color-warning-dark);
+  border-color: var(--color-warning-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(245, 124, 0, 0.3);
+}
+
+.filter-btn-not-validated.active:hover {
+  background: var(--color-warning-darker);
+  border-color: var(--color-warning-darker);
+  color: var(--color-white);
+}
+
+/* Variante: Activo */
+.filter-btn-active:not(.active):hover {
+  border-color: var(--color-success-dark);
+  color: var(--color-success-dark);
+}
+
+.filter-btn-active.active {
+  background: var(--color-success-dark);
+  border-color: var(--color-success-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(56, 142, 60, 0.3);
+}
+
+/* Variante: Inactivo */
+.filter-btn-inactive:not(.active):hover {
+  border-color: var(--color-warning-dark);
+  color: var(--color-warning-dark);
+}
+
+.filter-btn-inactive.active {
+  background: var(--color-warning-dark);
+  border-color: var(--color-warning-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(245, 124, 0, 0.3);
+}
+
+/* Variante: Danger */
+.filter-btn-danger:not(.active):hover {
+  border-color: var(--color-error-dark);
+  color: var(--color-error-dark);
+}
+
+.filter-btn-danger.active {
+  background: var(--color-error-dark);
+  border-color: var(--color-error-dark);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .filter-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}

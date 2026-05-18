@@ -1,0 +1,225 @@
+/* ─── Stats summary ─── */
+.notif-stats-summary {
+  background: var(--color-white);
+  border: 1px solid #eadfd0;
+  border-radius: 14px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-stats-summary p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-grey);
+}
+
+.notif-stats-summary strong {
+  color: var(--color-primary-dark);
+}
+
+/* ─── Send card ─── */
+.notif-send-card {
+  background: var(--color-white);
+  border: 1px solid #eadfd0;
+  border-radius: 14px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.notif-send-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.notif-send-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.notif-send-subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--color-grey);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notif-active-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(91, 136, 6, 0.12);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+/* ─── Inline alerts ─── */
+.notif-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.notif-alert-success {
+  background: rgba(56, 142, 60, 0.08);
+  border: 1px solid rgba(56, 142, 60, 0.25);
+  color: var(--color-success-darker);
+}
+
+.notif-alert-error {
+  background: rgba(211, 47, 47, 0.06);
+  border: 1px solid rgba(211, 47, 47, 0.2);
+  color: #c62828;
+}
+
+.notif-alert-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.notif-alert-success .notif-alert-icon { background: var(--color-success-dark); }
+.notif-alert-error .notif-alert-icon   { background: var(--color-error-dark); }
+
+.notif-alert-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.notif-alert-close:hover {
+  opacity: 1;
+}
+
+/* ─── Form ─── */
+.notif-send-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.notif-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.notif-form-input,
+.notif-form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  border: 1px solid #d5cfc2;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-dark);
+  font-family: inherit;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.notif-form-input:focus,
+.notif-form-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.1);
+}
+
+.notif-form-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* ─── Preview ─── */
+.notif-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notif-preview-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-grey);
+}
+
+.notif-preview-card {
+  background: #f9f8f4;
+  border: 1px solid #eadfd0;
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid var(--color-primary);
+}
+
+.notif-preview-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 4px;
+}
+
+.notif-preview-body {
+  font-size: 14px;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ─── Actions ─── */
+.notif-send-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .notif-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notif-send-card {
+    padding: 20px;
+  }
+
+  .notifications-main {
+    padding: 16px;
+  }
+}

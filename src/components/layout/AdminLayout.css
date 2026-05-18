@@ -1,0 +1,16 @@
+.admin-layout {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--color-friendly-white) 0%, var(--color-border-light) 100%);
+}
+
+.admin-main {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .admin-main {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+}

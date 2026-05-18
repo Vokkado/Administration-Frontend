@@ -1,0 +1,311 @@
+/* Modal de Importación CSV */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.csv-import-modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.csv-import-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.csv-import-modal .modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.csv-import-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.csv-import-modal .modal-close:hover {
+  color: #333;
+}
+
+.csv-import-modal .modal-body {
+  padding: 24px;
+}
+
+.csv-import-modal .error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  border-left: 4px solid #c33;
+}
+
+.csv-import-modal .warning-message {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 12px;
+  border-radius: 4px;
+  margin-top: 16px;
+  border-left: 4px solid #ffc107;
+}
+
+/* Upload Step */
+.upload-step .form-group {
+  margin-bottom: 20px;
+}
+
+.upload-step .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.upload-step .file-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.upload-step .file-input:hover {
+  border-color: #007bff;
+}
+
+.upload-step .file-info {
+  margin-top: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.upload-step .delimiter-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.upload-step .custom-delimiter-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.csv-info {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.csv-info h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 16px;
+}
+
+.csv-info p {
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.csv-info ul {
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.csv-info li {
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.csv-info .note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Validation Step */
+.validation-step .validation-summary {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.validation-step .validation-summary h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.validation-step .summary-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.validation-step .stat-item {
+  flex: 1;
+  min-width: 150px;
+  padding: 12px;
+  background: white;
+  border-radius: 4px;
+  border-left: 4px solid #6c757d;
+}
+
+.validation-step .stat-item.success {
+  border-left-color: #28a745;
+}
+
+.validation-step .stat-item.error {
+  border-left-color: #dc3545;
+}
+
+.validation-step .stat-label {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.validation-step .stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.validation-errors {
+  margin-top: 20px;
+}
+
+.validation-errors h4 {
+  margin-bottom: 12px;
+  color: #c33;
+}
+
+.errors-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  background: white;
+}
+
+.error-item {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #fee;
+  border-left: 3px solid #c33;
+  border-radius: 2px;
+  font-size: 14px;
+}
+
+.error-item:last-child {
+  margin-bottom: 0;
+}
+
+.more-errors {
+  margin-top: 12px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Import Complete Step */
+.import-complete h3 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.import-summary {
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.summary-item.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.summary-item.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.summary-icon {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.summary-text {
+  font-weight: 600;
+}
+
+.import-errors {
+  margin-top: 20px;
+}
+
+.import-errors h4 {
+  margin-bottom: 12px;
+  color: #c33;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}

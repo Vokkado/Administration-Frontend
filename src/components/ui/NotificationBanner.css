@@ -1,0 +1,20 @@
+/* NotificationBanner - Banners de notificación */
+.notification-banner {
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  animation: slideDown 0.3s ease-out;
+  font-weight: 600;
+}
+
+.notification-banner-success {
+  background: linear-gradient(135deg, var(--color-success-dark), var(--color-success-darker));
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(56, 142, 60, 0.2);
+}
+
+.notification-banner-error {
+  background: linear-gradient(135deg, var(--color-error-dark), var(--color-error-darker));
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+}

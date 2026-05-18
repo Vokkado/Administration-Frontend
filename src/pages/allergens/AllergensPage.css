@@ -1,0 +1,462 @@
+/* Filters */
+.allergen-filters {
+  background: var(--color-white);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: slideUp 0.5s ease-out 0.1s both;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Table Container */
+.allergen-table-container {
+  background: var(--color-white);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  margin-bottom: 24px;
+  animation: slideUp 0.5s ease-out 0.2s both;
+}
+
+.td-name {
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+/* Actions */
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: var(--color-friendly-white);
+  transform: scale(1.1);
+}
+
+.icon-img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Validation Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+/* ===== Modal Two-Column Layout ===== */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: 32px 48px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-form-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 350px) 1fr;
+  gap: 48px;
+  align-items: stretch;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.modal-form-left {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  align-self: start;
+}
+
+.modal-form-left::before {
+  content: "Información Básica";
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-border-light);
+}
+
+.modal-form-right {
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--color-border-light);
+  padding-left: 40px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.modal-form-right::before {
+  content: "Restricciones del Alérgeno";
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-border-light);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding: 24px 48px;
+  border-top: 2px solid var(--color-border-light);
+  flex-shrink: 0;
+  background: var(--color-white);
+}
+
+/* Form elements */
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-secondary);
+  font-style: italic;
+}
+
+/* ===== Restrictions Section ===== */
+.restrictions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.restrictions-search {
+  flex-shrink: 0;
+}
+
+.restrictions-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.restriction-filter-chip {
+  padding: 8px 16px;
+  border: 2px solid var(--color-border);
+  background: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-family: inherit;
+}
+
+.restriction-filter-chip:hover {
+  border-color: var(--color-primary);
+  background: #F1F8E9;
+}
+
+.restriction-filter-chip.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Status filters */
+.restrictions-status-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-friendly-white);
+  padding: 6px 10px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.status-filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-right: 4px;
+}
+
+.status-filter-btn {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-grey);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.status-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--color-primary-dark);
+}
+
+.status-filter-btn.active {
+  background: var(--color-white);
+  color: var(--color-primary-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.status-filter-btn.status-active.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.status-filter-btn.status-inactive.active {
+  background: var(--color-secondary);
+  color: var(--color-white);
+}
+
+/* Restrictions list */
+.restrictions-list-container {
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+  flex: 1;
+  min-height: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.restrictions-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.restriction-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.restriction-item:last-child {
+  border-bottom: none;
+}
+
+.restriction-item:hover {
+  background: #F1F8E9;
+}
+
+.restriction-item.selected {
+  background: var(--color-success-light);
+}
+
+.restriction-item.inactive {
+  opacity: 0.5;
+  background: #F5F5F5;
+}
+
+.restriction-item.inactive:hover {
+  background: #EFEFEF;
+}
+
+.restriction-item.inactive .restriction-name {
+  color: var(--color-grey);
+}
+
+.restriction-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.restriction-info {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.restriction-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.restriction-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.restriction-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.restriction-badge.allergy {
+  background: var(--color-error-light);
+  color: #C62828;
+}
+
+.restriction-badge.illness {
+  background: var(--color-warning-light);
+  color: var(--color-warning-darker);
+}
+
+.restriction-badge.voluntary {
+  background: var(--color-info-light);
+  color: #1565C0;
+}
+
+.restriction-badge.involuntary {
+  background: #F3E5F5;
+  color: #6A1B9A;
+}
+
+.restrictions-pagination {
+  flex-shrink: 0;
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.restrictions-pagination .pagination {
+  margin-top: 0;
+  padding: 8px 0;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.restrictions-pagination .pagination-btn {
+  padding: 8px 12px;
+  min-width: 36px;
+  font-size: 14px;
+}
+
+.restrictions-pagination .pagination-numbers {
+  gap: 4px;
+}
+
+.restrictions-pagination .pagination-number {
+  min-width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.restrictions-pagination .pagination-ellipsis {
+  min-width: 36px;
+  font-size: 13px;
+}
+
+.restrictions-selected-count {
+  text-align: right;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.restrictions-loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.restrictions-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .allergen-table-container {
+    overflow-x: auto;
+  }
+
+  .modal-form-columns {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .modal-form-right {
+    border-left: none;
+    padding-left: 0;
+    border-top: 3px solid var(--color-border-light);
+    padding-top: 24px;
+  }
+
+  .modal-body {
+    padding: 16px 20px;
+  }
+
+  .modal-footer {
+    padding: 16px 20px;
+  }
+}

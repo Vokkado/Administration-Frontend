@@ -1,0 +1,193 @@
+/**
+ * Estilos para el componente de filtros de usuarios
+ */
+
+.filters-section {
+  background: var(--color-white);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  animation: fadeIn 0.5s ease-out 0.1s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search */
+.filter-search {
+  margin-bottom: 20px;
+}
+
+.filter-search input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background: var(--color-white);
+}
+
+.filter-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.1);
+}
+
+/* Filter Sections */
+.filter-section {
+  margin-bottom: 16px;
+}
+
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-section > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+}
+
+.filter-btn:hover:not(.active) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(91, 136, 6, 0.15);
+}
+
+.filter-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(91, 136, 6, 0.3);
+}
+
+/* Date Filters */
+.date-filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.date-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.date-filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.filter-date {
+  padding: 10px 12px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--color-white);
+  color: #1F2937;
+  transition: all 0.2s ease;
+}
+
+.filter-date:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.1);
+}
+
+.filter-date:hover {
+  border-color: var(--color-primary);
+}
+
+/* Clear Filters */
+.filter-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.clear-filters-btn {
+  padding: 10px 20px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: var(--color-error-dark);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.clear-filters-btn:hover {
+  background: #FDE8E8;
+  border-color: var(--color-error-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(211, 47, 47, 0.15);
+}
+
+.clear-filters-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .date-filters {
+    flex-direction: column;
+  }
+
+  .date-filter-group {
+    min-width: unset;
+  }
+
+  .filter-actions {
+    justify-content: stretch;
+  }
+
+  .clear-filters-btn {
+    width: 100%;
+  }
+}

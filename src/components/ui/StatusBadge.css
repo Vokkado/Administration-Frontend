@@ -1,0 +1,50 @@
+/* StatusBadge - Badge de estado */
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.status-badge-clickable {
+  cursor: pointer;
+}
+
+.status-badge-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Validado / Activo */
+.status-badge-validated,
+.status-badge-active {
+  background: var(--color-success-light);
+  color: var(--color-success-darker);
+  border-color: var(--color-success);
+}
+
+/* Pendiente / Inactivo */
+.status-badge-pending,
+.status-badge-inactive {
+  background: var(--color-warning-light);
+  color: var(--color-warning-darker);
+  border-color: var(--color-warning);
+}
+
+/* Info */
+.status-badge-info {
+  background: var(--color-info-light);
+  color: #1565C0;
+  border-color: #42A5F5;
+}
+
+/* Danger */
+.status-badge-danger {
+  background: var(--color-error-light);
+  color: #C62828;
+  border-color: #EF5350;
+}

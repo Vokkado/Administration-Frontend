@@ -1,0 +1,29 @@
+/* SearchInput - Campo de búsqueda */
+.search-input-wrapper {
+  margin-bottom: 20px;
+}
+
+.search-input-fullwidth {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background: var(--color-white);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--color-grey);
+}

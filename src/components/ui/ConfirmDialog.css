@@ -1,0 +1,78 @@
+/* Confirm Dialog Styles */
+.confirm-dialog {
+  background: var(--color-white);
+  border-radius: 20px;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirm-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 2px solid var(--color-friendly-white);
+}
+
+.confirm-header h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.confirm-body {
+  padding: 24px;
+}
+
+.confirm-body p {
+  font-size: 16px;
+  color: var(--color-grey);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px 24px 24px;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .confirm-dialog {
+    margin: 0 16px;
+    border-radius: 16px;
+  }
+
+  .confirm-header {
+    padding: 20px 20px 12px 20px;
+  }
+
+  .confirm-header h3 {
+    font-size: 18px;
+  }
+
+  .confirm-body {
+    padding: 16px 20px;
+  }
+
+  .confirm-body p {
+    font-size: 14px;
+  }
+
+  .confirm-actions {
+    padding: 12px 20px 20px 20px;
+  }
+}

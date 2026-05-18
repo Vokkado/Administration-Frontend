@@ -1,0 +1,99 @@
+.faq-filters {
+  margin-bottom: 16px;
+}
+
+/* Table container (passed as className to DataTable) */
+.faq-table-container {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eadfd0;
+}
+
+.action-btn {
+  border: none;
+  background: transparent;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.icon-img {
+  width: 18px;
+  height: 18px;
+}
+
+/* Modal Form */
+.modal-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-modal-form {
+  flex: 1;
+  min-height: 0; /* necesario para que overflow funcione dentro de flex */
+  padding: 0; /* override del padding de .modal-form para controlar espaciado por secciones */
+}
+
+.faq-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+  scrollbar-gutter: stable;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #d6a25c;
+  box-shadow: 0 0 0 3px rgba(214, 162, 92, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.faq-modal-actions {
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid #f0e8dc;
+  background: #fff;
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .faq-modal-body {
+    padding: 16px;
+  }
+
+  .faq-modal-actions {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 12px;
+  }
+}

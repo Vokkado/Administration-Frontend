@@ -1,0 +1,51 @@
+/**
+ * Estilos para la Página de Gestión de Usuarios
+ */
+
+/* Filtros */
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Información de resultados */
+.results-info {
+  margin-bottom: 16px;
+  color: #6B7280;
+  font-size: 14px;
+}
+
+/* Badge de estado */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.active {
+  background-color: #DEF7EC;
+  color: #03543F;
+}
+
+.status-badge.inactive {
+  background-color: #FDE8E8;
+  color: #9B1C1C;
+}
+
+.text-muted {
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filters-section {
+    padding: 16px;
+  }
+}

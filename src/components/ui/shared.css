@@ -1,0 +1,101 @@
+/**
+ * Estilos compartidos para componentes reutilizables
+ * Centraliza patrones visuales que se repetían en cada página
+ */
+
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ===== Animaciones compartidas ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== Validation Badge Styles (unified across all pages) ===== */
+.badge-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid;
+  border-width: 2px;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-clickable:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.badge-clickable:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.badge.validated-yes {
+  background: var(--color-success-light);
+  color: var(--color-success-darker);
+  border-color: var(--color-success);
+}
+
+.badge.validated-yes:not(:disabled):hover {
+  background: #C8E6C9;
+  border-color: var(--color-success-dark);
+}
+
+.badge.validated-no {
+  background: var(--color-warning-light);
+  color: var(--color-warning-darker);
+  border-color: var(--color-warning);
+}
+
+.badge.validated-no:not(:disabled):hover {
+  background: #FFE0B2;
+  border-color: var(--color-warning-dark);
+}
+
+.badge-loading {
+  display: inline-block;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+

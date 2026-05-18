@@ -1,0 +1,94 @@
+.dashboard-card {
+  background: var(--color-white);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s ease-out;
+  animation-fill-mode: both;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-card:nth-child(1) { animation-delay: 0.1s; }
+.dashboard-card:nth-child(2) { animation-delay: 0.2s; }
+.dashboard-card:nth-child(3) { animation-delay: 0.3s; }
+.dashboard-card:nth-child(4) { animation-delay: 0.4s; }
+.dashboard-card:nth-child(5) { animation-delay: 0.5s; }
+.dashboard-card:nth-child(6) { animation-delay: 0.6s; }
+.dashboard-card:nth-child(7) { animation-delay: 0.7s; }
+.dashboard-card:nth-child(8) { animation-delay: 0.8s; }
+.dashboard-card:nth-child(9) { animation-delay: 0.9s; }
+.dashboard-card:nth-child(10) { animation-delay: 1.0s; }
+.dashboard-card:nth-child(11) { animation-delay: 1.1s; }
+.dashboard-card:nth-child(12) { animation-delay: 1.2s; }
+.dashboard-card:nth-child(13) { animation-delay: 1.3s; }
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--card-accent), var(--card-accent-end));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.dashboard-card:hover::before {
+  transform: scaleX(1);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: color-mix(in srgb, var(--card-accent) 40%, transparent);
+}
+
+.card-icon-bar {
+  height: 6px;
+  width: 60px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--card-accent), var(--card-accent-end));
+}
+
+.dashboard-card:hover .card-icon-bar {
+  width: 80px;
+}
+
+.dashboard-card h3 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin: 0 0 12px 0;
+}
+
+.dashboard-card p {
+  font-size: 14px;
+  color: var(--color-grey);
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+
+.dashboard-card-actions {
+  margin-top: auto;
+}
