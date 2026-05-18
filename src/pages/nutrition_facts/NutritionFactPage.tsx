@@ -25,7 +25,6 @@ export function NutritionFactPage() {
   };
 
   const {
-    filteredNutritionFacts,
     paginatedNutritionFacts,
     total,
     loading,

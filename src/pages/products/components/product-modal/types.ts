@@ -1,7 +1,7 @@
 /**
  * Shared types for ProductModal sub-components
  */
-import type { ProductAllergen, AllergenPresence, ProductIngredientVariant } from '../../types';
+import type { ProductAllergen, ProductIngredientVariant } from '../../types';
 
 export interface Category {
   id: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, ConfirmDialog, PageHeader, StatCard } from '../../components/ui';
+import { Button, ConfirmDialog, PageHeader } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { useNotifications } from './hooks/useNotifications';
 import type { NotificationFormData, BroadcastResult } from './types';

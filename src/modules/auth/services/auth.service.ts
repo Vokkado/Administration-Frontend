@@ -36,7 +36,7 @@ export class AuthService {
    */
   static async signInAdmin({ email, password }: SignInParams): Promise<AuthResult> {
     try {
-      const { isSignedIn, nextStep } = await signIn({
+      const { nextStep } = await signIn({
         username: email,
         password,
         options: {
