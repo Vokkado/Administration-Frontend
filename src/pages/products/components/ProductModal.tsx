@@ -7,6 +7,7 @@ import { apiService } from '../../../services/api.service';
 import type { Product, AllergenPresence } from '../types';
 import {
   ProductBasicInfoSection,
+  ProductSourceImagesSection,
   ProductAllergensSection,
   ProductRegistrationSection,
   ProductCompaniesSection,
@@ -310,6 +311,7 @@ export function ProductModal({
                   categories={categories}
                   onChange={onChange}
                 />
+                <ProductSourceImagesSection productId={editingProduct?.id} />
                 <ProductAllergensSection
                   allergenData={formData.allergenData || []}
                   allAllergens={allAllergens}
