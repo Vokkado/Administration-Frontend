@@ -1,7 +1,9 @@
 /**
  * Basic Information tab section for ProductModal
  */
+import { useState, type ChangeEvent } from 'react';
 import { Input } from '../../../../components/ui';
+import { apiService } from '../../../../services/api.service';
 import type { ProductFormData, Category } from './types';
 
 interface ProductBasicInfoSectionProps {
@@ -43,6 +45,47 @@ function buildSortedCategories(categories: Category[]): Category[] {
 
 export function ProductBasicInfoSection({ formData, categories, onChange }: ProductBasicInfoSectionProps) {
   const sortedCategories = buildSortedCategories(categories);
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permitir re-seleccionar el mismo archivo
+    if (!file) return;
+    setUploadError(null);
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setUploadError('Formato no soportado (JPG, PNG o WEBP)');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setUploadError('La imagen supera el máximo de 4 MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+        reader.readAsDataURL(file);
+      });
+
+      const resp = await apiService.post<{ success: boolean; data: { url: string } }>(
+        '/products/cover-image',
+        { imageBase64: dataUrl, contentType: file.type },
+        { timeout: 60000 },
+      );
+      onChange({ image: resp.data.url });
+    } catch (err: any) {
+      setUploadError(err?.response?.data?.message || 'Error al subir la imagen');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="product-form-grid">
@@ -121,20 +164,46 @@ export function ProductBasicInfoSection({ formData, categories, onChange }: Prod
       </div>
 
       <div className="form-group form-group-full">
-        <Input
-          type="url"
-          label="URL de la Imagen"
-          placeholder="https://..."
-          value={formData.image}
-          onChange={(e) => onChange({ image: e.target.value })}
-          title="Ingrese una URL válida (comenzando con https:// o http://)"
-          fullWidth
-        />
-        {formData.image && !formData.image.match(/^https?:\/\/.+/) && (
-          <small className="form-hint" style={{ color: '#F44336' }}>
-            La URL debe comenzar con http:// o https://
-          </small>
+        <label className="form-label">Imagen del Producto</label>
+
+        {formData.image && (
+          <div style={{ marginBottom: 8 }}>
+            <img
+              src={formData.image}
+              alt="Portada del producto"
+              style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fafafa' }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+            />
+          </div>
         )}
+
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleFileSelect}
+          disabled={uploading}
+        />
+        {uploading && <small className="form-hint">Subiendo imagen…</small>}
+        {uploadError && (
+          <small className="form-hint" style={{ color: '#F44336' }}>{uploadError}</small>
+        )}
+
+        <div style={{ marginTop: 8 }}>
+          <Input
+            type="url"
+            label="o pegar una URL de imagen"
+            placeholder="https://..."
+            value={formData.image}
+            onChange={(e) => onChange({ image: e.target.value })}
+            title="Ingrese una URL válida (comenzando con https:// o http://)"
+            fullWidth
+          />
+          {formData.image && !formData.image.match(/^https?:\/\/.+/) && (
+            <small className="form-hint" style={{ color: '#F44336' }}>
+              La URL debe comenzar con http:// o https://
+            </small>
+          )}
+        </div>
       </div>
 
       <div className="form-group form-group-full">
