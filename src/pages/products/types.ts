@@ -70,6 +70,9 @@ export interface Product {
     rawIngredients?: string;
     inspected: boolean;
     aiGenerated?: boolean;
+    /** Ficha de referencia liviana (sin nutrición). El admin la completa y promueve a validada. */
+    isReference?: boolean;
+    source?: string | null;
     isUltraProcessed?: boolean;
     alcoholGraduation?: number | null;
     ingredientVariants?: ProductIngredientVariant[];

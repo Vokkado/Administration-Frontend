@@ -12,6 +12,8 @@ export interface AdminProductListQuery {
   categoryId?: string | null;
   categoryIds?: string[];
   inspected?: boolean;
+  /** true => lista SOLO productos reference (curaduría). Default: solo normales. */
+  isReference?: boolean;
 }
 
 export interface AdminProductListResponse {
@@ -34,6 +36,7 @@ export class ProductsService {
       params.append('categoryIds', query.categoryIds.join(','));
     }
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
+    if (query.isReference) params.append('isReference', 'true');
 
     const response = await apiService.get<any>(`/products?${params.toString()}`);
 

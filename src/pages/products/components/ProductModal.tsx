@@ -37,7 +37,7 @@ interface ProductModalProps {
   onValidate?: (id: string, currentState: boolean) => void;
 }
 
-type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients';
+type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'origen';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'basic', label: 'Información Básica' },
@@ -45,7 +45,10 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'manufacturer', label: 'Fabricante y Distribución' },
   { id: 'nutrition', label: 'Información Nutricional' },
   { id: 'ingredients', label: 'Ingredientes' },
+  { id: 'origen', label: 'Origen' },
 ];
+
+const SOURCE_OPTIONS = ['', 'pos', 'eldorado', 'disco', 'tiendainglesa', 'manual'];
 
 export function ProductModal({
   show,
@@ -358,6 +361,47 @@ export function ProductModal({
                 onIngredientToggle={handleIngredientToggle}
                 onIngredientPositionChange={handleIngredientPositionChange}
               />
+            )}
+
+            {activeTab === 'origen' && (
+              <div className="form-section" style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: '4px 2px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!formData.isReference}
+                    onChange={(e) => onChange({ isReference: e.target.checked })}
+                    style={{ marginTop: 3 }}
+                  />
+                  <span>
+                    <strong>Producto de referencia</strong>
+                    <br />
+                    <span style={{ fontSize: 12, color: '#888' }}>
+                      Ficha liviana sin información nutricional (no se analiza). Desmarcalo para completar
+                      los datos y que el producto quede validado y analizable.
+                    </span>
+                  </span>
+                </label>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    Fuente del dato (source)
+                  </label>
+                  <select
+                    value={formData.source ?? ''}
+                    onChange={(e) => onChange({ source: e.target.value })}
+                    style={{ width: '100%', padding: 9, borderRadius: 8, border: '1px solid #ddd' }}
+                  >
+                    {SOURCE_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s === '' ? '— sin definir —' : s}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 12, color: '#888' }}>
+                    De dónde salió la ficha (POS, El Dorado, Disco, Tienda Inglesa, o manual).
+                  </span>
+                </div>
+              </div>
             )}
           </form>
         </div>

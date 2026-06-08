@@ -50,7 +50,44 @@ export function ProductTable({
       {
         key: 'name',
         header: 'Nombre',
-        render: (product) => <span className="td-name">{product.name}</span>,
+        render: (product) => (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {product.image ? (
+              <img
+                src={product.image}
+                alt=""
+                loading="lazy"
+                style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'contain', background: '#f3f3f3', flexShrink: 0 }}
+              />
+            ) : (
+              <span
+                style={{ width: 56, height: 56, borderRadius: 8, background: '#f0f0f0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}
+              >
+                📦
+              </span>
+            )}
+            <span className="td-name">
+              {product.name}
+              {product.isReference && (
+                <span
+                  title="Ficha de referencia (sin nutrición). Editala para completar los datos y validarla."
+                  style={{
+                    marginLeft: 8,
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    background: '#ECBF0A22',
+                    color: '#7A5F00',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    verticalAlign: 'middle',
+                  }}
+                >
+                  REF
+                </span>
+              )}
+            </span>
+          </span>
+        ),
       },
       {
         key: 'brand',
@@ -94,24 +131,34 @@ export function ProductTable({
       {
         key: 'inspected',
         header: 'Validado',
-        render: (product) => (
-          <button
-            className={`badge badge-clickable ${
-              product.inspected ? 'validated-yes' : 'validated-no'
-            } ${validatingId === product.id ? 'badge-loading' : ''}`}
-            onClick={() => onValidationChange(product.id, product.inspected)}
-            disabled={validatingId !== null}
-          >
-            {validatingId === product.id
-              ? '⏳'
-              : product.inspected
-                ? 'Validado'
-                : 'Sin validar'}
-          </button>
-        ),
+        render: (product) =>
+          product.isReference ? (
+            // Un reference no se "valida" suelto: hay que completarlo (modal) y eso lo promueve.
+            <button
+              className="badge badge-clickable validated-no"
+              onClick={() => onEdit(product)}
+              title="Completar los datos y validar (deja de ser reference)"
+            >
+              Completar
+            </button>
+          ) : (
+            <button
+              className={`badge badge-clickable ${
+                product.inspected ? 'validated-yes' : 'validated-no'
+              } ${validatingId === product.id ? 'badge-loading' : ''}`}
+              onClick={() => onValidationChange(product.id, product.inspected)}
+              disabled={validatingId !== null}
+            >
+              {validatingId === product.id
+                ? '⏳'
+                : product.inspected
+                  ? 'Validado'
+                  : 'Sin validar'}
+            </button>
+          ),
       },
     ],
-    [categories, onValidationChange, validatingId],
+    [categories, onValidationChange, validatingId, onEdit],
   );
 
   const renderActions = useMemo(
