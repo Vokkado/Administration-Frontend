@@ -58,7 +58,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
       {hasAnyPhoto && (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {PHOTOS.map((p) => {
-            const url = images[p.key];
+            const url = images[p.key] as string | undefined;
             if (!url || failed[p.key]) return null;
             return (
               <div key={p.key} style={{ textAlign: 'center' }}>

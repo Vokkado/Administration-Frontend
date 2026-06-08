@@ -94,6 +94,8 @@ export function ProductsPage() {
     nutritionFactData: [],
     image: '',
     inspected: false,
+    isReference: false,
+    source: '',
     isUltraProcessed: false,
     alcoholGraduation: '',
     ingredientVariants: [],
