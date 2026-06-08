@@ -32,6 +32,8 @@ interface ProductFormData {
   nutritionFactData: Array<{ nutritionFactId: string; value: string; unit: string }>;
   image: string;
   inspected: boolean;
+  isReference: boolean;
+  source: string;
   isUltraProcessed: boolean;
   alcoholGraduation: string;
   ingredientVariants: ProductIngredientVariant[];
@@ -49,12 +51,14 @@ export function ProductsPage() {
     filterParentCategory,
     filterCategory,
     filterInspected,
+    filterReference,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterParentCategory,
     setFilterCategory,
     setFilterInspected,
+    setFilterReference,
     setCurrentPage,
     setError,
     createProduct,
@@ -90,6 +94,8 @@ export function ProductsPage() {
     nutritionFactData: [],
     image: '',
     inspected: false,
+    isReference: false,
+    source: '',
     isUltraProcessed: false,
     alcoholGraduation: '',
     ingredientVariants: [],
@@ -135,6 +141,8 @@ export function ProductsPage() {
       nutritionFactData: [],
       image: '',
       inspected: false,
+      isReference: false,
+      source: '',
       isUltraProcessed: false,
       alcoholGraduation: '',
       ingredientVariants: [],
@@ -169,6 +177,8 @@ export function ProductsPage() {
       })),
       image: product.image || '',
       inspected: product.inspected,
+      isReference: product.isReference ?? false,
+      source: product.source ?? '',
       isUltraProcessed: product.isUltraProcessed ?? false,
       alcoholGraduation: product.alcoholGraduation != null ? String(product.alcoholGraduation) : '',
       ingredientVariants: product.ingredientVariants ?? [],
@@ -189,6 +199,15 @@ export function ProductsPage() {
     setIsSaving(true);
 
     try {
+      // Flag reference explícito (checkbox del modal).
+      const refFlag = formData.isReference;
+      // inspected: solo se toca al crear o cuando CAMBIA el tipo. Reference => no validado;
+      // dejar de ser reference (completar) => validado.
+      const inspectedPatch =
+        !editingProduct || refFlag !== !!editingProduct.isReference
+          ? { isInspected: !refFlag }
+          : {};
+
       const payload = {
         name: formData.name,
         brand: formData.brand,
@@ -219,12 +238,21 @@ export function ProductsPage() {
         image: formData.image,
         ingredientVariantData: formData.ingredientVariants.length > 0 ? formData.ingredientVariants : undefined,
         companyData: formData.companyData.length > 0 ? formData.companyData : undefined,
-        ...(editingProduct ? {} : { isInspected: true })
+        isReference: refFlag,
+        source: formData.source || null,
+        ...inspectedPatch,
       };
 
       if (editingProduct) {
+        const wasRef = !!editingProduct.isReference;
         await updateProduct(editingProduct.id, payload);
-        crud.showSuccess('✅ Producto actualizado exitosamente');
+        crud.showSuccess(
+          wasRef && !refFlag
+            ? '✅ Producto completado y validado (ya no es reference)'
+            : !wasRef && refFlag
+              ? '✅ Producto marcado como reference'
+              : '✅ Producto actualizado exitosamente',
+        );
       } else {
         await createProduct(payload);
         crud.showSuccess('✅ Producto creado exitosamente');
@@ -385,11 +413,13 @@ export function ProductsPage() {
           filterInspected={filterInspected}
           filterParentCategory={filterParentCategory}
           filterCategory={filterCategory}
+          filterReference={filterReference}
           categories={categories}
           onSearchChange={setSearchTerm}
           onFilterInspectedChange={setFilterInspected}
           onFilterParentCategoryChange={setFilterParentCategory}
           onFilterCategoryChange={setFilterCategory}
+          onFilterReferenceChange={setFilterReference}
         />
 
         {/* Table */}

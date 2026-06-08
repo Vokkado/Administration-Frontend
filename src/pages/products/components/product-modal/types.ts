@@ -57,6 +57,8 @@ export interface ProductFormData {
   nutritionFactData: Array<{ nutritionFactId: string; value: string; unit: string }>;
   image: string;
   inspected: boolean;
+  isReference: boolean;
+  source: string;
   isUltraProcessed: boolean;
   alcoholGraduation: string;
   ingredientVariants: ProductIngredientVariant[];

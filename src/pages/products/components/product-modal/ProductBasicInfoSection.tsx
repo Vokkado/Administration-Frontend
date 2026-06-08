@@ -2,7 +2,7 @@
  * Basic Information tab section for ProductModal
  */
 import { useState, type ChangeEvent } from 'react';
-import { Input } from '../../../../components/ui';
+import { Input, ImageLightbox } from '../../../../components/ui';
 import { apiService } from '../../../../services/api.service';
 import type { ProductFormData, Category } from './types';
 
@@ -48,6 +48,7 @@ export function ProductBasicInfoSection({ formData, categories, onChange }: Prod
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,11 +172,15 @@ export function ProductBasicInfoSection({ formData, categories, onChange }: Prod
             <img
               src={formData.image}
               alt="Portada del producto"
-              style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fafafa' }}
+              onClick={() => setLightboxSrc(formData.image)}
+              title="Click para agrandar"
+              style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fafafa', cursor: 'zoom-in' }}
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
             />
           </div>
         )}
+
+        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
 
         <input
           type="file"

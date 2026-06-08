@@ -55,6 +55,8 @@ const normalizeProduct = (product: any): Product => {
     sodiumAlert: product.sodiumAlert ?? product.isSodiumAlert ?? false,
     inspected: product.inspected ?? product.isInspected ?? false,
     aiGenerated: product.aiGenerated ?? product.isAiGenerated ?? false,
+    isReference: product.isReference ?? product.is_reference ?? false,
+    source: product.source ?? null,
     isUltraProcessed: product.isUltraProcessed ?? product.is_ultra_processed ?? false,
     alcoholGraduation: product.alcoholGraduation ?? product.alcohol_graduation ?? null,
     servingSizeQuantity: product.servingSizeQuantity ?? product.servingSizeAmount ?? product.servingSizeQuantity,
@@ -66,6 +68,8 @@ export function useProducts() {
   const [filterParentCategory, setFilterParentCategory] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
+  // 'NORMAL' (default) => productos normales | 'REFERENCE' => solo fichas reference (curaduría)
+  const [filterReference, setFilterReference] = useState<string>('NORMAL');
 
   const categoryId = filterCategory === 'ALL'
     ? undefined
@@ -76,6 +80,8 @@ export function useProducts() {
   const inspected = filterInspected === 'ALL'
     ? undefined
     : filterInspected === 'VALIDATED';
+
+  const isReference = filterReference === 'REFERENCE' ? true : undefined;
 
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) => {
@@ -97,9 +103,10 @@ export function useProducts() {
         categoryId,
         categoryIds: resolvedCategoryIds,
         inspected,
+        isReference,
       });
     },
-    [categoryId, filterCategory, filterParentCategory, categories, inspected],
+    [categoryId, filterCategory, filterParentCategory, categories, inspected, isReference],
   );
 
   const {
@@ -191,12 +198,14 @@ export function useProducts() {
     filterParentCategory,
     filterCategory,
     filterInspected,
+    filterReference,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterParentCategory,
     setFilterCategory,
     setFilterInspected,
+    setFilterReference,
     setCurrentPage,
     setError,
     createProduct,

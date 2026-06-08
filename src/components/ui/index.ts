@@ -10,6 +10,7 @@ export { DashboardCard } from './DashboardCard';
 export { DataTable } from './DataTable';
 export { EmptyState } from './EmptyState';
 export { FilterButtonGroup } from './FilterButtonGroup';
+export { ImageLightbox } from './ImageLightbox';
 export { Input } from './Input';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Modal } from './Modal';

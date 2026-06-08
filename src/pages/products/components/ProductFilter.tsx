@@ -19,11 +19,13 @@ interface ProductFilterProps {
   filterInspected: string;
   filterParentCategory: string;
   filterCategory: string;
+  filterReference: string;
   categories: Category[];
   onSearchChange: (value: string) => void;
   onFilterInspectedChange: (value: string) => void;
   onFilterParentCategoryChange: (value: string) => void;
   onFilterCategoryChange: (value: string) => void;
+  onFilterReferenceChange: (value: string) => void;
 }
 
 const VALIDATION_OPTIONS: FilterOption[] = [
@@ -32,16 +34,23 @@ const VALIDATION_OPTIONS: FilterOption[] = [
   { value: 'NOT_VALIDATED', label: 'No Validados', className: 'filter-btn-not-validated' },
 ];
 
+const TYPE_OPTIONS: FilterOption[] = [
+  { value: 'NORMAL', label: 'Normales' },
+  { value: 'REFERENCE', label: 'Reference' },
+];
+
 export function ProductFilter({
   searchTerm,
   filterParentCategory,
   filterCategory,
   filterInspected,
+  filterReference,
   categories,
   onSearchChange,
   onFilterParentCategoryChange,
   onFilterCategoryChange,
   onFilterInspectedChange,
+  onFilterReferenceChange,
 }: ProductFilterProps) {
   const [showSubcategoryFilter, setShowSubcategoryFilter] = useState(false);
 
@@ -108,6 +117,13 @@ export function ProductFilter({
 
       {/* Filters */}
       <div className="product-filters">
+
+        <FilterButtonGroup
+          label="Tipo"
+          options={TYPE_OPTIONS}
+          value={filterReference}
+          onChange={onFilterReferenceChange}
+        />
 
         <FilterButtonGroup
           label="Validación"
