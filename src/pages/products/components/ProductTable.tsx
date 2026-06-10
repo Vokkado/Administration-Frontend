@@ -31,6 +31,7 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
   onCalculateScore: (product: Product) => void;
+  onShowPrices: (product: Product) => void;
   onValidationChange: (id: string, currentState: boolean) => void;
   validatingId: string | null;
 }
@@ -42,6 +43,7 @@ export function ProductTable({
   onEdit,
   onDelete,
   onCalculateScore,
+  onShowPrices,
   onValidationChange,
   validatingId,
 }: ProductTableProps) {
@@ -181,6 +183,14 @@ export function ProductTable({
           </svg>
         </button>
         <button
+          className="action-btn price-btn"
+          onClick={() => onShowPrices(product)}
+          title="Consultar precios en los súper"
+          style={{ fontWeight: 700, fontSize: 16, color: '#388E3C' }}
+        >
+          $
+        </button>
+        <button
           className="action-btn edit-btn"
           onClick={() => onEdit(product)}
           title="Editar producto"
@@ -196,7 +206,7 @@ export function ProductTable({
         </button>
       </>
     ),
-    [onCalculateScore, onEdit, onDelete],
+    [onCalculateScore, onShowPrices, onEdit, onDelete],
   );
 
   return (
