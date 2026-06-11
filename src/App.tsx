@@ -14,6 +14,7 @@ import './config/amplify';
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const RestrictionPage = lazy(() => import('./pages/restriction/RestrictionPage').then(m => ({ default: m.RestrictionPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
+const ValidationPage = lazy(() => import('./pages/validation/ValidationPage').then(m => ({ default: m.ValidationPage })));
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const IngredientsPage = lazy(() => import('./pages/ingredients/IngredientsPage').then(m => ({ default: m.IngredientsPage })));
 const NutritionFactPage = lazy(() => import('./pages/nutrition_facts/NutritionFactPage').then(m => ({ default: m.NutritionFactPage })));
@@ -59,6 +60,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProductsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/validation"
+              element={
+                <ProtectedRoute>
+                  <ValidationPage />
                 </ProtectedRoute>
               }
             />
