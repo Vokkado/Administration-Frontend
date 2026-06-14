@@ -14,7 +14,8 @@ import './config/amplify';
 const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const RestrictionPage = lazy(() => import('./pages/restriction/RestrictionPage').then(m => ({ default: m.RestrictionPage })));
 const ProductsPage = lazy(() => import('./pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
-const ValidationPage = lazy(() => import('./pages/validation/ValidationPage').then(m => ({ default: m.ValidationPage })));
+const ValidationListPage = lazy(() => import('./pages/validation/ValidationListPage').then(m => ({ default: m.ValidationListPage })));
+const ValidationWizardPage = lazy(() => import('./pages/validation/ValidationWizardPage').then(m => ({ default: m.ValidationWizardPage })));
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const IngredientsPage = lazy(() => import('./pages/ingredients/IngredientsPage').then(m => ({ default: m.IngredientsPage })));
 const NutritionFactPage = lazy(() => import('./pages/nutrition_facts/NutritionFactPage').then(m => ({ default: m.NutritionFactPage })));
@@ -68,7 +69,16 @@ function App() {
               path="/validation"
               element={
                 <ProtectedRoute>
-                  <ValidationPage />
+                  <ValidationListPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/validation/:id"
+              element={
+                <ProtectedRoute>
+                  <ValidationWizardPage />
                 </ProtectedRoute>
               }
             />

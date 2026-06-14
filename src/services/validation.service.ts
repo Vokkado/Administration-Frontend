@@ -48,21 +48,33 @@ export interface ValidationNutrition {
   color: LinkColor;
 }
 
+export interface ValidationProduct {
+  id: string; name: string; brand: string | null; image: string | null; barcode: string | null;
+  rawIngredients: string | null; rawNutritionFacts: any; rawAllergens: string | null;
+  isInspected?: boolean;
+  categoryId: string | null; registrationName: string | null; registrationCode: string | null;
+  legalName: string | null; alcoholGraduation: number | null; source: string | null;
+  isUltraProcessed: boolean | null;
+  isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
+  servingSizeAmount: number | null; servingSizeUnit: string | null;
+}
+
 export interface ValidationDetail {
-  product: {
-    id: string; name: string; brand: string | null; image: string | null; barcode: string | null;
-    rawIngredients: string | null; rawNutritionFacts: any; rawAllergens: string | null;
-  };
+  product: ValidationProduct;
   ingredients: ValidationIngredient[];
   allergens: ValidationAllergen[];
   nutrition: ValidationNutrition[];
 }
 
+export interface CategoryOption { id: string; name: string }
+
 const BASE = '/products/validation';
 
 export class ValidationService {
-  static async getQueue(limit = 30, offset = 0): Promise<{ items: ValidationQueueItem[]; total: number }> {
-    const res = await apiService.get<any>(`${BASE}/queue?limit=${limit}&offset=${offset}`);
+  static async getQueue(limit = 30, offset = 0, search?: string): Promise<{ items: ValidationQueueItem[]; total: number }> {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (search) params.append('search', search);
+    const res = await apiService.get<any>(`${BASE}/queue?${params.toString()}`);
     return res.data ?? { items: [], total: 0 };
   }
 
@@ -97,6 +109,14 @@ export class ValidationService {
   // ── Edición directa ────────────────────────────────────────────────────────
   static async updateBasics(id: string, data: { name?: string; brand?: string | null; image?: string | null }): Promise<void> {
     await apiService.patch(`${BASE}/${id}/product`, data);
+  }
+  /** Edita campos escalares (básicos + registro/categoría/alcohol/serving/alertas). */
+  static async updateMeta(id: string, data: Record<string, any>): Promise<void> {
+    await apiService.patch(`${BASE}/${id}/meta`, data);
+  }
+  static async getCategories(): Promise<CategoryOption[]> {
+    const res = await apiService.get<any>('/categories');
+    return (res.data ?? []).map((c: any) => ({ id: c.id, name: c.name }));
   }
   static async addIngredient(id: string, variantId: string): Promise<void> {
     await apiService.post(`${BASE}/${id}/ingredient`, { variantId });
