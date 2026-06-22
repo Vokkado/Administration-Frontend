@@ -59,14 +59,22 @@ export interface ValidationProduct {
   servingSizeAmount: number | null; servingSizeUnit: string | null;
 }
 
+export interface ValidationCompany {
+  companyId: string;
+  companyName: string;
+  role: string;
+}
+
 export interface ValidationDetail {
   product: ValidationProduct;
   ingredients: ValidationIngredient[];
   allergens: ValidationAllergen[];
   nutrition: ValidationNutrition[];
+  companies: ValidationCompany[];
 }
 
 export interface CategoryOption { id: string; name: string }
+export interface CompanyOption { id: string; name: string }
 
 const BASE = '/products/validation';
 
@@ -116,6 +124,10 @@ export class ValidationService {
   }
   static async getCategories(): Promise<CategoryOption[]> {
     const res = await apiService.get<any>('/categories');
+    return (res.data ?? []).map((c: any) => ({ id: c.id, name: c.name }));
+  }
+  static async getCompanies(): Promise<CompanyOption[]> {
+    const res = await apiService.get<any>('/companies');
     return (res.data ?? []).map((c: any) => ({ id: c.id, name: c.name }));
   }
   static async addIngredient(id: string, variantId: string): Promise<void> {

@@ -8,10 +8,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, LoadingSpinner } from '../../components/ui';
-import { ProductSourceImagesSection } from '../products/components/product-modal';
-import { ValidationService, type ValidationDetail, type CategoryOption } from '../../services/validation.service';
+import { Button, Input, LoadingSpinner } from '../../components/ui';
+import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
+import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend } from './composition';
+import './ValidationWizardPage.css';
 
 const STEPS = ['Básico', 'Composición', 'Más info', 'Finalizar'];
 const SOURCES = ['', 'pos', 'eldorado', 'disco', 'tiendainglesa', 'manual'];
@@ -37,6 +38,8 @@ export function ValidationWizardPage() {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ValidationDetail | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState({ manufacturer: '', distributor: '', importer: '' });
   const [meta, setMeta] = useState<Meta | null>(null);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -48,13 +51,32 @@ export function ValidationWizardPage() {
     (async () => {
       setLoading(true);
       try {
-        const [d, cats] = await Promise.all([ValidationService.getDetail(id), ValidationService.getCategories()]);
-        setDetail(d); setMeta(toMeta(d.product)); setCategories(cats);
+        const [d, cats, comps] = await Promise.all([
+          ValidationService.getDetail(id), ValidationService.getCategories(), ValidationService.getCompanies(),
+        ]);
+        setDetail(d); setMeta(toMeta(d.product)); setCategories(cats); setCompanies(comps);
+        const sel = { manufacturer: '', distributor: '', importer: '' };
+        for (const pc of d.companies ?? []) {
+          const role = pc.role.toLowerCase() as keyof typeof sel;
+          if (role in sel) sel[role] = pc.companyId;
+        }
+        setSelectedCompanyIds(sel);
       } finally { setLoading(false); }
     })();
   }, [id]);
 
   const set = (k: keyof Meta, v: any) => setMeta((m) => (m ? { ...m, [k]: v } : m));
+
+  const onCompanySelect = (role: 'manufacturer' | 'distributor' | 'importer', companyId: string) =>
+    setSelectedCompanyIds((s) => ({ ...s, [role]: companyId }));
+
+  const buildCompanyData = () => {
+    const out: Array<{ companyId: string; role: string }> = [];
+    if (selectedCompanyIds.manufacturer) out.push({ companyId: selectedCompanyIds.manufacturer, role: 'MANUFACTURER' });
+    if (selectedCompanyIds.distributor) out.push({ companyId: selectedCompanyIds.distributor, role: 'DISTRIBUTOR' });
+    if (selectedCompanyIds.importer) out.push({ companyId: selectedCompanyIds.importer, role: 'IMPORTER' });
+    return out;
+  };
 
   const saveMeta = async () => {
     if (!meta) return;
@@ -65,6 +87,7 @@ export function ValidationWizardPage() {
       source: meta.source || null, servingSizeAmount: meta.servingSizeAmount === '' ? null : Number(meta.servingSizeAmount),
       servingSizeUnit: meta.servingSizeUnit, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
       isSaturatedFatAlert: meta.isSaturatedFatAlert, isSugarAlert: meta.isSugarAlert, isSodiumAlert: meta.isSodiumAlert,
+      companyData: buildCompanyData(),
     });
   };
 
@@ -94,86 +117,119 @@ export function ValidationWizardPage() {
 
   return (
     <AdminLayout title="Validar producto">
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <button onClick={() => navigate('/validation')} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', marginBottom: 8 }}>← Volver a la lista</button>
+      <div className="vw-container">
+        <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
 
         <Stepper step={step} onStep={(s) => setStep(s)} />
 
         {/* PASO 1 — Básico */}
         {step === 0 && (
-          <Card>
-            <div style={{ display: 'flex', gap: 20 }}>
-              <label style={{ cursor: 'pointer', textAlign: 'center' }}>
-                {meta.image ? <img src={meta.image} alt="" style={{ width: 96, height: 96, borderRadius: 10, objectFit: 'contain', background: '#f3f4f6' }} />
-                  : <div style={{ width: 96, height: 96, borderRadius: 10, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin foto</div>}
+          <div className="vw-card">
+            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+              <label className="vw-photo-label">
+                {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
+                  : <div className="vw-photo-empty">Sin foto</div>}
                 <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
-                <div style={{ fontSize: 12, color: '#2563eb', marginTop: 4 }}>📷 Cambiar</div>
+                <div className="vw-photo-change">📷 Cambiar</div>
               </label>
-              <div style={{ flex: 1 }}>
-                <Field label="Nombre"><input value={meta.name} onChange={(e) => set('name', e.target.value)} style={inp} /></Field>
-                <Field label="Marca"><input value={meta.brand} onChange={(e) => set('brand', e.target.value)} style={inp} /></Field>
-                <Field label="Código de barras"><input value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} style={{ ...inp, fontFamily: 'monospace' }} /></Field>
-                <Field label="o pegá una URL de imagen"><input value={meta.image} onChange={(e) => set('image', e.target.value)} style={inp} placeholder="https://…" /></Field>
+              <div style={{ flex: 1 }} className="vw-form-grid">
+                <div className="form-group form-group-full">
+                  <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
+                </div>
+                <div className="form-group">
+                  <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
+                </div>
+                <div className="form-group">
+                  <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
+                </div>
+                <div className="form-group form-group-full">
+                  <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* PASO 2 — Composición + fotos del usuario */}
         {step === 1 && (
           <>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}><Legend /></div>
-            <Card><CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} /></Card>
-            <Card>
-              <h3 style={{ fontSize: 15, margin: '0 0 10px', color: '#374151' }}>Fotos cargadas por el usuario</h3>
+            <div className="vw-card"><CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} /></div>
+            <div className="vw-card">
+              <h3 style={{ fontSize: 15, margin: '0 0 10px', color: 'var(--color-primary-dark)' }}>Fotos cargadas por el usuario</h3>
               <ProductSourceImagesSection productId={id} />
-            </Card>
+            </div>
           </>
         )}
 
         {/* PASO 3 — Más info */}
         {step === 2 && (
-          <Card>
-            <Field label="Categoría">
-              <select value={meta.categoryId} onChange={(e) => set('categoryId', e.target.value)} style={inp}>
-                <option value="">— Sin categoría —</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </Field>
-            <Row>
-              <Field label="Nombre de registro"><input value={meta.registrationName} onChange={(e) => set('registrationName', e.target.value)} style={inp} /></Field>
-              <Field label="Código de registro (RNPA/RNE)"><input value={meta.registrationCode} onChange={(e) => set('registrationCode', e.target.value)} style={inp} /></Field>
-            </Row>
-            <Field label="Razón social / nombre legal"><input value={meta.legalName} onChange={(e) => set('legalName', e.target.value)} style={inp} /></Field>
-            <Row>
-              <Field label="Origen del dato">
-                <select value={meta.source} onChange={(e) => set('source', e.target.value)} style={inp}>
+          <div className="vw-card">
+            <div className="vw-form-grid">
+              <div className="form-group form-group-full">
+                <label className="form-label">Categoría</label>
+                <select className="form-select" value={meta.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
+                  <option value="">— Sin categoría —</option>
+                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <Input label="Nombre de registro" value={meta.registrationName} onChange={(e) => set('registrationName', e.target.value)} fullWidth />
+              </div>
+              <div className="form-group">
+                <Input label="Código de registro (RNPA/RNE)" value={meta.registrationCode} onChange={(e) => set('registrationCode', e.target.value)} fullWidth />
+              </div>
+              <div className="form-group form-group-full">
+                <Input label="Razón social / nombre legal" value={meta.legalName} onChange={(e) => set('legalName', e.target.value)} fullWidth />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: 4 }}>
+              <label className="form-label">Empresas (opcional)</label>
+              <ProductCompaniesSection
+                companies={companies as any}
+                loadingCompanies={false}
+                selectedCompanyIds={selectedCompanyIds}
+                onCompanySelect={onCompanySelect}
+              />
+            </div>
+
+            <div className="vw-form-grid" style={{ marginTop: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Origen del dato</label>
+                <select className="form-select" value={meta.source} onChange={(e) => set('source', e.target.value)}>
                   {SOURCES.map((s) => <option key={s} value={s}>{s || '—'}</option>)}
                 </select>
-              </Field>
-              <Field label="Graduación alcohólica (% vol)"><input type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} style={inp} /></Field>
-            </Row>
-            <Row>
-              <Field label="Porción (cantidad)"><input type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} style={inp} /></Field>
-              <Field label="Porción (unidad)"><input value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} style={inp} placeholder="g / ml" /></Field>
-            </Row>
-            <Field label="Octógonos / alertas">
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              </div>
+              <div className="form-group">
+                <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
+              </div>
+              <div className="form-group">
+                <Input label="Porción (cantidad)" type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} fullWidth />
+              </div>
+              <div className="form-group">
+                <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: 8 }}>
+              <label className="form-label">Octógonos / alertas</label>
+              <div className="vw-checks">
                 <Check label="Ultraprocesado" v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
                 <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
                 <Check label="Exceso grasas sat." v={meta.isSaturatedFatAlert} on={(v) => set('isSaturatedFatAlert', v)} />
                 <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
                 <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
               </div>
-            </Field>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* PASO 4 — Finalizar */}
         {step === 3 && (
-          <Card>
-            <h3 style={{ marginTop: 0 }}>Listo para finalizar</h3>
-            <p style={{ color: '#6b7280' }}>
+          <div className="vw-card">
+            <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
+            <p style={{ color: 'var(--color-grey-600)' }}>
               <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
               <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas).
             </p>
@@ -181,7 +237,7 @@ export function ValidationWizardPage() {
               <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
               <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Navegación entre pasos */}
@@ -199,36 +255,23 @@ export function ValidationWizardPage() {
 // ── UI ───────────────────────────────────────────────────────────────────────────
 function Stepper({ step, onStep }: { step: number; onStep: (s: number) => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 20px' }}>
+    <div className="vw-stepper">
       {STEPS.map((label, i) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: i < STEPS.length - 1 ? 1 : 'initial' }}>
-          <button onClick={() => onStep(i)} style={{
-            display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer',
-            color: i === step ? '#111827' : i < step ? '#10b981' : '#9ca3af', fontWeight: i === step ? 700 : 500,
-          }}>
-            <span style={{
-              width: 26, height: 26, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13, background: i === step ? '#111827' : i < step ? '#10b981' : '#e5e7eb', color: i <= step ? '#fff' : '#6b7280',
-            }}>{i < step ? '✓' : i + 1}</span>
+        <div key={label} className="vw-step" style={{ flex: i < STEPS.length - 1 ? 1 : 'initial' }}>
+          <button
+            className={`vw-step-btn ${i === step ? 'is-current' : i < step ? 'is-done' : ''}`}
+            onClick={() => onStep(i)}
+          >
+            <span className="vw-step-dot">{i < step ? '✓' : i + 1}</span>
             {label}
           </button>
-          {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: i < step ? '#10b981' : '#e5e7eb' }} />}
+          {i < STEPS.length - 1 && <div className={`vw-step-line ${i < step ? 'is-done' : ''}`} />}
         </div>
       ))}
     </div>
   );
 }
 
-const inp: React.CSSProperties = { width: '100%', padding: '7px 9px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: 6 };
-function Card({ children }: { children: React.ReactNode }) {
-  return <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, marginBottom: 12 }}>{children}</div>;
-}
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div style={{ marginBottom: 12 }}><label style={{ display: 'block', fontSize: 13, color: '#6b7280', marginBottom: 4 }}>{label}</label>{children}</div>;
-}
-function Row({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>{children}</div>;
-}
 function Check({ label, v, on }: { label: string; v: boolean; on: (v: boolean) => void }) {
-  return <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14 }}><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;
+  return <label className="vw-check"><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;
 }
