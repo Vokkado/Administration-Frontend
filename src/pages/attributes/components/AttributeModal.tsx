@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import { RESTRICTION_TYPE_LABELS, getAttributeTypeLabel } from '../types';
 import { apiService } from '../../../services/api.service';
+import { matchesSearch } from '../../../utils/search';
 
 interface AttributeModalProps {
   show: boolean;
@@ -97,11 +98,11 @@ export function AttributeModal({
   const filteredRestrictions = restrictions.filter(restriction => {
     const matchesAbsolute = absoluteFilter === 'ALL' ||
       (absoluteFilter === 'ABSOLUTE' ? restriction.isAbsolute : !restriction.isAbsolute);
-    const matchesSearch = restriction.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesName = matchesSearch(restriction.name, searchTerm);
     const matchesFilter = selectedFilter === 'ALL' || restriction.type === selectedFilter;
     const matchesStatus = statusFilter === 'ALL' ||
       (statusFilter === 'ACTIVE' ? restriction.active : !restriction.active);
-    return matchesAbsolute && matchesSearch && matchesFilter && matchesStatus;
+    return matchesAbsolute && matchesName && matchesFilter && matchesStatus;
   });
 
   useEffect(() => {

@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { Button, Input } from '../../../components/ui';
 import type { Ingredient } from '../types';
 import { RISK_LABELS } from '../types';
+import { matchesSearch } from '../../../utils/search';
 import './MergeIngredientsModal.css';
 
 interface MergeIngredientsModalProps {
@@ -48,15 +49,14 @@ export function MergeIngredientsModal({
   }, [show]);
 
   const filteredIngredients = ingredients.filter(ing =>
-    ing.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(ing.name, searchTerm)
   );
 
   const availableChildren = ingredients.filter(ing => ing.id !== selectedParent?.id);
 
-  const filteredChildrenIngredients = availableChildren.filter(ing => {
-    const matchesSearch = ing.name.toLowerCase().includes(childrenSearchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredChildrenIngredients = availableChildren.filter(ing =>
+    matchesSearch(ing.name, childrenSearchTerm)
+  );
 
   const handleSelectParent = (ingredient: Ingredient) => {
     setSelectedParent(ingredient);

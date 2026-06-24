@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Input } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
+import { matchesSearch } from '../../../utils/search';
 import './MergeIngredientsModal.css';
 
 interface MergeIngredientVariantsModalProps {
@@ -49,8 +50,8 @@ export function MergeIngredientVariantsModal({
   }, [show]);
 
   const filteredVariants = variants.filter(variant =>
-    variant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getIngredientName(variant.ingredientId).toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(variant.name, searchTerm) ||
+    matchesSearch(getIngredientName(variant.ingredientId), searchTerm)
   );
 
   // Solo permitir unificar variantes del mismo ingrediente
@@ -61,11 +62,10 @@ export function MergeIngredientVariantsModal({
       )
     : [];
 
-  const filteredChildrenVariants = availableChildren.filter(variant => {
-    const matchesSearch = variant.name.toLowerCase().includes(childrenSearchTerm.toLowerCase()) ||
-      getIngredientName(variant.ingredientId).toLowerCase().includes(childrenSearchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredChildrenVariants = availableChildren.filter(variant =>
+    matchesSearch(variant.name, childrenSearchTerm) ||
+    matchesSearch(getIngredientName(variant.ingredientId), childrenSearchTerm)
+  );
 
   const handleSelectParent = (variant: IngredientVariant) => {
     setSelectedParent(variant);

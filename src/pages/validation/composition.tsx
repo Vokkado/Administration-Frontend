@@ -3,7 +3,7 @@
  * el paso 2 del wizard. Cada item viene con su color (🟢🟡🔴) y acciones: confirmar /
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui';
 import {
   ValidationService,
@@ -21,6 +21,20 @@ export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string
   red: { bg: '#fef2f2', border: '#fecaca', dot: '#ef4444', label: 'Creado por IA' },
 };
 type Picked = { id: string; name: string };
+type PageResult = { items: Picked[]; total: number };
+/** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
+type PickerSearch = (term: string, offset: number, limit: number) => Promise<PageResult>;
+
+// Helpers a nivel módulo = identidad estable (el SearchPicker los usa en deps de useEffect).
+const variantSearch: PickerSearch = (term, offset, limit) =>
+  IngredientVariantsService.listAdminVariants({ limit, offset, search: term || undefined })
+    .then((r) => ({ items: r.data.map((v: any) => ({ id: v.id, name: v.name })), total: r.total }));
+const allergenSearch: PickerSearch = (term, offset, limit) =>
+  AllergensService.listAdminAllergens({ limit, offset, search: term || undefined })
+    .then((r) => ({ items: r.data.map((a: any) => ({ id: a.id, name: a.name })), total: r.total }));
+const nutritionSearch: PickerSearch = (term, offset, limit) =>
+  NutritionFactsService.listAdminNutritionFacts({ limit, offset, search: term || undefined })
+    .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name })), total: r.total }));
 
 export function Dot({ color }: { color: LinkColor }) {
   return <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: COLORS[color].dot, marginRight: 2 }} />;
@@ -43,7 +57,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
     <>
       <Section title={`Ingredientes (${detail.ingredients.length})`}
         adder={<AdderButton label="+ Agregar"
-          search={(t) => IngredientVariantsService.listAdminVariants({ limit: 10, offset: 0, search: t }).then((r) => r.data.map((v: any) => ({ id: v.id, name: v.name })))}
+          search={variantSearch}
           onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
@@ -53,7 +67,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
-          search={(t) => AllergensService.listAdminAllergens({ limit: 10, offset: 0, search: t }).then((r) => r.data.map((a: any) => ({ id: a.id, name: a.name })))}
+          search={allergenSearch}
           onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
         {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -111,7 +125,7 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId
       </div>
       {correcting && (
         <SearchPicker placeholder="Buscar la variante correcta…"
-          search={(t) => IngredientVariantsService.listAdminVariants({ limit: 10, offset: 0, search: t }).then((r) => r.data.map((v: any) => ({ id: v.id, name: v.name })))}
+          search={variantSearch}
           onCancel={() => setCorrecting(false)}
           onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })} />
       )}
@@ -161,37 +175,75 @@ function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: st
   }
   return (
     <AdderButton label="+ Agregar nutriente"
-      search={(t) => NutritionFactsService.listAdminNutritionFacts({ limit: 10, offset: 0, search: t }).then((r) => r.data.map((x: any) => ({ id: x.id, name: x.name })))}
+      search={nutritionSearch}
       onPick={(p) => setPicked(p)} />
   );
 }
 
-function AdderButton({ label, search, onPick }: { label: string; search: (t: string) => Promise<Picked[]>; onPick: (p: Picked) => void }) {
+function AdderButton({ label, search, onPick }: { label: string; search: PickerSearch; onPick: (p: Picked) => void }) {
   const [open, setOpen] = useState(false);
   if (!open) return <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>;
   return <SearchPicker placeholder="Buscar…" search={search} onCancel={() => setOpen(false)} onSelect={(p) => { onPick(p); setOpen(false); }} />;
 }
 
-function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: (t: string) => Promise<Picked[]>; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
+const PICKER_PAGE = 25;
+
+function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Picked[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Token para descartar respuestas viejas (debounce + scroll concurrentes).
+  const reqRef = useRef(0);
+
+  // Primera página: al abrir (q vacío trae todo) y en cada cambio de query (debounce 300ms).
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) { setResults([]); return; }
-    let active = true; setLoading(true);
+    const myReq = ++reqRef.current;
+    setLoading(true);
     const t = setTimeout(async () => {
-      try { const r = await search(term); if (active) setResults(r); } finally { if (active) setLoading(false); }
+      try {
+        const r = await search(term, 0, PICKER_PAGE);
+        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); }
+      } finally {
+        if (reqRef.current === myReq) setLoading(false);
+      }
     }, 300);
-    return () => { active = false; clearTimeout(t); };
-  }, [q]);
+    return () => clearTimeout(t);
+  }, [q, search]);
+
+  const loadMore = async () => {
+    if (loadingMore || loading || results.length >= total) return;
+    const myReq = reqRef.current; // mismo query
+    setLoadingMore(true);
+    try {
+      const r = await search(q.trim(), results.length, PICKER_PAGE);
+      if (reqRef.current === myReq) {
+        setResults((prev) => [...prev, ...r.items]);
+        setTotal(r.total);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) loadMore();
+  };
+
   return (
     <div style={{ marginTop: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, minWidth: 280 }}>
       <input autoFocus placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '100%', padding: '6px 8px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: 6 }} />
-      <div style={{ maxHeight: 200, overflowY: 'auto', marginTop: 6 }}>
+      <div style={{ maxHeight: 240, overflowY: 'auto', marginTop: 6 }} onScroll={onScroll}>
         {loading && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Buscando…</div>}
         {!loading && results.map((r) => <button key={r.id} onClick={() => onSelect(r)} style={pickerItem}>{r.name}</button>)}
-        {!loading && q.trim().length >= 2 && results.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Sin resultados</div>}
+        {!loading && results.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Sin resultados</div>}
+        {!loading && loadingMore && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Cargando más…</div>}
+        {!loading && !loadingMore && results.length > 0 && results.length < total && (
+          <div style={{ fontSize: 11, color: '#c4c4c4', padding: 4, textAlign: 'center' }}>Scrolleá para ver más ({results.length}/{total})</div>
+        )}
       </div>
       <button onClick={onCancel} style={{ ...pickerItem, color: '#6b7280' }}>Cancelar</button>
     </div>

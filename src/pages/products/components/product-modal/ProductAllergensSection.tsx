@@ -3,6 +3,7 @@ import type { Allergen } from './types';
 import type { ProductAllergen, AllergenPresence } from '../../types';
 import { ALLERGEN_PRESENCE_LABELS } from '../../types';
 import { Input } from '../../../../components/ui';
+import { matchesSearch } from '../../../../utils/search';
 
 interface ProductAllergensSectionProps {
   allergenData: ProductAllergen[];
@@ -22,7 +23,7 @@ export function ProductAllergensSection({
   const [searchAllergen, setSearchAllergen] = useState('');
 
   const filteredAllergens = allAllergens.filter(a =>
-    a.name.toLowerCase().includes(searchAllergen.toLowerCase())
+    matchesSearch(a.name, searchAllergen)
   );
 
   return (

@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Input } from '../../../components/ui';
 import type { Allergen } from '../types';
+import { matchesSearch } from '../../../utils/search';
 import './MergeAllergensModal.css';
 
 interface MergeAllergensModalProps {
@@ -47,15 +48,14 @@ export function MergeAllergensModal({
   }, [show]);
 
   const filteredAllergens = allergens.filter(a =>
-    a.name.toLowerCase().includes(searchTerm.toLowerCase())
+    matchesSearch(a.name, searchTerm)
   );
 
   const availableChildren = allergens.filter(a => a.id !== selectedParent?.id);
 
-  const filteredChildrenAllergens = availableChildren.filter(a => {
-    const matchesSearch = a.name.toLowerCase().includes(childrenSearchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredChildrenAllergens = availableChildren.filter(a =>
+    matchesSearch(a.name, childrenSearchTerm)
+  );
 
   const handleSelectParent = (allergen: Allergen) => {
     setSelectedParent(allergen);
