@@ -23,8 +23,16 @@ export function normalizeForSearch(value: string | null | undefined): string {
     .trim();
 }
 
+/**
+ * ¿`text` matchea `query`? Tolerante a tildes, mayúsculas y símbolos.
+ *
+ * El query se parte en tokens por cualquier separador no alfanumérico (espacios,
+ * guiones, puntos…) y se exige que TODOS los tokens aparezcan en el texto (orden
+ * indistinto). Así "coca cola" matchea "Coca-Cola" y "cola coca" también.
+ */
 export function matchesSearch(text: string | null | undefined, query: string): boolean {
-  const q = normalizeForSearch(query);
-  if (!q) return true;
-  return normalizeForSearch(text).includes(q);
+  const normalizedText = normalizeForSearch(text);
+  const tokens = normalizeForSearch(query).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (tokens.length === 0) return true;
+  return tokens.every((token) => normalizedText.includes(token));
 }
