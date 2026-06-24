@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ProductFormData, IngredientVariant } from './types';
 import { Input, Pagination } from '../../../../components/ui';
+import { matchesSearch } from '../../../../utils/search';
 
 interface ProductIngredientsSectionProps {
   formData: Pick<ProductFormData, 'rawIngredients'>;
@@ -29,7 +30,7 @@ export function ProductIngredientsSection({
   const [currentPageIngredients, setCurrentPageIngredients] = useState(1);
 
   const filteredVariants = ingredientVariants.filter(v =>
-    v.name.toLowerCase().includes(searchIngredient.toLowerCase())
+    matchesSearch(v.name, searchIngredient)
   );
 
   const sortedVariants = [...filteredVariants].sort((a, b) => {

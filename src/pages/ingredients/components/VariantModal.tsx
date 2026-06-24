@@ -13,6 +13,7 @@ import type {
   RestrictionType,
 } from '../types';
 import { RESTRICTION_TYPE_LABELS } from '../types';
+import { matchesSearch } from '../../../utils/search';
 import { apiService } from '../../../services/api.service';
 
 interface VariantModalProps {
@@ -138,9 +139,9 @@ export function VariantModal({
 
   // Filter attributes
   const filteredAttributes = attributes.filter(attr => {
-    const matchesSearch = attr.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesName = matchesSearch(attr.name, searchTerm);
     const matchesType = filterType === 'ALL' || attr.typeId === filterType;
-    return matchesSearch && matchesType;
+    return matchesName && matchesType;
   });
 
   // Reset page on filter change
@@ -173,7 +174,7 @@ export function VariantModal({
 
   // Filter ingredients for autocomplete
   const filteredIngredients = ingredients
-    .filter(ing => ing.name.toLowerCase().includes(ingredientSearch.toLowerCase()))
+    .filter(ing => matchesSearch(ing.name, ingredientSearch))
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 20);
 

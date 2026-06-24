@@ -27,6 +27,14 @@ interface DashboardGroupConfig {
 
 const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   {
+    name: 'Validación',
+    color: 'var(--color-warning, #f59e0b)',
+    colorEnd: 'var(--color-primary-light)',
+    cards: [
+      { title: 'Validar productos', description: 'Revisá los productos cargados por IA: confirmá ingredientes, alérgenos y nutrición', path: '/validation', buttonLabel: 'Validar productos' },
+    ],
+  },
+  {
     name: 'Catálogo',
     color: 'var(--color-primary)',
     colorEnd: 'var(--color-primary-light)',

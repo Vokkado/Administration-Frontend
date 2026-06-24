@@ -8,6 +8,7 @@ import { ProductModal } from './components/ProductModal';
 import { ProductTable } from './components/ProductTable';
 import { ProductFilter } from './components/ProductFilter';
 import { ScoreBreakdownModal } from './components/ScoreBreakdownModal';
+import { PricesModal } from './components/PricesModal';
 import { useProducts } from './hooks/useProducts';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
 import type { Product, ProductAllergen, ProductIngredientVariant, ProductNutritionFact } from './types';
@@ -115,6 +116,7 @@ export function ProductsPage() {
 
   // Score calculation state
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [pricesProduct, setPricesProduct] = useState<Product | null>(null);
   const [scoreResult, setScoreResult] = useState<any>(null);
   const [scoreProductName, setScoreProductName] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
@@ -430,6 +432,7 @@ export function ProductsPage() {
           onEdit={openEditModal}
           onDelete={crud.requestDelete}
           onCalculateScore={handleCalculateScore}
+          onShowPrices={setPricesProduct}
           onValidationChange={crud.requestValidation}
           validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
         />
@@ -511,6 +514,13 @@ export function ProductsPage() {
           productName={scoreProductName}
           result={scoreResult}
           onClose={() => { setShowScoreModal(false); setScoreResult(null); }}
+        />
+
+        <PricesModal
+          show={!!pricesProduct}
+          productId={pricesProduct?.id ?? null}
+          productName={pricesProduct?.name ?? ''}
+          onClose={() => setPricesProduct(null)}
         />
     </AdminLayout>
   );

@@ -21,7 +21,35 @@ export interface AdminProductListResponse {
   total: number;
 }
 
+export type PriceDirection = 'up' | 'down' | 'same' | null;
+
+export interface StorePrice {
+  store: string;
+  storeName: string;
+  price: number;
+  listPrice: number | null;
+  isOffer: boolean;
+  isAvailable: boolean;
+  direction: PriceDirection;
+  previousPrice: number | null;
+  stale: boolean;
+  productUrl: string | null;
+  capturedAt: string;
+}
+
+export interface ProductPrices {
+  productId: string;
+  prices: StorePrice[];
+  cheapestStore: string | null;
+}
+
 export class ProductsService {
+  /** Precios del producto (comparador). Consulta en vivo al tocar. */
+  static async getPrices(productId: string): Promise<ProductPrices> {
+    const response = await apiService.get<any>(`/products/${productId}/prices`);
+    return response.data ?? response;
+  }
+
   static async listAdminProducts(query: AdminProductListQuery): Promise<AdminProductListResponse> {
     const params = new URLSearchParams({
       limit: String(query.limit),
