@@ -65,7 +65,16 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Reportes', description: 'Gestiona reportes de BUG y productos faltantes', path: '/reports', buttonLabel: 'Ver Reportes' },
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
       { title: 'Notificaciones', description: 'Envía notificaciones push a los usuarios', path: '/notifications', buttonLabel: 'Ver Notificaciones' },
-      { title: 'Estadísticas', description: 'Ranking de contribuidores y estadísticas de uso de productos', path: '/statistics', buttonLabel: 'Ver Estadísticas' },
+      { title: 'Términos y Privacidad', description: 'Edita y publica nuevas versiones de los Términos y la Política de Privacidad', path: '/legal', buttonLabel: 'Editar Términos' },
+    ],
+  },
+  {
+    name: 'Estadísticas',
+    color: 'var(--color-primary)',
+    colorEnd: 'var(--color-primary-light)',
+    cards: [
+      { title: 'Usuarios', description: 'Ranking de contribuidores: puntos, nivel, escaneos y carritos', path: '/statistics/users', buttonLabel: 'Ver Usuarios' },
+      { title: 'Productos', description: 'Cantidad de escaneos por producto y detalle demográfico', path: '/statistics/products', buttonLabel: 'Ver Productos' },
     ],
   },
 ];

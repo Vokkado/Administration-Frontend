@@ -27,7 +27,9 @@ const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
 const AttributesPage = lazy(() => import('./pages/attributes/AttributesPage').then(m => ({ default: m.AttributesPage })));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const StatisticsPage = lazy(() => import('./pages/statistics/StatisticsPage').then(m => ({ default: m.StatisticsPage })));
+const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStatisticsPage').then(m => ({ default: m.ProductStatisticsPage })));
+const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
+const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
 
 function App() {
   return (
@@ -184,10 +186,28 @@ function App() {
             />
 
             <Route
-              path="/statistics"
+              path="/statistics/products"
               element={
                 <ProtectedRoute>
-                  <StatisticsPage />
+                  <ProductStatisticsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/statistics/users"
+              element={
+                <ProtectedRoute>
+                  <UserStatisticsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/legal"
+              element={
+                <ProtectedRoute>
+                  <LegalPage />
                 </ProtectedRoute>
               }
             />

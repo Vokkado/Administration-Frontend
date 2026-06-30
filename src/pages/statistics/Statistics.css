@@ -1,0 +1,83 @@
+/* Métrica grande: número centrado, sin tarjeta, sin hover, no interactivo. */
+.statistics-bignumber {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  margin-bottom: 20px;
+}
+
+.statistics-bignumber-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.statistics-bignumber-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Modal de detalle de producto: mismo criterio, sin tarjetas ni hover. */
+.statistics-detail-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 8px 0;
+}
+
+.statistics-detail-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statistics-detail-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.statistics-detail-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.statistics-detail-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.statistics-breakdown h4 {
+  margin: 0 0 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statistics-breakdown-empty {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.statistics-breakdown-count {
+  text-align: right;
+  font-weight: 600;
+}
+
+.statistics-breakdown-pct {
+  text-align: right;
+  color: var(--color-text-muted);
+  width: 56px;
+}
