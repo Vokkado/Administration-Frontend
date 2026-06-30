@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, Input, LoadingSpinner } from '../../components/ui';
+import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend } from './composition';
@@ -44,6 +44,7 @@ export function ValidationWizardPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showReject, setShowReject] = useState(false);
 
   const loadDetail = async () => { setDetail(await ValidationService.getDetail(id)); };
 
@@ -103,6 +104,16 @@ export function ValidationWizardPage() {
     try {
       await saveMeta();
       if (validate) await ValidationService.approve(id);
+      navigate('/validation');
+    } finally { setBusy(false); }
+  };
+
+  // Descartar (soft-reject): saca el producto de la cola conservando el registro. No da puntos.
+  const onReject = async () => {
+    setBusy(true);
+    try {
+      await ValidationService.reject(id);
+      setShowReject(false);
       navigate('/validation');
     } finally { setBusy(false); }
   };
@@ -231,11 +242,15 @@ export function ValidationWizardPage() {
             <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
             <p style={{ color: 'var(--color-grey-600)' }}>
               <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
-              <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas).
+              <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
+              <strong>Descartar</strong>: el producto no sirve. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
-              <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'space-between' }}>
+              <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Descartar producto</Button>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
+                <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
+              </div>
             </div>
           </div>
         )}
@@ -248,6 +263,18 @@ export function ValidationWizardPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        show={showReject}
+        title="Descartar producto"
+        message="El producto se marcará como rechazado y saldrá de la cola. No se otorgan puntos a quien lo cargó. ¿Confirmás?"
+        confirmText="Descartar"
+        cancelText="Cancelar"
+        variant="danger"
+        loading={busy}
+        onConfirm={onReject}
+        onCancel={() => setShowReject(false)}
+      />
     </AdminLayout>
   );
 }

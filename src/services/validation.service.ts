@@ -95,6 +95,11 @@ export class ValidationService {
     await apiService.post(`${BASE}/${id}/approve`);
   }
 
+  /** Descarta (soft-reject) el producto: lo marca rechazado, no otorga puntos al uploader. */
+  static async reject(id: string, reason?: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/reject`, reason ? { reason } : {});
+  }
+
   static async confirmIngredient(id: string, variantId: string): Promise<void> {
     await apiService.patch(`${BASE}/${id}/ingredient/${variantId}/confirm`);
   }

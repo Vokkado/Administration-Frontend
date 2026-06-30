@@ -65,6 +65,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Reportes', description: 'Gestiona reportes de BUG y productos faltantes', path: '/reports', buttonLabel: 'Ver Reportes' },
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
       { title: 'Notificaciones', description: 'Envía notificaciones push a los usuarios', path: '/notifications', buttonLabel: 'Ver Notificaciones' },
+      { title: 'Estadísticas', description: 'Ranking de contribuidores y estadísticas de uso de productos', path: '/statistics', buttonLabel: 'Ver Estadísticas' },
     ],
   },
 ];

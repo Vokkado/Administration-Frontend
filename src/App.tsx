@@ -27,6 +27,7 @@ const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
 const AttributesPage = lazy(() => import('./pages/attributes/AttributesPage').then(m => ({ default: m.AttributesPage })));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const StatisticsPage = lazy(() => import('./pages/statistics/StatisticsPage').then(m => ({ default: m.StatisticsPage })));
 
 function App() {
   return (
@@ -178,6 +179,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/statistics"
+              element={
+                <ProtectedRoute>
+                  <StatisticsPage />
                 </ProtectedRoute>
               }
             />
