@@ -4,7 +4,7 @@
  * UNA vez, el cartel de re-aceptación en la app para todo usuario que esté en una
  * versión anterior (no hace falta tocar código para actualizar los términos).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, ConfirmDialog, NotificationBanner, LoadingSpinner } from '../../components/ui';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
@@ -27,22 +27,30 @@ export function LegalPage() {
 
   const crud = useCRUDActions();
 
-  const load = async () => {
+  // Guarda de carrera: si el admin cambia de pestaña antes de que termine de cargar (o
+  // mientras publica), una respuesta vieja no debe pisar lo que se está mostrando ahora —
+  // podría dejar la pestaña "Términos" con texto de Privacidad y publicarlo mezclado.
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
+  const load = async (docType: LegalDocType) => {
     setLoading(true);
     setError('');
     try {
-      const versions = await LegalService.listVersions(activeTab);
+      const versions = await LegalService.listVersions(docType);
+      if (activeTabRef.current !== docType) return; // el admin ya cambió de pestaña
       setHistory(versions);
       setContent(versions[0]?.content ?? '');
     } catch (err: any) {
+      if (activeTabRef.current !== docType) return;
       setError(err.response?.data?.message || 'Error al cargar el documento');
     } finally {
-      setLoading(false);
+      if (activeTabRef.current === docType) setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    load(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
@@ -50,13 +58,18 @@ export function LegalPage() {
   const isDirty = content.trim() !== (current?.content ?? '').trim();
 
   const handlePublish = async () => {
+    // Se fijan ACÁ (no se leen de nuevo después del await): si el admin cambia de pestaña
+    // mientras publica, publicamos lo que tenía en pantalla cuando confirmó, no lo que
+    // haya quedado cargado después.
+    const docType = activeTab;
+    const contentToPublish = content;
     setPublishing(true);
     setError('');
     try {
-      await LegalService.publish(activeTab, content);
+      await LegalService.publish(docType, contentToPublish);
       setShowPublishConfirm(false);
       crud.showSuccess('✅ Nueva versión publicada. Los usuarios verán el cartel de aceptación la próxima vez que abran la app.');
-      await load();
+      await load(docType);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al publicar la versión');
     } finally {
@@ -73,6 +86,7 @@ export function LegalPage() {
             type="button"
             className={`legal-page-tab ${activeTab === tab.key ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.key)}
+            disabled={publishing}
           >
             {tab.label}
           </button>

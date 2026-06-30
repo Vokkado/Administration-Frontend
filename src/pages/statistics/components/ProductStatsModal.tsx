@@ -18,12 +18,16 @@ export function ProductStatsModal({ product, onClose }: ProductStatsModalProps) 
 
   useEffect(() => {
     if (!product) { setDetail(null); return; }
+    // Guarda de carrera: si se cierra este producto y se abre otro antes de que responda
+    // el fetch, una respuesta vieja no debe pisar el detalle del producto que se ve ahora.
+    let active = true;
     setLoading(true);
     setError(null);
     StatisticsService.getProductStatsDetail(product.id)
-      .then(setDetail)
-      .catch(() => setError('No se pudo cargar el detalle de este producto.'))
-      .finally(() => setLoading(false));
+      .then((d) => { if (active) setDetail(d); })
+      .catch(() => { if (active) setError('No se pudo cargar el detalle de este producto.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [product]);
 
   if (!product) return null;
