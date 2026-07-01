@@ -25,7 +25,7 @@ export function ProductStatisticsPage() {
     <AdminLayout title="Estadísticas de productos">
       <PageHeader
         title="Estadísticas de productos"
-        description="Cantidad de escaneos por producto. Hacé click en un producto para ver el detalle demográfico."
+        description="Cantidad de escaneos por producto. Tocá “Ver detalle” para ver el desglose demográfico."
         count={productStats.total}
         countLabel="productos"
         countLabelSingular="producto"

@@ -45,6 +45,7 @@ export function ValidationWizardPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showReject, setShowReject] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadDetail = async () => { setDetail(await ValidationService.getDetail(id)); };
 
@@ -94,34 +95,59 @@ export function ValidationWizardPage() {
 
   const goNext = async () => {
     // Al salir de los pasos con campos meta (0 y 2) persistimos.
-    if (step === 0 || step === 2) { setBusy(true); try { await saveMeta(); } finally { setBusy(false); } }
+    if (step === 0 || step === 2) {
+      setBusy(true);
+      try {
+        await saveMeta();
+      } catch {
+        setError('No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.');
+        setBusy(false);
+        return; // No avanzamos de paso si el guardado falló (evita perder cambios en silencio).
+      }
+      setBusy(false);
+    }
+    setError(null);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const onComplete = async (validate: boolean) => {
     setBusy(true);
+    setError(null);
     try {
       await saveMeta();
       if (validate) await ValidationService.approve(id);
       navigate('/validation');
+    } catch {
+      setError(validate
+        ? 'No pudimos validar el producto. Revisá tu conexión e intentá de nuevo.'
+        : 'No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
   // Descartar (soft-reject): saca el producto de la cola conservando el registro. No da puntos.
   const onReject = async () => {
     setBusy(true);
+    setError(null);
     try {
       await ValidationService.reject(id);
       setShowReject(false);
       navigate('/validation');
+    } catch {
+      setShowReject(false);
+      setError('No pudimos descartar el producto. Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     setBusy(true);
-    try { set('image', await ValidationService.uploadImage(f)); } finally { setBusy(false); }
+    setError(null);
+    try {
+      set('image', await ValidationService.uploadImage(f));
+    } catch {
+      setError('No pudimos subir la imagen. Probá con otra o reintentá.');
+    } finally { setBusy(false); }
   };
 
   if (loading || !detail || !meta) return <AdminLayout title="Validar producto"><LoadingSpinner /></AdminLayout>;
@@ -130,6 +156,8 @@ export function ValidationWizardPage() {
     <AdminLayout title="Validar producto">
       <div className="vw-container">
         <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
+
+        {error && <div className="vw-error" role="alert">{error}</div>}
 
         <Stepper step={step} onStep={(s) => setStep(s)} />
 
