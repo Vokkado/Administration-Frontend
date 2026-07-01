@@ -200,12 +200,12 @@ export function ProductBasicInfoSection({ formData, categories, onChange }: Prod
             placeholder="https://..."
             value={formData.image}
             onChange={(e) => onChange({ image: e.target.value })}
-            title="Ingrese una URL válida (comenzando con https:// o http://)"
+            title="Ingrese una URL válida que comience con https://"
             fullWidth
           />
-          {formData.image && !formData.image.match(/^https?:\/\/.+/) && (
+          {formData.image && !formData.image.match(/^https:\/\/.+/) && (
             <small className="form-hint" style={{ color: '#F44336' }}>
-              La URL debe comenzar con http:// o https://
+              La URL debe comenzar con https:// (no se permite http:// por seguridad)
             </small>
           )}
         </div>

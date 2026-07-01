@@ -183,6 +183,11 @@ export function ValidationWizardPage() {
                 </div>
                 <div className="form-group form-group-full">
                   <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
+                  {meta.image && !/^https:\/\/.+/.test(meta.image) && (
+                    <small className="form-hint" style={{ color: 'var(--color-error)' }}>
+                      La URL debe comenzar con https:// (no se permite http:// por seguridad)
+                    </small>
+                  )}
                 </div>
               </div>
             </div>
