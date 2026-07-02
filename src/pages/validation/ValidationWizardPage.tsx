@@ -80,6 +80,11 @@ export function ValidationWizardPage() {
     return out;
   };
 
+  // Seguridad (#11): la URL de imagen debe ser https — acá se BLOQUEA el guardado (el hint rojo
+  // del input es solo aviso). Evita persistir URLs http que el CSP igual no renderiza y que la app
+  // móvil (sin cleartext) tampoco puede cargar.
+  const imageUrlInvalid = !!meta?.image && !/^https:\/\/.+/.test(meta.image);
+
   const saveMeta = async () => {
     if (!meta) return;
     await ValidationService.updateMeta(id, {
@@ -96,6 +101,10 @@ export function ValidationWizardPage() {
   const goNext = async () => {
     // Al salir de los pasos con campos meta (0 y 2) persistimos.
     if (step === 0 || step === 2) {
+      if (imageUrlInvalid) {
+        setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
+        return;
+      }
       setBusy(true);
       try {
         await saveMeta();
@@ -112,6 +121,10 @@ export function ValidationWizardPage() {
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const onComplete = async (validate: boolean) => {
+    if (imageUrlInvalid) {
+      setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
