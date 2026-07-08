@@ -29,6 +29,7 @@ const AttributesPage = lazy(() => import('./pages/attributes/AttributesPage').th
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStatisticsPage').then(m => ({ default: m.ProductStatisticsPage })));
 const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
+const BadgesPage = lazy(() => import('./pages/statistics/BadgesPage').then(m => ({ default: m.BadgesPage })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
 
 function App() {
@@ -199,6 +200,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserStatisticsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/statistics/badges"
+              element={
+                <ProtectedRoute>
+                  <BadgesPage />
                 </ProtectedRoute>
               }
             />

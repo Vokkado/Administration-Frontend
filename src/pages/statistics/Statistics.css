@@ -23,11 +23,46 @@
   letter-spacing: 0.5px;
 }
 
-/* Modal de detalle de producto: mismo criterio, sin tarjetas ni hover. */
+/* ── Leaderboard de usuarios: headers en varias líneas para que las columnas numéricas
+   queden angostas y entre todo sin scroll horizontal (solo scrollea en pantallas muy chicas). ── */
+.stats-leaderboard .dt-table th {
+  white-space: normal;      /* permite que el título del header baje a 2 líneas */
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 8px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.stats-leaderboard .dt-table td {
+  text-align: center;
+  padding: 10px 8px;
+}
+
+/* Usuario y Email alineados a la izquierda (texto, no números). */
+.stats-leaderboard .dt-table th:nth-child(1),
+.stats-leaderboard .dt-table td:nth-child(1),
+.stats-leaderboard .dt-table th:nth-child(2),
+.stats-leaderboard .dt-table td:nth-child(2) {
+  text-align: left;
+}
+
+.stats-leaderboard .dt-table td:nth-child(2) {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+/* Modal de detalle de producto: padding propio (el modal-body-content no lo trae) + responsive. */
+.statistics-detail {
+  padding: 24px;
+}
+
 .statistics-detail-stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 24px;
   padding: 8px 0;
 }
@@ -80,4 +115,20 @@
   text-align: right;
   color: var(--color-text-muted);
   width: 56px;
+}
+
+/* ── Responsive del modal de detalle ── */
+@media (max-width: 767px) {
+  .statistics-detail {
+    padding: 16px;
+  }
+
+  .statistics-detail-stat-value {
+    font-size: 24px;
+  }
+
+  .statistics-detail-breakdowns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }

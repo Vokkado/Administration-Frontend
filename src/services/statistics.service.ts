@@ -8,12 +8,14 @@ import type { PaginatedFetchParams } from '../hooks/usePaginatedList';
 export interface LeaderboardEntry {
   userId: string;
   name: string | null;
+  email: string | null; // censurado por el backend (ej: "n***@gmail.com")
   totalScans: number;
+  productsUploaded: number;
   productsApproved: number;
   cartsCreated: number;
   cartsCompleted: number;
+  reportsApproved: number;
   pointsBalance: number;
-  level: number;
 }
 
 export interface ProductScanStat {
@@ -31,6 +33,29 @@ export interface ProductStatsDetail {
   addToCartCount: number;
   byAgeBucket: Array<{ ageBucket: string | null; count: number }>;
   byGender: Array<{ gender: string | null; count: number }>;
+}
+
+export type BadgeMetric = 'scans' | 'uploads' | 'carts';
+export type BadgeTier = 'bronze' | 'silver' | 'gold';
+
+export interface BadgeDefinitionAdmin {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  iconUrl: string | null;
+  metric: BadgeMetric;
+  threshold: number;
+  tier: BadgeTier;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface BadgeUpdateFields {
+  name?: string;
+  threshold?: number;
+  iconUrl?: string | null;
+  isActive?: boolean;
 }
 
 const BASE = '/engagement/admin';
@@ -62,5 +87,23 @@ export class StatisticsService {
   static async getProductStatsDetail(productId: string): Promise<ProductStatsDetail> {
     const res = await apiService.get<any>(`${BASE}/product/${encodeURIComponent(productId)}/stats`);
     return res.data;
+  }
+
+  /** Catálogo completo de insignias (activas e inactivas) para administrarlas. */
+  static async getBadges(): Promise<BadgeDefinitionAdmin[]> {
+    const res = await apiService.get<any>(`${BASE}/badges`);
+    return res.data ?? [];
+  }
+
+  /** Actualiza una insignia (nombre, umbral, foto, activa). */
+  static async updateBadge(id: string, fields: BadgeUpdateFields): Promise<BadgeDefinitionAdmin> {
+    const res = await apiService.patch<any>(`${BASE}/badges/${encodeURIComponent(id)}`, fields);
+    return res.data;
+  }
+
+  /** Sube una imagen (reusa el endpoint de portada de productos) y devuelve su URL en S3. */
+  static async uploadImage(imageBase64: string, contentType: string): Promise<string> {
+    const res = await apiService.post<any>('/products/cover-image', { imageBase64, contentType }, { timeout: 60000 });
+    return res.data.url;
   }
 }

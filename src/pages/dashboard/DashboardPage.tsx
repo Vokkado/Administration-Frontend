@@ -73,8 +73,9 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
     color: 'var(--color-primary)',
     colorEnd: 'var(--color-primary-light)',
     cards: [
-      { title: 'Usuarios', description: 'Ranking de contribuidores: puntos, nivel, escaneos y carritos', path: '/statistics/users', buttonLabel: 'Ver Usuarios' },
+      { title: 'Usuarios', description: 'Ranking de contribuidores: puntos, escaneos, cargas, aprobados y carritos', path: '/statistics/users', buttonLabel: 'Ver Usuarios' },
       { title: 'Productos', description: 'Cantidad de escaneos por producto y detalle demográfico', path: '/statistics/products', buttonLabel: 'Ver Productos' },
+      { title: 'Insignias', description: 'Editar nombre, umbral (cantidad) y foto de cada insignia', path: '/statistics/badges', buttonLabel: 'Ver Insignias' },
     ],
   },
 ];
