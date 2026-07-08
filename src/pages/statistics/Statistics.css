@@ -1,0 +1,134 @@
+/* Métrica grande: número centrado, sin tarjeta, sin hover, no interactivo. */
+.statistics-bignumber {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  margin-bottom: 20px;
+}
+
+.statistics-bignumber-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.statistics-bignumber-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Leaderboard de usuarios: headers en varias líneas para que las columnas numéricas
+   queden angostas y entre todo sin scroll horizontal (solo scrollea en pantallas muy chicas). ── */
+.stats-leaderboard .dt-table th {
+  white-space: normal;      /* permite que el título del header baje a 2 líneas */
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 8px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.stats-leaderboard .dt-table td {
+  text-align: center;
+  padding: 10px 8px;
+}
+
+/* Usuario y Email alineados a la izquierda (texto, no números). */
+.stats-leaderboard .dt-table th:nth-child(1),
+.stats-leaderboard .dt-table td:nth-child(1),
+.stats-leaderboard .dt-table th:nth-child(2),
+.stats-leaderboard .dt-table td:nth-child(2) {
+  text-align: left;
+}
+
+.stats-leaderboard .dt-table td:nth-child(2) {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+/* Modal de detalle de producto: padding propio (el modal-body-content no lo trae) + responsive. */
+.statistics-detail {
+  padding: 24px;
+}
+
+.statistics-detail-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 8px 0;
+}
+
+.statistics-detail-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statistics-detail-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.statistics-detail-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.statistics-detail-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.statistics-breakdown h4 {
+  margin: 0 0 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statistics-breakdown-empty {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.statistics-breakdown-count {
+  text-align: right;
+  font-weight: 600;
+}
+
+.statistics-breakdown-pct {
+  text-align: right;
+  color: var(--color-text-muted);
+  width: 56px;
+}
+
+/* ── Responsive del modal de detalle ── */
+@media (max-width: 767px) {
+  .statistics-detail {
+    padding: 16px;
+  }
+
+  .statistics-detail-stat-value {
+    font-size: 24px;
+  }
+
+  .statistics-detail-breakdowns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

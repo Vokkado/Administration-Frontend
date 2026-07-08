@@ -155,7 +155,10 @@ export class AuthService {
   static async getAuthToken(): Promise<string | null> {
     try {
       const session = await fetchAuthSession({ forceRefresh: false });
-      return session.tokens?.idToken?.toString() || null;
+      // Usar el accessToken para autorizar la API (buena práctica OAuth: lleva scopes/grupos).
+      // El backend lo acepta y requireAdmin lee `cognito:groups`, presente en el access token.
+      // Fallback al idToken por robustez si el access no estuviera disponible.
+      return session.tokens?.accessToken?.toString() || session.tokens?.idToken?.toString() || null;
     } catch (error) {
       return null;
     }

@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, Input, LoadingSpinner } from '../../components/ui';
+import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend } from './composition';
@@ -44,6 +44,8 @@ export function ValidationWizardPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showReject, setShowReject] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadDetail = async () => { setDetail(await ValidationService.getDetail(id)); };
 
@@ -78,6 +80,11 @@ export function ValidationWizardPage() {
     return out;
   };
 
+  // Seguridad (#11): la URL de imagen debe ser https — acá se BLOQUEA el guardado (el hint rojo
+  // del input es solo aviso). Evita persistir URLs http que el CSP igual no renderiza y que la app
+  // móvil (sin cleartext) tampoco puede cargar.
+  const imageUrlInvalid = !!meta?.image && !/^https:\/\/.+/.test(meta.image);
+
   const saveMeta = async () => {
     if (!meta) return;
     await ValidationService.updateMeta(id, {
@@ -93,24 +100,67 @@ export function ValidationWizardPage() {
 
   const goNext = async () => {
     // Al salir de los pasos con campos meta (0 y 2) persistimos.
-    if (step === 0 || step === 2) { setBusy(true); try { await saveMeta(); } finally { setBusy(false); } }
+    if (step === 0 || step === 2) {
+      if (imageUrlInvalid) {
+        setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
+        return;
+      }
+      setBusy(true);
+      try {
+        await saveMeta();
+      } catch {
+        setError('No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.');
+        setBusy(false);
+        return; // No avanzamos de paso si el guardado falló (evita perder cambios en silencio).
+      }
+      setBusy(false);
+    }
+    setError(null);
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const onComplete = async (validate: boolean) => {
+    if (imageUrlInvalid) {
+      setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
+      return;
+    }
     setBusy(true);
+    setError(null);
     try {
       await saveMeta();
       if (validate) await ValidationService.approve(id);
       navigate('/validation');
+    } catch {
+      setError(validate
+        ? 'No pudimos validar el producto. Revisá tu conexión e intentá de nuevo.'
+        : 'No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.');
+    } finally { setBusy(false); }
+  };
+
+  // Descartar (soft-reject): saca el producto de la cola conservando el registro. No da puntos.
+  const onReject = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await ValidationService.reject(id);
+      setShowReject(false);
+      navigate('/validation');
+    } catch {
+      setShowReject(false);
+      setError('No pudimos descartar el producto. Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     setBusy(true);
-    try { set('image', await ValidationService.uploadImage(f)); } finally { setBusy(false); }
+    setError(null);
+    try {
+      set('image', await ValidationService.uploadImage(f));
+    } catch {
+      setError('No pudimos subir la imagen. Probá con otra o reintentá.');
+    } finally { setBusy(false); }
   };
 
   if (loading || !detail || !meta) return <AdminLayout title="Validar producto"><LoadingSpinner /></AdminLayout>;
@@ -119,6 +169,8 @@ export function ValidationWizardPage() {
     <AdminLayout title="Validar producto">
       <div className="vw-container">
         <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
+
+        {error && <div className="vw-error" role="alert">{error}</div>}
 
         <Stepper step={step} onStep={(s) => setStep(s)} />
 
@@ -144,6 +196,11 @@ export function ValidationWizardPage() {
                 </div>
                 <div className="form-group form-group-full">
                   <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
+                  {meta.image && !/^https:\/\/.+/.test(meta.image) && (
+                    <small className="form-hint" style={{ color: 'var(--color-error)' }}>
+                      La URL debe comenzar con https:// (no se permite http:// por seguridad)
+                    </small>
+                  )}
                 </div>
               </div>
             </div>
@@ -231,11 +288,15 @@ export function ValidationWizardPage() {
             <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
             <p style={{ color: 'var(--color-grey-600)' }}>
               <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
-              <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas).
+              <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
+              <strong>Descartar</strong>: el producto no sirve. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
-              <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'space-between' }}>
+              <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Descartar producto</Button>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
+                <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
+              </div>
             </div>
           </div>
         )}
@@ -248,6 +309,18 @@ export function ValidationWizardPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        show={showReject}
+        title="Descartar producto"
+        message="El producto se marcará como rechazado y saldrá de la cola. No se otorgan puntos a quien lo cargó. ¿Confirmás?"
+        confirmText="Descartar"
+        cancelText="Cancelar"
+        variant="danger"
+        loading={busy}
+        onConfirm={onReject}
+        onCancel={() => setShowReject(false)}
+      />
     </AdminLayout>
   );
 }

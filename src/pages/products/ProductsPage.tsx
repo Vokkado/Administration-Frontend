@@ -198,6 +198,12 @@ export function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    // Seguridad (#11): bloquear el guardado de URLs de imagen no-https (el hint rojo del
+    // formulario es solo aviso; el enforcement real es este).
+    if (formData.image && !/^https:\/\/.+/.test(formData.image)) {
+      setError('La URL de la imagen debe comenzar con https:// (no se permite http://).');
+      return;
+    }
     setIsSaving(true);
 
     try {
