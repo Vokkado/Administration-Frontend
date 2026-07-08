@@ -101,9 +101,9 @@ export class StatisticsService {
     return res.data;
   }
 
-  /** Sube una imagen (reusa el endpoint de portada de productos) y devuelve su URL en S3. */
+  /** Sube la foto de una insignia a su propia carpeta en S3 (badgeImages/) y devuelve su URL. */
   static async uploadImage(imageBase64: string, contentType: string): Promise<string> {
-    const res = await apiService.post<any>('/products/cover-image', { imageBase64, contentType }, { timeout: 60000 });
+    const res = await apiService.post<any>(`${BASE}/badges/image`, { imageBase64, contentType }, { timeout: 60000 });
     return res.data.url;
   }
 }

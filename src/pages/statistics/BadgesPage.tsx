@@ -178,13 +178,18 @@ function BadgeEditModal({
 
   return (
     <Modal show title={`Editar: ${badge.name}`} onClose={onClose} error={error}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* El modal-body-content no trae padding propio (igual que el modal de producto). */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <BadgeThumb url={iconUrl} tier={badge.tier} />
           <label className="btn btn-secondary" style={{ cursor: uploading ? 'default' : 'pointer' }}>
-            {uploading ? 'Subiendo…' : 'Cambiar foto'}
+            {uploading ? 'Subiendo…' : iconUrl ? 'Cambiar foto' : 'Subir foto'}
             <input type="file" accept="image/*" onChange={handleFile} disabled={uploading} style={{ display: 'none' }} />
           </label>
+          {iconUrl && !uploading && (
+            // Vuelve la insignia al ícono de trofeo por defecto (al guardar, el backend borra la foto de S3).
+            <Button variant="secondary" onClick={() => setIconUrl(null)}>Quitar foto</Button>
+          )}
         </div>
 
         <Input type="text" label="Nombre" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
