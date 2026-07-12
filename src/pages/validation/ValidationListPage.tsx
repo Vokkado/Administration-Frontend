@@ -5,7 +5,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, DataTable, Pagination, SearchInput } from '../../components/ui';
+import { Button, DataTable, Pagination, SearchInput, PageHeader } from '../../components/ui';
 import type { DataTableColumn } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
 import { ValidationService, type ValidationQueueItem } from '../../services/validation.service';
@@ -50,9 +50,13 @@ export function ValidationListPage() {
 
   return (
     <AdminLayout title="Validar productos">
-      <p style={{ color: '#6b7280', marginTop: -4, marginBottom: 12 }}>
-        {total} producto{total === 1 ? '' : 's'} pendiente{total === 1 ? '' : 's'} de validación.
-      </p>
+      <PageHeader
+        title="Validar productos"
+        description="Productos cargados por IA pendientes de validación."
+        count={total}
+        countLabel="productos"
+        countLabelSingular="producto"
+      />
       <div style={{ marginBottom: 12, maxWidth: 360 }}>
         <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="🔍 Buscar por nombre o código…" />
       </div>
