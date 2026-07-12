@@ -168,7 +168,11 @@ export function ValidationWizardPage() {
   return (
     <AdminLayout title="Validar producto">
       <div className="vw-container">
-        <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
+          {/* Siempre disponible: rechazar/eliminar el producto en cualquier paso. No otorga puntos. */}
+          <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Rechazar producto</Button>
+        </div>
 
         {error && <div className="vw-error" role="alert">{error}</div>}
 
@@ -176,35 +180,43 @@ export function ValidationWizardPage() {
 
         {/* PASO 1 — Básico */}
         {step === 0 && (
-          <div className="vw-card">
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-              <label className="vw-photo-label">
-                {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
-                  : <div className="vw-photo-empty">Sin foto</div>}
-                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
-                <div className="vw-photo-change">📷 Cambiar</div>
-              </label>
-              <div style={{ flex: 1 }} className="vw-form-grid">
-                <div className="form-group form-group-full">
-                  <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
-                </div>
-                <div className="form-group">
-                  <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
-                </div>
-                <div className="form-group">
-                  <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
-                </div>
-                <div className="form-group form-group-full">
-                  <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
-                  {meta.image && !/^https:\/\/.+/.test(meta.image) && (
-                    <small className="form-hint" style={{ color: 'var(--color-error)' }}>
-                      La URL debe comenzar con https:// (no se permite http:// por seguridad)
-                    </small>
-                  )}
+          <>
+            <div className="vw-card">
+              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                <label className="vw-photo-label">
+                  {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
+                    : <div className="vw-photo-empty">Sin foto</div>}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
+                  <div className="vw-photo-change">📷 Cambiar</div>
+                </label>
+                <div style={{ flex: 1 }} className="vw-form-grid">
+                  <div className="form-group form-group-full">
+                    <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group form-group-full">
+                    <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
+                    {meta.image && !/^https:\/\/.+/.test(meta.image) && (
+                      <small className="form-hint" style={{ color: 'var(--color-error)' }}>
+                        La URL debe comenzar con https:// (no se permite http:// por seguridad)
+                      </small>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+            {/* Fotos originales que sacó el usuario (etiqueta frontal / ingredientes / tabla
+                nutricional). Acá abajo para que el admin pueda evaluar de una y rechazar si es basura. */}
+            <div className="vw-card">
+              <h3 style={{ fontSize: 15, margin: '0 0 10px', color: 'var(--color-primary-dark)' }}>Fotos cargadas por el usuario</h3>
+              <ProductSourceImagesSection productId={id} />
+            </div>
+          </>
         )}
 
         {/* PASO 2 — Composición + fotos del usuario */}
@@ -289,14 +301,11 @@ export function ValidationWizardPage() {
             <p style={{ color: 'var(--color-grey-600)' }}>
               <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
               <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
-              <strong>Descartar</strong>: el producto no sirve. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
+              <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'space-between' }}>
-              <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Descartar producto</Button>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
-                <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
-              </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+              <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
+              <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
             </div>
           </div>
         )}
@@ -312,9 +321,9 @@ export function ValidationWizardPage() {
 
       <ConfirmDialog
         show={showReject}
-        title="Descartar producto"
-        message="El producto se marcará como rechazado y saldrá de la cola. No se otorgan puntos a quien lo cargó. ¿Confirmás?"
-        confirmText="Descartar"
+        title="¿Seguro que querés rechazar?"
+        message="Significa que el producto no tiene sentido o está mal. Se marcará como rechazado y saldrá de la cola. El usuario que lo cargó NO va a recibir puntos."
+        confirmText="Rechazar producto"
         cancelText="Cancelar"
         variant="danger"
         loading={busy}
