@@ -11,7 +11,6 @@ interface ScoreBreakdown {
   nutritionPositiveImpact: number;
   penaltyUltraProcessed: number;
   penaltyPobrezaNutricional: number;
-  penaltyAlcohol?: number;
   penaltyAmortiguacion?: number;
 }
 
@@ -41,7 +40,6 @@ const BREAKDOWN_ROWS = [
   { key: 'nutritionPositiveImpact', label: 'Paso 4 - Nutrición (positivos)', max: 20, type: 'positive' },
   { key: 'penaltyUltraProcessed', label: 'Paso 5 - Ultra-procesado', max: 20, type: 'negative' },
   { key: 'penaltyPobrezaNutricional', label: 'Paso 6 - Pobreza nutricional', max: 15, type: 'negative' },
-  { key: 'penaltyAlcohol', label: 'Paso 7 - Graduación alcohólica', max: 60, type: 'negative' },
   { key: 'penaltyAmortiguacion', label: 'Paso 8 - Amortiguación caída libre', max: 18, type: 'positive' },
 ] as const;
 
