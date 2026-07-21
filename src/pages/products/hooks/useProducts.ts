@@ -182,9 +182,20 @@ export function useProducts() {
     return response.data;
   };
 
-  const calculateScoresBulk = async (mode: 'all' | 'outdated'): Promise<{ calculated: number; skipped: number; errors: number }> => {
-    const response = await apiService.post('/products/calculate-scores-bulk', { mode }) as { data: { calculated: number; skipped: number; errors: number } };
-    await refetch();
+  /**
+   * Procesa UNA página del recálculo masivo (no el catálogo entero: con 25k+
+   * productos, un solo request no entra en los 29s de API Gateway). El caller
+   * (ProductsPage) debe llamarla repetidamente pasando el `offset` devuelto
+   * hasta que `done` sea true. No hace refetch acá — el caller decide cuándo
+   * refrescar la lista (normalmente una sola vez, al terminar todo el loop).
+   */
+  const calculateScoresBulk = async (
+    mode: 'all' | 'outdated',
+    offset = 0
+  ): Promise<{ calculated: number; skipped: number; errors: number; offset: number; total: number; done: boolean }> => {
+    const response = await apiService.post('/products/calculate-scores-bulk', { mode, offset }) as {
+      data: { calculated: number; skipped: number; errors: number; offset: number; total: number; done: boolean };
+    };
     return response.data;
   };
 
@@ -215,5 +226,6 @@ export function useProducts() {
     rebuildAllSnapshots,
     calculateScore,
     calculateScoresBulk,
+    refetch,
   };
 }

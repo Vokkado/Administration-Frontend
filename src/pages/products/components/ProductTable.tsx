@@ -6,6 +6,7 @@ import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Product } from '../types';
 import { IoSparkles } from 'react-icons/io5';
+import { GiWineBottle } from 'react-icons/gi';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 
@@ -120,6 +121,16 @@ export function ProductTable({
         render: (product) => {
           if (product.aiGenerated && !product.inspected) {
             return <span className="badge-score badge-score-ai" title="Producto IA sin inspeccionar"><IoSparkles size={16} /></span>;
+          }
+          if (product.alcoholGraduation && product.alcoholGraduation > 0) {
+            // Alcohol no se puntúa (no hay nivel de consumo libre de riesgo, OMS):
+            // color fijo rojo, botella + graduación en vez del número.
+            return (
+              <span className="badge-score" style={{ background: '#D32F2F', gap: 2 }} title={`Contiene alcohol (${product.alcoholGraduation}%)`}>
+                <GiWineBottle size={14} />
+                {String(product.alcoholGraduation).replace('.', ',')}%
+              </span>
+            );
           }
           const score = product.score ?? null;
           const color = getScoreColor(score);

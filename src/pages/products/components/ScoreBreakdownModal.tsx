@@ -1,6 +1,7 @@
 /**
  * Modal para mostrar el desglose del cálculo de puntaje
  */
+import { GiWineBottle } from 'react-icons/gi';
 
 interface ScoreBreakdown {
   scoreFinal: number | null;
@@ -11,7 +12,6 @@ interface ScoreBreakdown {
   nutritionPositiveImpact: number;
   penaltyUltraProcessed: number;
   penaltyPobrezaNutricional: number;
-  penaltyAlcohol?: number;
   penaltyAmortiguacion?: number;
 }
 
@@ -30,6 +30,7 @@ interface ScoreBreakdownModalProps {
   show: boolean;
   productName: string;
   result: ScoreCalculationResult | null;
+  alcoholGraduation?: number | null;
   onClose: () => void;
 }
 
@@ -41,7 +42,6 @@ const BREAKDOWN_ROWS = [
   { key: 'nutritionPositiveImpact', label: 'Paso 4 - Nutrición (positivos)', max: 20, type: 'positive' },
   { key: 'penaltyUltraProcessed', label: 'Paso 5 - Ultra-procesado', max: 20, type: 'negative' },
   { key: 'penaltyPobrezaNutricional', label: 'Paso 6 - Pobreza nutricional', max: 15, type: 'negative' },
-  { key: 'penaltyAlcohol', label: 'Paso 7 - Graduación alcohólica', max: 60, type: 'negative' },
   { key: 'penaltyAmortiguacion', label: 'Paso 8 - Amortiguación caída libre', max: 18, type: 'positive' },
 ] as const;
 
@@ -63,7 +63,20 @@ function formatValue(value: number, type: string): string {
 }
 
 /** Filled circular score badge */
-function ScoreCircle({ score }: { score: number | null }) {
+function ScoreCircle({ score, alcoholGraduation }: { score: number | null; alcoholGraduation?: number | null }) {
+  if (alcoholGraduation && alcoholGraduation > 0) {
+    // Alcohol no se puntúa (no hay nivel de consumo libre de riesgo, OMS):
+    // color fijo rojo, botella + graduación en vez del número.
+    return (
+      <div className="score-circle-filled" style={{ background: '#D32F2F', flexDirection: 'column', gap: 2 }}>
+        <GiWineBottle size={22} color="#fff" />
+        <span className="score-circle-number" style={{ fontSize: 12 }}>
+          {String(alcoholGraduation).replace('.', ',')}%
+        </span>
+      </div>
+    );
+  }
+
   const color = getScoreColor(score);
 
   return (
@@ -73,7 +86,7 @@ function ScoreCircle({ score }: { score: number | null }) {
   );
 }
 
-export function ScoreBreakdownModal({ show, productName, result, onClose }: ScoreBreakdownModalProps) {
+export function ScoreBreakdownModal({ show, productName, result, alcoholGraduation, onClose }: ScoreBreakdownModalProps) {
   if (!show || !result) return null;
 
   const { score, breakdown, logs } = result;
@@ -92,7 +105,7 @@ export function ScoreBreakdownModal({ show, productName, result, onClose }: Scor
         <div className="modal-body">
           {/* Product name + score circle */}
           <div className="score-header">
-            <ScoreCircle score={finalScore} />
+            <ScoreCircle score={finalScore} alcoholGraduation={alcoholGraduation} />
             <div className="score-header-info">
               <div className="score-product-name">{productName}</div>
               <div className="score-version">Score v{score.scoreVersion}</div>

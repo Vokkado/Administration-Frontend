@@ -69,6 +69,7 @@ export function ProductsPage() {
     rebuildAllSnapshots,
     calculateScore,
     calculateScoresBulk,
+    refetch,
   } = useProducts();
 
   const crud = useCRUDActions();
@@ -113,12 +114,14 @@ export function ProductsPage() {
   // Bulk score calculation state
   const [showBulkScoreDialog, setShowBulkScoreDialog] = useState(false);
   const [isCalculatingBulk, setIsCalculatingBulk] = useState(false);
+  const [bulkScoreProgress, setBulkScoreProgress] = useState<{ offset: number; total: number } | null>(null);
 
   // Score calculation state
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [pricesProduct, setPricesProduct] = useState<Product | null>(null);
   const [scoreResult, setScoreResult] = useState<any>(null);
   const [scoreProductName, setScoreProductName] = useState('');
+  const [scoreProductAlcoholGraduation, setScoreProductAlcoholGraduation] = useState<number | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const openCreateModal = () => {
@@ -345,17 +348,72 @@ export function ProductsPage() {
     setShowBulkScoreDialog(false);
     setIsCalculatingBulk(true);
     setError('');
+    setBulkScoreProgress(null);
+
+    const startedAt = performance.now();
+    let totalCalculated = 0;
+    let totalSkipped = 0;
+    let totalErrors = 0;
+    let offset = 0;
+    const MAX_RETRIES_PER_PAGE = 3;
 
     try {
-      const result = await calculateScoresBulk(mode);
+      // El catálogo (25k+ productos) no entra en un solo request (Lambda/API Gateway
+      // cortan a los 29s): se pide de a páginas, avanzando con el offset devuelto,
+      // hasta que el backend informa done=true.
+      while (true) {
+        const previousOffset = offset;
+
+        // Cada página es idempotente (recalcular un producto ya actualizado no hace
+        // daño), así que ante un error de red/timeout puntual reintentamos desde el
+        // mismo offset en vez de abortar todo el proceso.
+        let page: Awaited<ReturnType<typeof calculateScoresBulk>> | undefined;
+        let lastError: any = null;
+        for (let attempt = 1; attempt <= MAX_RETRIES_PER_PAGE; attempt++) {
+          try {
+            page = await calculateScoresBulk(mode, offset);
+            lastError = null;
+            break;
+          } catch (err) {
+            lastError = err;
+            if (attempt < MAX_RETRIES_PER_PAGE) {
+              await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+            }
+          }
+        }
+        if (!page) throw lastError ?? new Error('No se pudo calcular esta página de puntajes.');
+
+        totalCalculated += page.calculated;
+        totalSkipped += page.skipped;
+        totalErrors += page.errors;
+        offset = page.offset;
+        setBulkScoreProgress({ offset: page.offset, total: page.total });
+
+        if (page.done) break;
+        // Salvaguarda: si una página no avanza el offset (ej. la propia consulta
+        // tardó más que el presupuesto de tiempo del backend), cortar en vez de
+        // quedar en un loop infinito.
+        if (page.offset <= previousOffset) {
+          throw new Error(`El cálculo no avanzó (offset se quedó en ${page.offset}/${page.total}). Reintentá desde el panel.`);
+        }
+      }
+
+      await refetch();
+
+      const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+      console.log(`✅ [Calcular Puntajes] mode=${mode} calculated=${totalCalculated} skipped=${totalSkipped} errors=${totalErrors} tiempo=${elapsedSeconds}s`);
       crud.showSuccess(
-        `✅ Puntajes calculados: ${result.calculated} calculados, ${result.skipped} omitidos, ${result.errors} errores`,
+        `✅ Puntajes calculados: ${totalCalculated} calculados, ${totalSkipped} omitidos, ${totalErrors} errores (${elapsedSeconds}s)`,
         10000
       );
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al calcular puntajes en lote:', err);
       setError(err.response?.data?.message || 'Error al calcular puntajes en lote');
     } finally {
+      // No limpiamos bulkScoreProgress acá: si lo hiciéramos, la barra desaparecería
+      // en el mismo instante en que termina, sin que llegue a verse en 100%. Queda
+      // visible con el último estado hasta el próximo click en "Calcular Puntajes"
+      // (que la reinicia a null antes de arrancar el loop).
       setIsCalculatingBulk(false);
     }
   };
@@ -363,6 +421,7 @@ export function ProductsPage() {
   const handleCalculateScore = async (product: Product) => {
     setIsCalculating(true);
     setScoreProductName(product.name);
+    setScoreProductAlcoholGraduation(product.alcoholGraduation ?? null);
     setError('');
 
     try {
@@ -408,6 +467,32 @@ export function ProductsPage() {
             </div>
           }
         />
+
+        {/* Barra de progreso del recálculo masivo. Se muestra mientras corre Y se
+            queda visible al terminar (con el estado final en 100%) hasta el próximo
+            click en "Calcular Puntajes" — si dependiera de isCalculatingBulk,
+            desaparecería en el mismo instante en que termina sin llegar a verse. */}
+        {bulkScoreProgress && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13, color: '#555' }}>
+              <span>{isCalculatingBulk ? 'Calculando puntajes…' : 'Último cálculo'}</span>
+              <span>
+                {bulkScoreProgress.offset.toLocaleString('es-UY')} / {bulkScoreProgress.total.toLocaleString('es-UY')}
+                {' '}({Math.min(100, Math.round((bulkScoreProgress.offset / Math.max(1, bulkScoreProgress.total)) * 100))}%)
+              </span>
+            </div>
+            <div style={{ width: '100%', height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${Math.min(100, (bulkScoreProgress.offset / Math.max(1, bulkScoreProgress.total)) * 100)}%`,
+                  height: '100%',
+                  background: '#388E3C',
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Success Message */}
         <NotificationBanner type="success" message={crud.successMessage} />
@@ -519,6 +604,7 @@ export function ProductsPage() {
           show={showScoreModal}
           productName={scoreProductName}
           result={scoreResult}
+          alcoholGraduation={scoreProductAlcoholGraduation}
           onClose={() => { setShowScoreModal(false); setScoreResult(null); }}
         />
 
