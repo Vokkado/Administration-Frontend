@@ -3,14 +3,17 @@
  * carritos completados, y breakdown demográfico (edad/género) con gráficas.
  * Se abre al hacer click en "Ver detalle" de la tabla.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { IoBarChartOutline, IoCartOutline, IoCheckmarkDoneCircleOutline, IoPeopleOutline, IoScanOutline } from 'react-icons/io5';
-import { Modal, LoadingSpinner } from '../../../components/ui';
+import { Modal, LoadingSpinner, DateRangePicker, type DateRange } from '../../../components/ui';
 import { StatisticsService, type ProductScanStat, type ProductStatsDetail } from '../../../services/statistics.service';
+import { StatTile } from './StatTile';
 
 interface ProductStatsModalProps {
   product: ProductScanStat | null;
   onClose: () => void;
+  /** Filtro de fecha de la pantalla principal — se usa como default al abrir un producto. */
+  dateRange?: DateRange | null;
 }
 
 type BreakdownRow = { label: string; scans: number; distinctUsers: number };
@@ -18,26 +21,40 @@ type AgeViewMode = 'age' | 'range';
 
 const PIE_COLORS = ['var(--color-primary-dark)', 'var(--color-primary)', 'var(--color-secondary)', 'var(--color-alternative)', 'var(--color-grey-400)'];
 
-export function ProductStatsModal({ product, onClose }: ProductStatsModalProps) {
+export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsModalProps) {
   const [detail, setDetail] = useState<ProductStatsDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ageMode, setAgeMode] = useState<AgeViewMode>('age');
+  // Filtro propio del modal — arranca con el de la pantalla principal, pero cambiarlo acá
+  // adentro no toca ese filtro externo (independiente una vez abierto).
+  const [localDateRange, setLocalDateRange] = useState<DateRange | null>(dateRange ?? null);
+  const lastProductIdRef = useRef<string | null>(null);
+  const dateRangeRef = useRef(dateRange);
+  useEffect(() => { dateRangeRef.current = dateRange; }, [dateRange]);
 
   useEffect(() => {
     if (!product) { setDetail(null); return; }
+    // Al abrir un producto NUEVO (no en cada refetch del mismo), resetear al filtro externo
+    // vigente en ese momento y volver a la vista "por edad" por defecto.
+    const isNewProduct = lastProductIdRef.current !== product.id;
+    lastProductIdRef.current = product.id;
+    const effectiveRange = isNewProduct ? (dateRangeRef.current ?? null) : localDateRange;
+    if (isNewProduct) {
+      setLocalDateRange(effectiveRange);
+      setAgeMode('age');
+    }
     // Guarda de carrera: si se cierra este producto y se abre otro antes de que responda
     // el fetch, una respuesta vieja no debe pisar el detalle del producto que se ve ahora.
     let active = true;
     setLoading(true);
     setError(null);
-    setAgeMode('age');
-    StatisticsService.getProductStatsDetail(product.id)
+    StatisticsService.getProductStatsDetail(product.id, effectiveRange)
       .then((d) => { if (active) setDetail(d); })
       .catch(() => { if (active) setError('No se pudo cargar el detalle de este producto.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [product]);
+  }, [product, localDateRange]);
 
   const ageRows = useMemo<BreakdownRow[]>(() => {
     if (!detail) return [];
@@ -56,12 +73,13 @@ export function ProductStatsModal({ product, onClose }: ProductStatsModalProps) 
   const cartRate = detail && detail.totalScans > 0
     ? `${Math.round((detail.addToCartCount / detail.totalScans) * 100)}%`
     : '—';
-  const completedRate = detail && detail.addToCartCount > 0
-    ? `${Math.round((detail.completedCartCount / detail.addToCartCount) * 100)}%`
-    : '—';
 
   return (
     <Modal show={!!product} title={product.name} onClose={onClose} error={error ?? undefined} maxWidth="960px">
+      <div className="statistics-modal-daterow">
+        <DateRangePicker label="Filtrar fecha:" value={localDateRange} onChange={setLocalDateRange} />
+      </div>
+
       {loading && <LoadingSpinner message="Cargando estadísticas..." />}
 
       {detail && !loading && (
@@ -70,7 +88,7 @@ export function ProductStatsModal({ product, onClose }: ProductStatsModalProps) 
             <StatTile icon={<IoScanOutline />} value={detail.totalScans} label="Escaneos totales" />
             <StatTile icon={<IoPeopleOutline />} value={detail.distinctUsers} label="Cantidad de usuarios que lo escanearon" />
             <StatTile icon={<IoCartOutline />} value={detail.addToCartCount} label="Movido al carrito" rate={cartRate} />
-            <StatTile icon={<IoCheckmarkDoneCircleOutline />} value={detail.completedCartCount} label="Carritos completados con este producto" rate={completedRate} />
+            <StatTile icon={<IoCheckmarkDoneCircleOutline />} value={detail.completedCartCount} label="Carritos completados con este producto" />
           </div>
 
           <div className="statistics-detail-breakdowns">
@@ -125,21 +143,6 @@ function formatGender(gender: string | null): string {
   if (gender === 'female') return 'Femenino';
   if (gender === 'prefer-not-to-say') return 'Prefiere no decirlo';
   return 'Sin dato';
-}
-
-function StatTile({
-  icon, value, label, rate,
-}: { icon: React.ReactNode; value: number; label: string; rate?: string }) {
-  return (
-    <div className="statistics-detail-stat">
-      <div className="statistics-detail-stat-icon">{icon}</div>
-      <span className="statistics-detail-stat-value">
-        {value}
-        {rate && <span className="statistics-detail-stat-rate">{rate}</span>}
-      </span>
-      <span className="statistics-detail-stat-label">{label}</span>
-    </div>
-  );
 }
 
 function BarLegend({ dimension }: { dimension: string }) {
