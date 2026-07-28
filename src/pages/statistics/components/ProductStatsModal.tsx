@@ -32,9 +32,27 @@ export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsM
   const lastProductIdRef = useRef<string | null>(null);
   const dateRangeRef = useRef(dateRange);
   useEffect(() => { dateRangeRef.current = dateRange; }, [dateRange]);
+  // Última combinación (producto + rango) ya pedida al backend — evita el doble fetch que
+  // se daba al abrir un producto nuevo: el reset de `localDateRange` (abajo) dispara otra
+  // vuelta de este mismo efecto, y sin este chequeo se repetía la misma llamada dos veces
+  // seguidas (loading→contenido→loading de nuevo, sensación de modal "trancado").
+  const lastFetchKeyRef = useRef<string | null>(null);
+  // Los gráficos (hasta ~70 barras en "edad puntual" + las tortas) son el montaje más pesado
+  // del modal. Si el backend responde rápido (como en dev/local), ese montaje cae justo
+  // encima de la animación de apertura del modal (slideUp, 0.3s) y se siente como bajón de
+  // FPS. Se retrasan un par de frames (después de que `detail` llega) para no competir con
+  // la animación — el modal ya terminó de entrar para cuando se montan.
+  const [chartsReady, setChartsReady] = useState(false);
 
   useEffect(() => {
-    if (!product) { setDetail(null); return; }
+    if (!product) {
+      setDetail(null);
+      // Al cerrar, olvidar el producto/rango visto — reabrir (aunque sea el mismo producto)
+      // vuelve a arrancar del filtro externo vigente, no de lo que se haya tocado la vez anterior.
+      lastProductIdRef.current = null;
+      lastFetchKeyRef.current = null;
+      return;
+    }
     // Al abrir un producto NUEVO (no en cada refetch del mismo), resetear al filtro externo
     // vigente en ese momento y volver a la vista "por edad" por defecto.
     const isNewProduct = lastProductIdRef.current !== product.id;
@@ -44,6 +62,11 @@ export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsM
       setLocalDateRange(effectiveRange);
       setAgeMode('age');
     }
+
+    const key = `${product.id}|${effectiveRange?.from.getTime() ?? ''}|${effectiveRange?.to.getTime() ?? ''}`;
+    if (lastFetchKeyRef.current === key) return;
+    lastFetchKeyRef.current = key;
+
     // Guarda de carrera: si se cierra este producto y se abre otro antes de que responda
     // el fetch, una respuesta vieja no debe pisar el detalle del producto que se ve ahora.
     let active = true;
@@ -55,6 +78,18 @@ export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsM
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [product, localDateRange]);
+
+  useEffect(() => {
+    if (!detail) { setChartsReady(false); return; }
+    setChartsReady(false);
+    // Doble rAF: el primero corre al final del frame actual, el segundo ya en el frame
+    // siguiente — para entonces el navegador terminó de pintar lo que estaba animando.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setChartsReady(true));
+    });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  }, [detail]);
 
   const ageRows = useMemo<BreakdownRow[]>(() => {
     if (!detail) return [];
@@ -91,47 +126,51 @@ export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsM
             <StatTile icon={<IoCheckmarkDoneCircleOutline />} value={detail.completedCartCount} label="Carritos completados con este producto" />
           </div>
 
-          <div className="statistics-detail-breakdowns">
-            <div className="statistics-breakdown">
-              <div className="statistics-breakdown-header">
-                <h4><IoBarChartOutline />Usuarios y escaneos por edad</h4>
-                <div className="statistics-breakdown-toggle">
-                  {[{ value: 'age', label: 'Edad' }, { value: 'range', label: 'Rango' }].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={opt.value === ageMode ? 'active' : ''}
-                      onClick={() => setAgeMode(opt.value as AgeViewMode)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+          {chartsReady ? (
+            <div className="statistics-detail-breakdowns">
+              <div className="statistics-breakdown">
+                <div className="statistics-breakdown-header">
+                  <h4><IoBarChartOutline />Usuarios y escaneos por edad</h4>
+                  <div className="statistics-breakdown-toggle">
+                    {[{ value: 'age', label: 'Edad' }, { value: 'range', label: 'Rango' }].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={opt.value === ageMode ? 'active' : ''}
+                        onClick={() => setAgeMode(opt.value as AgeViewMode)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                {ageRows.length === 0 ? (
+                  <p className="statistics-breakdown-empty">Sin datos.</p>
+                ) : (
+                  <>
+                    <BarLegend dimension="edad" />
+                    <BarChart rows={ageRows} />
+                  </>
+                )}
               </div>
-              {ageRows.length === 0 ? (
-                <p className="statistics-breakdown-empty">Sin datos.</p>
-              ) : (
-                <>
-                  <BarLegend dimension="edad" />
-                  <BarChart rows={ageRows} />
-                </>
-              )}
-            </div>
 
-            <div className="statistics-breakdown">
-              <div className="statistics-breakdown-header">
-                <h4><IoPeopleOutline />Usuarios y escaneos por género</h4>
-              </div>
-              {genderRows.length === 0 ? (
-                <p className="statistics-breakdown-empty">Sin datos.</p>
-              ) : (
-                <div className="statistics-pie-pair">
-                  <PieChart title="Usuarios únicos por género" rows={genderRows} metric="distinctUsers" />
-                  <PieChart title="Escaneos totales por género" rows={genderRows} metric="scans" />
+              <div className="statistics-breakdown">
+                <div className="statistics-breakdown-header">
+                  <h4><IoPeopleOutline />Usuarios y escaneos por género</h4>
                 </div>
-              )}
+                {genderRows.length === 0 ? (
+                  <p className="statistics-breakdown-empty">Sin datos.</p>
+                ) : (
+                  <div className="statistics-pie-pair">
+                    <PieChart title="Usuarios únicos por género" rows={genderRows} metric="distinctUsers" />
+                    <PieChart title="Escaneos totales por género" rows={genderRows} metric="scans" />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="statistics-detail-breakdowns-placeholder" />
+          )}
         </div>
       )}
     </Modal>

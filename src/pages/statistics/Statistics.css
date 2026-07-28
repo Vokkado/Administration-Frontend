@@ -115,6 +115,12 @@
   gap: 24px;
 }
 
+/* Reserva de espacio mientras se retrasa el montaje de los gráficos (ver ProductStatsModal) —
+   evita que el modal "salte" de alto apenas después de mostrar las tarjetas de arriba. */
+.statistics-detail-breakdowns-placeholder {
+  min-height: 260px;
+}
+
 .statistics-breakdown {
   border: 1px solid var(--color-border-light);
   border-radius: 12px;
