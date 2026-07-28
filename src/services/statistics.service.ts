@@ -31,8 +31,10 @@ export interface ProductStatsDetail {
   totalScans: number;
   distinctUsers: number;
   addToCartCount: number;
-  byAgeBucket: Array<{ ageBucket: string | null; count: number }>;
-  byGender: Array<{ gender: string | null; count: number }>;
+  completedCartCount: number;
+  byAge: Array<{ age: number | null; scans: number; distinctUsers: number }>;
+  byAgeBucket: Array<{ ageBucket: string | null; scans: number; distinctUsers: number }>;
+  byGender: Array<{ gender: string | null; scans: number; distinctUsers: number }>;
 }
 
 export type BadgeMetric = 'scans' | 'uploads' | 'carts';
