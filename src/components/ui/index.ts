@@ -20,6 +20,7 @@ export { PageHeader } from './PageHeader';
 export { Pagination } from './Pagination';
 export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
+export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
 
 // Re-export types

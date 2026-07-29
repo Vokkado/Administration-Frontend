@@ -7,12 +7,11 @@ import { useEffect, useState } from 'react';
 import { IoCartOutline, IoCheckmarkDoneCircleOutline, IoPeopleOutline, IoScanOutline } from 'react-icons/io5';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import {
-  Pagination, PageHeader, SearchInput, NotificationBanner, FilterButtonGroup, DateRangePicker,
+  Pagination, PageHeader, SearchInput, NotificationBanner, FilterButtonGroup, DateRangePicker, StatTile,
   type FilterOption, type DateRange,
 } from '../../components/ui';
 import { ProductScanTable } from './components/ProductScanTable';
 import { ProductStatsModal } from './components/ProductStatsModal';
-import { StatTile } from './components/StatTile';
 import { useProductScanStats } from './hooks/useProductScanStats';
 import {
   StatisticsService, type ProductScanStat, type PlatformStats, type GenderFilter, type AgeBucketFilter,
@@ -85,7 +84,7 @@ export function ProductStatisticsPage() {
         <FilterButtonGroup label="Edad:" options={AGE_OPTIONS} value={ageBucket} onChange={setAgeBucket} />
       </div>
 
-      <div className="statistics-detail-stats">
+      <div className="stat-tile-row">
         <StatTile icon={<IoScanOutline />} value={platformStats?.totalScans ?? 0} label="Escaneos totales" />
         <StatTile icon={<IoPeopleOutline />} value={platformStats?.distinctUsers ?? 0} label="Cantidad de usuarios que escanearon" />
         <StatTile icon={<IoCartOutline />} value={platformStats?.addToCartCount ?? 0} label="Movido al carrito" rate={cartRate} />

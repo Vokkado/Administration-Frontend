@@ -40,6 +40,17 @@
   margin-bottom: 20px;
 }
 
+/* Estadísticas de usuarios: 3 tarjetas (no 4), así que 3 columnas en vez de las 4 default. */
+.statistics-user-stats-tiles {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 767px) {
+  .statistics-user-stats-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    Modal de detalle de producto
    ══════════════════════════════════════════════════════════════════════════ */
@@ -52,61 +63,8 @@
   padding: 28px 32px 32px;
 }
 
-/* ── Tarjetas de métricas (4 en fila pareja, nunca huérfanas) ── */
-.statistics-detail-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.statistics-detail-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px 12px;
-  background: var(--color-grey-50);
-  border: 1px solid var(--color-border-light);
-  border-radius: 12px;
-}
-
-.statistics-detail-stat-icon {
-  width: 46px;
-  height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--color-primary-dark);
-  color: #fff;
-  font-size: 22px;
-  margin-bottom: 12px;
-}
-
-.statistics-detail-stat-value {
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-  line-height: 1;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.statistics-detail-stat-rate {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.statistics-detail-stat-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  margin-top: 10px;
-  line-height: 1.35;
-}
+/* Las tarjetas de métricas ahora son el componente compartido StatTile + `.stat-tile-row`
+   (components/ui/StatTile.css). */
 
 /* ── Breakdowns por edad / género: bloques a todo lo ancho, apilados ── */
 .statistics-detail-breakdowns {
@@ -390,13 +348,7 @@
   margin-left: 2px;
 }
 
-/* ── Responsive del modal de detalle ── */
-@media (max-width: 900px) {
-  .statistics-detail-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+/* ── Responsive del modal de detalle (StatTile ya trae su propio responsive) ── */
 @media (max-width: 767px) {
   .statistics-modal-daterow {
     padding: 16px 20px 0;
@@ -404,19 +356,6 @@
 
   .statistics-detail {
     padding: 20px;
-  }
-
-  .statistics-detail-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .statistics-detail-stat {
-    padding: 14px 8px;
-  }
-
-  .statistics-detail-stat-value {
-    font-size: 22px;
   }
 
   .statistics-pie-pair {

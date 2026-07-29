@@ -5,9 +5,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { IoBarChartOutline, IoCartOutline, IoCheckmarkDoneCircleOutline, IoPeopleOutline, IoScanOutline } from 'react-icons/io5';
-import { Modal, LoadingSpinner, DateRangePicker, type DateRange } from '../../../components/ui';
+import { Modal, LoadingSpinner, DateRangePicker, StatTile, type DateRange } from '../../../components/ui';
 import { StatisticsService, type ProductScanStat, type ProductStatsDetail } from '../../../services/statistics.service';
-import { StatTile } from './StatTile';
 
 interface ProductStatsModalProps {
   product: ProductScanStat | null;
@@ -119,7 +118,7 @@ export function ProductStatsModal({ product, onClose, dateRange }: ProductStatsM
 
       {detail && !loading && (
         <div className="statistics-detail">
-          <div className="statistics-detail-stats">
+          <div className="stat-tile-row">
             <StatTile icon={<IoScanOutline />} value={detail.totalScans} label="Escaneos totales" />
             <StatTile icon={<IoPeopleOutline />} value={detail.distinctUsers} label="Cantidad de usuarios que lo escanearon" />
             <StatTile icon={<IoCartOutline />} value={detail.addToCartCount} label="Movido al carrito" rate={cartRate} />
