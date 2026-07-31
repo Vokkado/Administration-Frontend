@@ -3,7 +3,12 @@
  * Centraliza patrones visuales que se repetían en cada página
  */
 
-/* ===== Modal Overlay ===== */
+/* ===== Modal Overlay =====
+   Sin animación acá a propósito: `backdrop-filter: blur` es carísimo de recomponer, y
+   animarle la opacidad (como antes) obliga al navegador a recalcular el blur de TODO lo
+   que hay detrás en cada frame durante los 0.2s — eso es lo que se sentía como "no smooth"
+   al abrir cualquier modal (afecta a todos, es compartido). El blur se paga una sola vez,
+   al pintar; solo el contenido del modal anima su entrada (ver `.modal-content`/`slideUp`). */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -16,7 +21,6 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
 }
 
 /* ===== Animaciones compartidas ===== */

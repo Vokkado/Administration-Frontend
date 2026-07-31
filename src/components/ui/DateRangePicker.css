@@ -1,0 +1,243 @@
+.drp-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  white-space: nowrap;
+}
+
+.drp-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.drp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: var(--color-primary-dark);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.drp-trigger:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.drp-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.drp-presets {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  min-width: 190px;
+  border-right: 1px solid var(--color-border-light);
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.drp-presets button {
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.drp-presets button:hover {
+  background: var(--color-grey-50);
+}
+
+.drp-presets button.active {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.drp-calendars {
+  display: flex;
+  padding: 16px;
+  gap: 24px;
+}
+
+.drp-month {
+  width: 230px;
+}
+
+.drp-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.drp-month-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  text-transform: capitalize;
+}
+
+.drp-nav {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.drp-nav:hover {
+  background: var(--color-grey-50);
+  color: var(--color-primary-dark);
+}
+
+.drp-nav-spacer {
+  width: 24px;
+  height: 24px;
+}
+
+.drp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.drp-weekdays span {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.drp-weeks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drp-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.drp-day {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-primary-dark);
+  padding: 6px 0;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.drp-day:hover:not(.disabled) {
+  background: var(--color-grey-100);
+}
+
+.drp-day.outside {
+  color: var(--color-grey-300);
+}
+
+.drp-day.disabled {
+  color: var(--color-grey-200);
+  cursor: not-allowed;
+}
+
+.drp-day.today {
+  font-weight: 700;
+}
+
+.drp-day.in-range {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border-radius: 0;
+}
+
+.drp-day.range-start {
+  background: var(--color-primary-dark);
+  color: #fff;
+  border-radius: 6px 0 0 6px;
+}
+
+.drp-day.range-end {
+  background: var(--color-primary-dark);
+  color: #fff;
+  border-radius: 0 6px 6px 0;
+}
+
+.drp-day.range-start.range-end {
+  border-radius: 6px;
+}
+
+/* Mismo peso que `.drp-day:hover:not(.disabled)` — sin esto, el hover pisa el fondo verde
+   (lo aclara) pero no el texto blanco de start/end/in-range, y queda blanco sobre blanco. */
+.drp-day.in-range:hover:not(.disabled) {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.drp-day.range-start:hover:not(.disabled),
+.drp-day.range-end:hover:not(.disabled) {
+  background: var(--color-primary-dark);
+  color: #fff;
+}
+
+/* ── Responsive: paneles angostos apilan calendario debajo de presets ── */
+@media (max-width: 640px) {
+  .drp-panel {
+    flex-direction: column;
+    max-width: calc(100vw - 32px);
+  }
+
+  .drp-presets {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-light);
+    max-height: 160px;
+  }
+
+  .drp-calendars {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .drp-month {
+    width: 100%;
+  }
+}

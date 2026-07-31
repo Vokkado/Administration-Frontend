@@ -8,6 +8,7 @@ export { Button } from './Button';
 export { ConfirmDialog } from './ConfirmDialog';
 export { DashboardCard } from './DashboardCard';
 export { DataTable } from './DataTable';
+export { DateRangePicker } from './DateRangePicker';
 export { EmptyState } from './EmptyState';
 export { FilterButtonGroup } from './FilterButtonGroup';
 export { ImageLightbox } from './ImageLightbox';
@@ -19,10 +20,12 @@ export { PageHeader } from './PageHeader';
 export { Pagination } from './Pagination';
 export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
+export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
 
 // Re-export types
 export type { DataTableColumn } from './DataTable';
+export type { DateRange } from './DateRangePicker';
 export type { FilterOption } from './FilterButtonGroup';
 export type { CountBadge } from './PageHeader';
 export type { DashboardCardProps } from './DashboardCard';
