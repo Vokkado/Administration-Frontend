@@ -48,6 +48,13 @@ export interface PlatformStats {
   completedCartCount: number;
 }
 
+/** Un punto del mapa de calor: coordenada exacta + cantidad de escaneos ahí. */
+export interface ScanHeatmapPoint {
+  lat: number;
+  lng: number;
+  weight: number;
+}
+
 export interface ProductStatsDetail {
   productId: string;
   totalScans: number;
@@ -120,6 +127,17 @@ export class StatisticsService {
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
     const res = await apiService.get<any>(`${BASE}/products/platform-stats${suffix}`);
     return res.data ?? { totalScans: 0, distinctUsers: 0, addToCartCount: 0, completedCartCount: 0 };
+  }
+
+  /** Puntos del mapa de calor de escaneos (solo los que tienen ubicación), filtrables por género/edad/fecha. */
+  static async getScanHeatmap(filters: PlatformStatsFilters = {}): Promise<ScanHeatmapPoint[]> {
+    const qs = new URLSearchParams();
+    if (filters.gender) qs.append('gender', filters.gender);
+    if (filters.ageBucket) qs.append('ageBucket', filters.ageBucket);
+    appendDateRange(qs, filters.dateRange);
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    const res = await apiService.get<any>(`${BASE}/products/scan-heatmap${suffix}`);
+    return res.data ?? [];
   }
 
   /** Detalle de uso de un producto (demografía + conversión a carrito), para el modal. Filtrable por rango de fechas. */

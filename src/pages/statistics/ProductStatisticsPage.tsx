@@ -8,11 +8,12 @@ import { IoCartOutline, IoCheckmarkDoneCircleOutline, IoPeopleOutline, IoScanOut
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import {
   Pagination, PageHeader, SearchInput, NotificationBanner, FilterButtonGroup, DateRangePicker, StatTile,
-  type FilterOption, type DateRange,
+  ScanHeatmapMap, type FilterOption, type DateRange,
 } from '../../components/ui';
 import { ProductScanTable } from './components/ProductScanTable';
 import { ProductStatsModal } from './components/ProductStatsModal';
 import { useProductScanStats } from './hooks/useProductScanStats';
+import { useScanHeatmap } from './hooks/useScanHeatmap';
 import {
   StatisticsService, type ProductScanStat, type PlatformStats, type GenderFilter, type AgeBucketFilter,
 } from '../../services/statistics.service';
@@ -45,6 +46,11 @@ export function ProductStatisticsPage() {
   const [gender, setGender] = useState<string>(ALL);
   const [ageBucket, setAgeBucket] = useState<string>(ALL);
   const [selectedProduct, setSelectedProduct] = useState<ProductScanStat | null>(null);
+  const heatmap = useScanHeatmap(
+    gender === ALL ? null : (gender as GenderFilter),
+    ageBucket === ALL ? null : (ageBucket as AgeBucketFilter),
+    dateRange,
+  );
 
   useEffect(() => {
     let active = true;
@@ -90,6 +96,9 @@ export function ProductStatisticsPage() {
         <StatTile icon={<IoCartOutline />} value={platformStats?.addToCartCount ?? 0} label="Movido al carrito" rate={cartRate} />
         <StatTile icon={<IoCheckmarkDoneCircleOutline />} value={platformStats?.completedCartCount ?? 0} label="Carritos completados" />
       </div>
+
+      {heatmap.error && <NotificationBanner type="error" message={heatmap.error} />}
+      <ScanHeatmapMap points={heatmap.points} loading={heatmap.loading} />
 
       <SearchInput
         value={productStats.searchTerm}
