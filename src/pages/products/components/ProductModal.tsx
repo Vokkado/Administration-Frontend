@@ -88,6 +88,16 @@ export function ProductModal({
   const [allNutritionFacts, setAllNutritionFacts] = useState<NutritionFactOption[]>([]);
   const [loadingNutritionFacts, setLoadingNutritionFacts] = useState(false);
 
+  // ── Bloquear scroll de la página de fondo mientras el modal está abierto ──
+  useEffect(() => {
+    if (show) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [show]);
+
   // ── Load data when modal opens ──
   useEffect(() => {
     if (!show) return;
