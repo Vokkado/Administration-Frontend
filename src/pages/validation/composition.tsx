@@ -118,8 +118,8 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId
           )}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <Button variant="secondary" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
+          {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+          <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
           <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
         </div>
       </div>

@@ -3,55 +3,21 @@
  * (portada / ingredientes / información nutricional). Solo aparece en modo edición y si el
  * backend devuelve URLs (producto IA). Cada foto se puede agrandar en un lightbox.
  */
-import { useEffect, useState } from 'react';
-import { apiService } from '../../../../services/api.service';
+import { useState } from 'react';
 import { ImageLightbox } from '../../../../components/ui';
+import { useSourceImages } from '../../../../hooks/useSourceImages';
 
 interface ProductSourceImagesSectionProps {
   productId?: string;
 }
 
-interface SourceImages {
-  cover: string | null;
-  ingredients: string | null;
-  nutritionFacts: string | null;
-  uploader: { id: string; email: string } | null;
-}
-
-const PHOTOS: Array<{ key: keyof SourceImages; label: string }> = [
-  { key: 'cover', label: 'Portada' },
-  { key: 'ingredients', label: 'Ingredientes' },
-  { key: 'nutritionFacts', label: 'Información nutricional' },
-];
-
 export function ProductSourceImagesSection({ productId }: ProductSourceImagesSectionProps) {
-  const [images, setImages] = useState<SourceImages | null>(null);
-  const [failed, setFailed] = useState<Record<string, boolean>>({});
+  const { photos, uploader, markFailed } = useSourceImages(productId);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [uploaderRevealed, setUploaderRevealed] = useState(false);
+  const [revealedFor, setRevealedFor] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!productId) {
-      setImages(null);
-      return;
-    }
-    let active = true;
-    setFailed({});
-    setUploaderRevealed(false);
-    apiService
-      .get<{ success: boolean; data: SourceImages }>(`/products/${productId}/source-images`)
-      .then((resp) => { if (active) setImages(resp.data); })
-      .catch(() => { if (active) setImages(null); });
-    return () => { active = false; };
-  }, [productId]);
-
-  if (!images) return null;
-
-  // Solo las fotos que realmente se ven: así los índices coinciden con las flechas del lightbox.
-  const visiblePhotos = PHOTOS.map((p) => ({ ...p, url: images[p.key] as string | null }))
-    .filter((p): p is typeof p & { url: string } => !!p.url && !failed[p.key]);
-  const hasAnyPhoto = visiblePhotos.length > 0;
-  const uploader = images.uploader;
+  const uploaderRevealed = !!productId && revealedFor === productId;
+  const hasAnyPhoto = photos.length > 0;
   if (!hasAnyPhoto && !uploader) return null;
 
   return (
@@ -60,30 +26,28 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
 
       {hasAnyPhoto && (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          {visiblePhotos.map((p, i) => {
-            return (
-              <div key={p.key} style={{ textAlign: 'center' }}>
-                <img
-                  src={p.url}
-                  alt={p.label}
-                  title="Click para agrandar"
-                  onClick={() => setLightboxIndex(i)}
-                  onError={() => setFailed((f) => ({ ...f, [p.key]: true }))}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: 'cover',
-                    borderRadius: 8,
-                    border: '1px solid #e0e0e0',
-                    background: '#fafafa',
-                    cursor: 'zoom-in',
-                    display: 'block',
-                  }}
-                />
-                <small className="form-hint" style={{ display: 'block', marginTop: 4 }}>{p.label}</small>
-              </div>
-            );
-          })}
+          {photos.map((p, i) => (
+            <div key={p.key} style={{ textAlign: 'center' }}>
+              <img
+                src={p.url}
+                alt={p.label}
+                title="Click para agrandar"
+                onClick={() => setLightboxIndex(i)}
+                onError={() => markFailed(p.key)}
+                style={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'cover',
+                  borderRadius: 8,
+                  border: '1px solid #e0e0e0',
+                  background: '#fafafa',
+                  cursor: 'zoom-in',
+                  display: 'block',
+                }}
+              />
+              <small className="form-hint" style={{ display: 'block', marginTop: 4 }}>{p.label}</small>
+            </div>
+          ))}
         </div>
       )}
 
@@ -93,7 +57,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
             Cargado por {uploaderRevealed ? '' : '(click para revelar)'}
           </small>
           <span
-            onClick={() => setUploaderRevealed(true)}
+            onClick={() => setRevealedFor(productId ?? null)}
             title={uploaderRevealed ? '' : 'Click para revelar'}
             style={{
               display: 'inline-block',
@@ -114,7 +78,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
       )}
 
       <ImageLightbox
-        images={visiblePhotos.map((p) => ({ src: p.url, alt: p.label }))}
+        images={photos.map((p) => ({ src: p.url, alt: p.label }))}
         index={lightboxIndex}
         onIndexChange={setLightboxIndex}
         onClose={() => setLightboxIndex(null)}

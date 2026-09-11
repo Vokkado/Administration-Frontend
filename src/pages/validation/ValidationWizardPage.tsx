@@ -12,6 +12,7 @@ import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/u
 import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend } from './composition';
+import { SourceImagesPanel } from './SourceImagesPanel';
 import './ValidationWizardPage.css';
 
 const STEPS = ['Básico', 'Composición', 'Más info', 'Finalizar'];
@@ -167,7 +168,8 @@ export function ValidationWizardPage() {
 
   return (
     <AdminLayout title="Validar producto">
-      <div className="vw-container">
+      {/* El paso de composición usa dos columnas: necesita más ancho que el resto del wizard. */}
+      <div className={`vw-container ${step === 1 ? 'is-wide' : ''}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
           {/* Siempre disponible: rechazar/eliminar el producto en cualquier paso. No otorga puntos. */}
@@ -219,16 +221,19 @@ export function ValidationWizardPage() {
           </>
         )}
 
-        {/* PASO 2 — Composición + fotos del usuario */}
+        {/* PASO 2 — Composición a la izquierda, fotos del usuario fijas a la derecha:
+            el admin contrasta cada ingrediente contra la etiqueta sin perderla al scrollear. */}
         {step === 1 && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}><Legend /></div>
-            <div className="vw-card"><CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} /></div>
+          <div className="vw-split">
+            {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
             <div className="vw-card">
-              <h3 style={{ fontSize: 15, margin: '0 0 10px', color: 'var(--color-primary-dark)' }}>Fotos cargadas por el usuario</h3>
-              <ProductSourceImagesSection productId={id} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
+              <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
             </div>
-          </>
+            <div className="vw-split-aside">
+              <SourceImagesPanel productId={id} />
+            </div>
+          </div>
         )}
 
         {/* PASO 3 — Más info */}
