@@ -27,7 +27,7 @@ const PHOTOS: Array<{ key: keyof SourceImages; label: string }> = [
 export function ProductSourceImagesSection({ productId }: ProductSourceImagesSectionProps) {
   const [images, setImages] = useState<SourceImages | null>(null);
   const [failed, setFailed] = useState<Record<string, boolean>>({});
-  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [uploaderRevealed, setUploaderRevealed] = useState(false);
 
   useEffect(() => {
@@ -47,7 +47,10 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
 
   if (!images) return null;
 
-  const hasAnyPhoto = PHOTOS.some((p) => images[p.key] && !failed[p.key]);
+  // Solo las fotos que realmente se ven: así los índices coinciden con las flechas del lightbox.
+  const visiblePhotos = PHOTOS.map((p) => ({ ...p, url: images[p.key] as string | null }))
+    .filter((p): p is typeof p & { url: string } => !!p.url && !failed[p.key]);
+  const hasAnyPhoto = visiblePhotos.length > 0;
   const uploader = images.uploader;
   if (!hasAnyPhoto && !uploader) return null;
 
@@ -57,15 +60,14 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
 
       {hasAnyPhoto && (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          {PHOTOS.map((p) => {
-            const url = images[p.key] as string | undefined;
-            if (!url || failed[p.key]) return null;
+          {visiblePhotos.map((p, i) => {
             return (
               <div key={p.key} style={{ textAlign: 'center' }}>
                 <img
-                  src={url}
+                  src={p.url}
                   alt={p.label}
-                  onClick={() => setLightboxSrc(url)}
+                  title="Click para agrandar"
+                  onClick={() => setLightboxIndex(i)}
                   onError={() => setFailed((f) => ({ ...f, [p.key]: true }))}
                   style={{
                     width: 120,
@@ -111,7 +113,12 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
         </div>
       )}
 
-      <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      <ImageLightbox
+        images={visiblePhotos.map((p) => ({ src: p.url, alt: p.label }))}
+        index={lightboxIndex}
+        onIndexChange={setLightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+      />
     </div>
   );
 }
