@@ -115,6 +115,17 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   );
 }
 
+const MIN_SCORE = 1;
+const MAX_SCORE = 10;
+/** Un campo vacío o no numérico cae al mínimo en vez de dejar NaN. */
+const clampScore = (n: number) => (Number.isFinite(n) ? Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(n))) : MIN_SCORE);
+
+const TOX_OPTIONS = [
+  { value: 'LOW', label: 'Baja' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'HIGH', label: 'Alta' },
+];
+
 /** Qué leyó la IA y con qué lo vinculó: el contexto para decidir el reemplazo. */
 const TIER_HINTS: Record<string, string> = {
   EXACT: 'Coincidencia exacta con una variante que ya existía',
@@ -163,15 +174,70 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
             </span>
           </div>
           {ing.color === 'red' && (
-            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 13 }}>Score <input type="number" min={1} max={10} value={score} onChange={(e) => setScore(Number(e.target.value))} style={{ width: 54, marginLeft: 6 }} /></label>
-              <label style={{ fontSize: 13 }}>Toxicidad
-                <select value={tox} onChange={(e) => setTox(e.target.value)} style={{ marginLeft: 6 }}>
-                  <option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option>
-                </select>
-              </label>
-              {ing.reason && <em style={{ fontSize: 12, color: '#6b7280' }}>{ing.reason}</em>}
-              <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>Validar ingrediente</Button>
+            <div className="vp-ai-panel">
+              <div className="vp-ai-head">
+                <span className="vp-ai-tag">Creado por la IA</span>
+                <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+              </div>
+
+              {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
+
+              <div className="vp-ai-fields">
+                <div className="vp-field">
+                  <span className="vp-field-name">Puntaje</span>
+                  <div className="vp-score-input">
+                    <button
+                      type="button"
+                      className="vp-score-step"
+                      onClick={() => setScore((s) => clampScore(s - 1))}
+                      disabled={busy || score <= MIN_SCORE}
+                      aria-label="Bajar puntaje"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={MIN_SCORE}
+                      max={MAX_SCORE}
+                      value={score}
+                      onChange={(e) => setScore(clampScore(Number(e.target.value)))}
+                      disabled={busy}
+                      aria-label="Puntaje"
+                    />
+                    <span className="vp-score-suffix">/10</span>
+                    <button
+                      type="button"
+                      className="vp-score-step"
+                      onClick={() => setScore((s) => clampScore(s + 1))}
+                      disabled={busy || score >= MAX_SCORE}
+                      aria-label="Subir puntaje"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="vp-field">
+                  <span className="vp-field-name">Toxicidad</span>
+                  <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
+                    {TOX_OPTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
+                        onClick={() => setTox(o.value)}
+                        disabled={busy}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
+                  Validar ingrediente
+                </Button>
+              </div>
             </div>
           )}
         </div>

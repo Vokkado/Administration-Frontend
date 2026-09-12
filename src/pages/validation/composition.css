@@ -51,6 +51,182 @@
   padding: 20px 24px 24px;
 }
 
+/* ── Panel de revisión de un ingrediente creado por la IA (filas rojas) ── */
+.vp-ai-panel {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+}
+
+.vp-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vp-ai-tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vp-ai-hint {
+  font-size: 12px;
+  color: var(--color-grey-500);
+}
+
+.vp-ai-reason {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--color-grey-600);
+}
+
+.vp-ai-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* El botón de validar se va al extremo derecho del panel. */
+.vp-ai-fields .btn {
+  margin-left: auto;
+}
+
+.vp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vp-field-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--color-grey-500);
+}
+
+/* Puntaje: − y + a los costados, con el valor y el sufijo /10 en el medio. */
+.vp-score-input {
+  display: inline-flex;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vp-score-input:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.12);
+}
+
+.vp-score-step {
+  width: 34px;
+  border: none;
+  background: var(--color-grey-50);
+  color: var(--color-grey-700);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vp-score-step:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.vp-score-step:disabled {
+  cursor: not-allowed;
+  color: var(--color-grey-300);
+}
+
+.vp-score-input input {
+  /* Justo lo que ocupan dos dígitos: alineado a la derecha queda pegado al "/10". */
+  width: 22px;
+  padding: 7px 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-grey-800);
+  text-align: right;
+  /* Las flechitas nativas sobran: ya están los botones − / +. */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.vp-score-input input::-webkit-outer-spin-button,
+.vp-score-input input::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.vp-score-suffix {
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 1px;
+  font-size: 12px;
+  color: var(--color-grey-400);
+}
+
+/* Toxicidad: tres opciones a la vista en vez de un <select> cerrado. */
+.vp-tox-group {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vp-tox {
+  padding: 7px 15px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-grey-500);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vp-tox + .vp-tox {
+  border-left: 1px solid var(--color-grey-200);
+}
+
+.vp-tox:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.vp-tox:hover:not(.is-active):not(:disabled) {
+  background: var(--color-grey-50);
+}
+
+.vp-tox-low.is-active { background: #ecfdf5; color: #047857; }
+.vp-tox-medium.is-active { background: #fffbeb; color: #b45309; }
+.vp-tox-high.is-active { background: #fef2f2; color: #b91c1c; }
+
 /* Resumen de lo que detectó la IA, arriba del buscador en "Corregir". */
 .vp-detected {
   border: 1px solid;
