@@ -770,11 +770,13 @@
 /* ========================= */
 /* Page Tabs                  */
 /* ========================= */
+/* Van debajo del header de la pestaña activa; el margen negativo recorta los 32px
+   que deja `.page-header` para que queden pegadas al contador. */
 .ingredient-page-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 32px;
-  border-bottom: 2px solid var(--color-border-light);
+  margin-top: -16px;
+  margin-bottom: 24px;
   overflow-x: auto;
   padding-bottom: 8px;
 }
