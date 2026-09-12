@@ -93,7 +93,11 @@ export function DataTable<T>({
                 </td>
               ))}
               {hasActions && (
-                <td className={cellClass('dt-actions', alignClass(actionsAlign))}>{renderActions!(item)}</td>
+                // La celda queda como table-cell (centrada vertical); el flex va en el div interno:
+                // un <td> con display:flex se sale del layout de tabla y los botones suben al tope.
+                <td className={cellClass('dt-actions-cell', alignClass(actionsAlign))}>
+                  <div className="dt-actions">{renderActions!(item)}</div>
+                </td>
               )}
             </tr>
           ))}

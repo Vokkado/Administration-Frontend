@@ -63,16 +63,21 @@
 .dt-table th.dt-align-right,
 .dt-table td.dt-align-right { text-align: right; }
 
-/* Actions cell */
+/* Actions cell: el <td> sigue siendo table-cell para centrarse vertical con la fila; el flex
+   con los botones vive en el div interno. */
+.dt-table td.dt-actions-cell {
+  vertical-align: middle;
+}
+
 .dt-actions {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
 }
 
-/* La celda de acciones es flex: se alinea con justify-content, no con text-align. */
-.dt-table td.dt-actions.dt-align-center { justify-content: center; }
-.dt-table td.dt-actions.dt-align-right { justify-content: flex-end; }
+/* Al ser flex, se alinea con justify-content: el text-align de la celda no le aplica. */
+.dt-table td.dt-actions-cell.dt-align-center .dt-actions { justify-content: center; }
+.dt-table td.dt-actions-cell.dt-align-right .dt-actions { justify-content: flex-end; }
 
 /* Inactive row variant (used by RestrictionTable, etc.) */
 .dt-table tbody tr.row-inactive {
