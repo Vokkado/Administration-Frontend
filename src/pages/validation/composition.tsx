@@ -4,7 +4,7 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 import {
   ValidationService,
   type ValidationDetail,
@@ -61,6 +61,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
     <>
       <Section title={`Ingredientes (${detail.ingredients.length})`}
         adder={<AdderButton label="+ Agregar"
+          title="Agregar ingrediente"
+          placeholder="Buscar variante de ingrediente…"
           search={variantSearch}
           onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
@@ -87,6 +89,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
+          title="Agregar alérgeno"
+          placeholder="Buscar alérgeno…"
           search={allergenSearch}
           onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
         {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
@@ -111,6 +115,29 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   );
 }
 
+/** Qué leyó la IA y con qué lo vinculó: el contexto para decidir el reemplazo. */
+const TIER_HINTS: Record<string, string> = {
+  EXACT: 'Coincidencia exacta con una variante que ya existía',
+  AI: 'Variante creada o vinculada por la IA',
+  MANUAL: 'Vinculado a mano por un admin',
+};
+
+function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
+  const c = COLORS[ing.color];
+  const tier = ing.matchTier ?? '—';
+  return (
+    <div className="vp-detected" style={{ background: c.bg, borderColor: c.border }}>
+      <span className="vp-detected-label">Detectado por la IA en la etiqueta</span>
+      <div className="vp-detected-name"><Dot color={ing.color} /> {ing.variantName}</div>
+      <div className="vp-detected-meta">
+        Vinculado al ingrediente <strong>{ing.ingredientName}</strong>
+        <span style={tierBadge} title={TIER_HINTS[tier] ?? 'Origen del vínculo'}>{tier}</span>
+      </div>
+      {ing.reason && <p className="vp-detected-reason">{ing.reason}</p>}
+    </div>
+  );
+}
+
 function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
@@ -131,7 +158,9 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
             >
               {ing.ingredientName} <span aria-hidden>✎</span>
             </button>
-            <span style={tierBadge}>{ing.matchTier ?? '—'}</span>
+            <span style={tierBadge} title={TIER_HINTS[ing.matchTier ?? ''] ?? 'Origen del vínculo'}>
+              {ing.matchTier ?? '—'}
+            </span>
           </div>
           {ing.color === 'red' && (
             <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -153,10 +182,19 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
         </div>
       </div>
       {correcting && (
-        <SearchPicker placeholder="Buscar la variante correcta…"
-          search={variantSearch}
-          onCancel={() => setCorrecting(false)}
-          onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })} />
+        <Modal show title="Corregir ingrediente" onClose={() => setCorrecting(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <DetectedSummary ing={ing} />
+            <p className="vp-field-label">Elegí la variante correcta</p>
+            <SearchPicker
+              plain
+              placeholder="Buscar la variante correcta…"
+              search={variantSearch}
+              onCancel={() => setCorrecting(false)}
+              onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -204,15 +242,39 @@ function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: st
   }
   return (
     <AdderButton label="+ Agregar nutriente"
+      title="Agregar valor nutricional"
+      placeholder="Buscar nutriente…"
       search={nutritionSearch}
       onPick={(p) => setPicked(p)} />
   );
 }
 
-function AdderButton({ label, search, onPick }: { label: string; search: PickerSearch; onPick: (p: Picked) => void }) {
+/**
+ * Botón de alta que abre el buscador en un modal: inline empujaba la lista hacia abajo
+ * y dejaba el desplegable apretado contra el borde de la card.
+ */
+function AdderButton({ label, title, placeholder, search, onPick }: {
+  label: string; title: string; placeholder: string; search: PickerSearch; onPick: (p: Picked) => void;
+}) {
   const [open, setOpen] = useState(false);
-  if (!open) return <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>;
-  return <SearchPicker placeholder="Buscar…" search={search} onCancel={() => setOpen(false)} onSelect={(p) => { onPick(p); setOpen(false); }} />;
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>
+      {open && (
+        <Modal show title={title} onClose={() => setOpen(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <SearchPicker
+              plain
+              placeholder={placeholder}
+              search={search}
+              onCancel={() => setOpen(false)}
+              onSelect={(p) => { onPick(p); setOpen(false); }}
+            />
+          </div>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 const PICKER_PAGE = 25;
@@ -230,7 +292,7 @@ function Highlight({ text, term }: { text: string; term: string }) {
   );
 }
 
-function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
+function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string; plain?: boolean }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Picked[]>([]);
   const [total, setTotal] = useState(0);
@@ -297,7 +359,7 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
   const term = q.trim();
 
   return (
-    <div className="vp-picker">
+    <div className={`vp-picker ${plain ? 'is-plain' : ''}`}>
       <div className="vp-picker-search">
         <span className="vp-picker-icon" aria-hidden>🔍</span>
         <input
@@ -345,7 +407,7 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
 }
 
 // ── helpers de estilo ────────────────────────────────────────────────────────────
-const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280' };
+const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'pointer' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
