@@ -808,6 +808,8 @@
 .variant-attributes {
   display: flex;
   align-items: center;
+  /* Es flex: se centra con justify-content, el text-align de la celda no le aplica. */
+  justify-content: center;
   gap: 3px;
   flex-wrap: nowrap;
 }

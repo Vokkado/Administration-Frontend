@@ -56,12 +56,23 @@
   font-size: var(--font-size-sm);
 }
 
+/* Alineación por columna (opt-in desde `align` / `actionsAlign`) */
+.dt-table th.dt-align-center,
+.dt-table td.dt-align-center { text-align: center; }
+
+.dt-table th.dt-align-right,
+.dt-table td.dt-align-right { text-align: right; }
+
 /* Actions cell */
 .dt-actions {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
 }
+
+/* La celda de acciones es flex: se alinea con justify-content, no con text-align. */
+.dt-table td.dt-actions.dt-align-center { justify-content: center; }
+.dt-table td.dt-actions.dt-align-right { justify-content: flex-end; }
 
 /* Inactive row variant (used by RestrictionTable, etc.) */
 .dt-table tbody tr.row-inactive {

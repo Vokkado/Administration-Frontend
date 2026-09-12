@@ -44,6 +44,7 @@ export function VariantTable({
       {
         key: 'ingredient',
         header: 'Ingrediente',
+        align: 'center',
         render: (variant) => (
           <span className="badge badge-type">
             {getIngredientName(variant.ingredientId)}
@@ -54,6 +55,7 @@ export function VariantTable({
         key: 'attributes',
         header: 'Atributos',
         hideOnMobile: true,
+        align: 'center',
         render: (variant) => {
           const attrs = variant.attributeIds || [];
           return (
@@ -79,6 +81,7 @@ export function VariantTable({
       {
         key: 'validated',
         header: 'Validado',
+        align: 'center',
         render: (variant) => {
           const isValidated = variant.isInspected === true;
           return (
@@ -144,6 +147,7 @@ export function VariantTable({
       loadingMessage="Cargando variantes..."
       emptyMessage="No se encontraron variantes de ingrediente"
       keyExtractor={(variant) => variant.id}
+      actionsAlign="center"
       renderActions={renderActions}
       className="ingredient-table-container"
     />
