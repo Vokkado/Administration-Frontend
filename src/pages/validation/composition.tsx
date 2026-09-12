@@ -156,8 +156,9 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1 }}>
+      {/* Título a la izquierda y acciones a la derecha; el panel de la IA va debajo, a todo el ancho. */}
+      <div className="vp-row-head">
+        <div className="vp-row-title">
           <div><Dot color={ing.color} /> <strong>{ing.variantName}</strong>
             <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
             {/* El ingrediente canónico abre su ficha completa (la misma de la página de Ingredientes). */}
@@ -173,80 +174,82 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
               {ing.matchTier ?? '—'}
             </span>
           </div>
-          {ing.color === 'red' && (
-            <div className="vp-ai-panel">
-              <div className="vp-ai-head">
-                <span className="vp-ai-tag">Creado por la IA</span>
-                <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
-              </div>
-
-              {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
-
-              <div className="vp-ai-fields">
-                <div className="vp-field">
-                  <span className="vp-field-name">Puntaje</span>
-                  <div className="vp-score-input">
-                    <button
-                      type="button"
-                      className="vp-score-step"
-                      onClick={() => setScore((s) => clampScore(s - 1))}
-                      disabled={busy || score <= MIN_SCORE}
-                      aria-label="Bajar puntaje"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      min={MIN_SCORE}
-                      max={MAX_SCORE}
-                      value={score}
-                      onChange={(e) => setScore(clampScore(Number(e.target.value)))}
-                      disabled={busy}
-                      aria-label="Puntaje"
-                    />
-                    <span className="vp-score-suffix">/10</span>
-                    <button
-                      type="button"
-                      className="vp-score-step"
-                      onClick={() => setScore((s) => clampScore(s + 1))}
-                      disabled={busy || score >= MAX_SCORE}
-                      aria-label="Subir puntaje"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="vp-field">
-                  <span className="vp-field-name">Toxicidad</span>
-                  <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
-                    {TOX_OPTIONS.map((o) => (
-                      <button
-                        key={o.value}
-                        type="button"
-                        className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
-                        onClick={() => setTox(o.value)}
-                        disabled={busy}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
-                  Validar ingrediente
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="vp-row-actions">
           {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
           <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
           <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
         </div>
       </div>
+
+      {ing.color === 'red' && (
+        <div className="vp-ai-panel">
+          <div className="vp-ai-head">
+            <span className="vp-ai-tag">Creado por la IA</span>
+            <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+          </div>
+
+          {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
+
+          <div className="vp-ai-fields">
+            <div className="vp-field">
+              <span className="vp-field-name">Puntaje</span>
+              <div className="vp-score-input">
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s - 1))}
+                  disabled={busy || score <= MIN_SCORE}
+                  aria-label="Bajar puntaje"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={MIN_SCORE}
+                  max={MAX_SCORE}
+                  value={score}
+                  onChange={(e) => setScore(clampScore(Number(e.target.value)))}
+                  disabled={busy}
+                  aria-label="Puntaje"
+                />
+                <span className="vp-score-suffix">/10</span>
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s + 1))}
+                  disabled={busy || score >= MAX_SCORE}
+                  aria-label="Subir puntaje"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="vp-field">
+              <span className="vp-field-name">Toxicidad</span>
+              <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
+                {TOX_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
+                    onClick={() => setTox(o.value)}
+                    disabled={busy}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
+              Validar ingrediente
+            </Button>
+          </div>
+        </div>
+      )}
+
       {correcting && (
         <Modal show title="Corregir ingrediente" onClose={() => setCorrecting(false)} maxWidth="560px">
           <div className="vp-picker-modal">

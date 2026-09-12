@@ -51,6 +51,24 @@
   padding: 20px 24px 24px;
 }
 
+/* ── Fila de ingrediente ─────────────────────────────────────────────── */
+.vp-row-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vp-row-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.vp-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* ── Panel de revisión de un ingrediente creado por la IA (filas rojas) ── */
 .vp-ai-panel {
   margin-top: 12px;
