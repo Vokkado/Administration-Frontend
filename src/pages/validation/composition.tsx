@@ -14,6 +14,8 @@ import {
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
+import { EditIngredientModal } from './EditIngredientModal';
+import './composition.css';
 
 export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
   green: { bg: '#ecfdf5', border: '#a7f3d0', dot: '#10b981', label: 'Ya existía' },
@@ -53,6 +55,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
+  // Ficha de ingrediente abierta en el modal compartido con la página de Ingredientes.
+  const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   return (
     <>
       <Section title={`Ingredientes (${detail.ingredients.length})`}
@@ -61,9 +65,25 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
-          <IngredientRow key={ing.variantId} productId={productId} ing={ing} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          <IngredientRow
+            key={ing.variantId}
+            productId={productId}
+            ing={ing}
+            busy={busy}
+            setBusy={setBusy}
+            onChanged={onChanged}
+            onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+          />
         ))}
       </Section>
+
+      {editingIngredientId && (
+        <EditIngredientModal
+          ingredientId={editingIngredientId}
+          onClose={() => setEditingIngredientId(null)}
+          onSaved={onChanged}
+        />
+      )}
 
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
@@ -91,7 +111,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   );
 }
 
-function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
+function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
@@ -101,7 +121,16 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div><Dot color={ing.color} /> <strong>{ing.variantName}</strong>
-            <span style={{ color: '#6b7280', fontSize: 13 }}> → {ing.ingredientName}</span>
+            <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
+            {/* El ingrediente canónico abre su ficha completa (la misma de la página de Ingredientes). */}
+            <button
+              type="button"
+              className="vp-ingredient-link"
+              onClick={onEditIngredient}
+              title="Editar ficha del ingrediente"
+            >
+              {ing.ingredientName} <span aria-hidden>✎</span>
+            </button>
             <span style={tierBadge}>{ing.matchTier ?? '—'}</span>
           </div>
           {ing.color === 'red' && (
@@ -188,14 +217,30 @@ function AdderButton({ label, search, onPick }: { label: string; search: PickerS
 
 const PICKER_PAGE = 25;
 
+/** Resalta dentro del nombre la parte que coincide con lo tipeado. */
+function Highlight({ text, term }: { text: string; term: string }) {
+  const at = term ? text.toLowerCase().indexOf(term.toLowerCase()) : -1;
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark className="vp-picker-mark">{text.slice(at, at + term.length)}</mark>
+      {text.slice(at + term.length)}
+    </>
+  );
+}
+
 function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Picked[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Fila resaltada, para elegir con ↑/↓ + Enter sin sacar las manos del teclado.
+  const [active, setActive] = useState(0);
   // Token para descartar respuestas viejas (debounce + scroll concurrentes).
   const reqRef = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Primera página: al abrir (q vacío trae todo) y en cada cambio de query (debounce 300ms).
   useEffect(() => {
@@ -205,7 +250,7 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     const t = setTimeout(async () => {
       try {
         const r = await search(term, 0, PICKER_PAGE);
-        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); }
+        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); setActive(0); }
       } finally {
         if (reqRef.current === myReq) setLoading(false);
       }
@@ -233,19 +278,68 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) loadMore();
   };
 
+  /** Mueve el resaltado y arrastra el scroll para que la fila quede visible. */
+  const move = (delta: number) => {
+    if (results.length === 0) return;
+    const next = Math.min(Math.max(active + delta, 0), results.length - 1);
+    setActive(next);
+    listRef.current?.children[next]?.scrollIntoView({ block: 'nearest' });
+    if (next >= results.length - 3) loadMore();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[active]) onSelect(results[active]); }
+    else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
+
+  const term = q.trim();
+
   return (
-    <div style={{ marginTop: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, minWidth: 280 }}>
-      <input autoFocus placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '100%', padding: '6px 8px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: 6 }} />
-      <div style={{ maxHeight: 240, overflowY: 'auto', marginTop: 6 }} onScroll={onScroll}>
-        {loading && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Buscando…</div>}
-        {!loading && results.map((r) => <button key={r.id} onClick={() => onSelect(r)} style={pickerItem}>{r.name}</button>)}
-        {!loading && results.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Sin resultados</div>}
-        {!loading && loadingMore && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Cargando más…</div>}
-        {!loading && !loadingMore && results.length > 0 && results.length < total && (
-          <div style={{ fontSize: 11, color: '#c4c4c4', padding: 4, textAlign: 'center' }}>Scrolleá para ver más ({results.length}/{total})</div>
+    <div className="vp-picker">
+      <div className="vp-picker-search">
+        <span className="vp-picker-icon" aria-hidden>🔍</span>
+        <input
+          autoFocus
+          className="vp-picker-input"
+          placeholder={placeholder}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        {q && (
+          <button type="button" className="vp-picker-clear" onClick={() => setQ('')} aria-label="Limpiar búsqueda">
+            ×
+          </button>
         )}
       </div>
-      <button onClick={onCancel} style={{ ...pickerItem, color: '#6b7280' }}>Cancelar</button>
+
+      <div className="vp-picker-list" ref={listRef} onScroll={onScroll}>
+        {loading && <div className="vp-picker-state"><span className="vp-picker-spinner" />Buscando…</div>}
+        {!loading && results.map((r, i) => (
+          <button
+            key={r.id}
+            type="button"
+            className={`vp-picker-item ${i === active ? 'is-active' : ''}`}
+            onMouseEnter={() => setActive(i)}
+            onClick={() => onSelect(r)}
+          >
+            <Highlight text={r.name} term={term} />
+          </button>
+        ))}
+        {!loading && results.length === 0 && (
+          <div className="vp-picker-state">Sin resultados{term ? ` para “${term}”` : ''}</div>
+        )}
+        {!loading && loadingMore && <div className="vp-picker-state"><span className="vp-picker-spinner" />Cargando más…</div>}
+        {!loading && !loadingMore && results.length > 0 && results.length < total && (
+          <div className="vp-picker-more">Scrolleá para ver más ({results.length} de {total})</div>
+        )}
+      </div>
+
+      <div className="vp-picker-footer">
+        <button type="button" className="vp-picker-cancel" onClick={onCancel}>Cancelar</button>
+      </div>
     </div>
   );
 }
@@ -253,7 +347,6 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
 // ── helpers de estilo ────────────────────────────────────────────────────────────
 const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
-const pickerItem: React.CSSProperties = { display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 };
