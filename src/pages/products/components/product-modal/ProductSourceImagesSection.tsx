@@ -12,12 +12,27 @@ interface ProductSourceImagesSectionProps {
 }
 
 export function ProductSourceImagesSection({ productId }: ProductSourceImagesSectionProps) {
-  const { photos, uploader, markFailed } = useSourceImages(productId);
+  const { photos, uploader, loading, markFailed } = useSourceImages(productId);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [revealedFor, setRevealedFor] = useState<string | null>(null);
 
   const uploaderRevealed = !!productId && revealedFor === productId;
   const hasAnyPhoto = photos.length > 0;
+
+  if (loading) {
+    return (
+      <div className="form-group form-group-full">
+        <label className="form-label">Fotos cargadas por el usuario (IA)</label>
+        {/* `pulse` es una animación global (components/ui/shared.css). */}
+        <div style={{ display: 'flex', gap: 16 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ width: 120, height: 120, borderRadius: 8, background: '#f0f0f0', animation: 'pulse 1.2s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!hasAnyPhoto && !uploader) return null;
 
   return (

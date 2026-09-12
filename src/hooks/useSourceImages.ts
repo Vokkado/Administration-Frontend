@@ -50,7 +50,11 @@ export function useSourceImages(productId?: string) {
 
   const markFailed = useCallback((key: string) => setFailed((f) => ({ ...f, [key]: true })), []);
 
-  const images = productId && loaded.productId === productId ? loaded.images : null;
+  // Derivado, no un estado aparte: hay carga en curso mientras el resultado guardado
+  // no corresponda al productId actual (incluye el primer render, antes del fetch).
+  const loading = !!productId && loaded.productId !== productId;
+
+  const images = loading || !productId ? null : loaded.images;
   const photos: SourcePhoto[] = images
     ? SOURCE_PHOTOS.flatMap((p) => {
         const url = images[p.key];
@@ -58,5 +62,5 @@ export function useSourceImages(productId?: string) {
       })
     : [];
 
-  return { images, photos, uploader: images?.uploader ?? null, markFailed };
+  return { images, photos, uploader: images?.uploader ?? null, loading, markFailed };
 }

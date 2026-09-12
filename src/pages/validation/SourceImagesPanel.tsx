@@ -15,9 +15,26 @@ interface SourceImagesPanelProps {
 }
 
 export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: SourceImagesPanelProps) {
-  const { photos, markFailed } = useSourceImages(productId);
+  const { photos, loading, markFailed } = useSourceImages(productId);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // URL que ya terminó de bajar: mientras no coincida con la activa, se muestra el loader.
+  const [shownUrl, setShownUrl] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <div className="vw-photo-panel">
+        <h3 className="vw-photo-panel-title">Fotos del usuario</h3>
+        <div className="vw-photo-main vw-photo-loading">
+          <span className="vw-photo-spinner" />
+          <span>Cargando fotos…</span>
+        </div>
+        <div className="vw-photo-thumbs">
+          {[0, 1, 2].map((i) => <span key={i} className="vw-photo-thumb-skeleton" />)}
+        </div>
+      </div>
+    );
+  }
 
   if (photos.length === 0) {
     return (
@@ -37,15 +54,23 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
     <div className="vw-photo-panel">
       <h3 className="vw-photo-panel-title">Fotos del usuario</h3>
 
-      <img
-        key={active.url}
-        src={active.url}
-        alt={active.label}
-        title="Click para ampliar"
-        className="vw-photo-main"
-        onClick={() => setLightboxIndex(activeIndex)}
-        onError={() => markFailed(active.key)}
-      />
+      <div className="vw-photo-main-wrap">
+        <img
+          key={active.url}
+          src={active.url}
+          alt={active.label}
+          title="Click para ampliar"
+          className="vw-photo-main"
+          onClick={() => setLightboxIndex(activeIndex)}
+          onLoad={() => setShownUrl(active.url)}
+          onError={() => markFailed(active.key)}
+        />
+        {shownUrl !== active.url && (
+          <div className="vw-photo-main-loader">
+            <span className="vw-photo-spinner" />
+          </div>
+        )}
+      </div>
 
       {photos.length > 1 && (
         <div className="vw-photo-thumbs">
