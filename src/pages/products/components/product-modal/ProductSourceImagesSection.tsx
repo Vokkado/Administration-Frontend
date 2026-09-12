@@ -11,6 +11,9 @@ interface ProductSourceImagesSectionProps {
   productId?: string;
 }
 
+/** Textos auxiliares en gris (la clase `form-hint` los pinta marrón e itálica). */
+const hintStyle: React.CSSProperties = { fontSize: 12, color: 'var(--color-grey-500)' };
+
 export function ProductSourceImagesSection({ productId }: ProductSourceImagesSectionProps) {
   const { photos, uploader, loading, markFailed } = useSourceImages(productId);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -23,12 +26,25 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
     return (
       <div className="form-group form-group-full">
         <label className="form-label">Fotos cargadas por el usuario (IA)</label>
-        {/* `pulse` es una animación global (components/ui/shared.css). */}
+        {/* `pulse` y `spin` son animaciones globales (components/ui/shared.css). */}
         <div style={{ display: 'flex', gap: 16 }}>
           {[0, 1, 2].map((i) => (
             <div key={i} style={{ width: 120, height: 120, borderRadius: 8, background: '#f0f0f0', animation: 'pulse 1.2s ease-in-out infinite' }} />
           ))}
         </div>
+        <small style={{ ...hintStyle, display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <span
+            style={{
+              width: 12,
+              height: 12,
+              border: '2px solid var(--color-grey-200)',
+              borderTopColor: 'var(--color-primary)',
+              borderRadius: '50%',
+              animation: 'spin 0.7s linear infinite',
+            }}
+          />
+          Cargando fotos…
+        </small>
       </div>
     );
   }
@@ -60,7 +76,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
                   display: 'block',
                 }}
               />
-              <small className="form-hint" style={{ display: 'block', marginTop: 4 }}>{p.label}</small>
+              <small style={{ ...hintStyle, display: 'block', marginTop: 4 }}>{p.label}</small>
             </div>
           ))}
         </div>
@@ -68,7 +84,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
 
       {uploader && (
         <div style={{ marginTop: 12 }}>
-          <small className="form-hint" style={{ display: 'block', marginBottom: 4 }}>
+          <small style={{ ...hintStyle, display: 'block', marginBottom: 4 }}>
             Cargado por {uploaderRevealed ? '' : '(click para revelar)'}
           </small>
           <span
