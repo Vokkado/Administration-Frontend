@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { Button } from '../ui';
+import { ROLE_LABELS } from '../../modules/auth/types';
 import vokkadoIcon from '../../../assets/images/icon.png';
 import './Navbar.css';
 
@@ -13,12 +14,12 @@ interface NavbarProps {
 }
 
 export function Navbar({ title = '' }: NavbarProps) {
-  const { session, signOut } = useAuthContext();
+  const { user, signOut } = useAuthContext();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const groupsLabel = session?.user?.groups?.length
-    ? session.user.groups.join(', ')
-    : 'Sin grupo';
+  const rolesLabel = user?.roles?.length
+    ? user.roles.map((role) => ROLE_LABELS[role] || role).join(', ')
+    : 'Sin rol';
 
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -53,10 +54,10 @@ export function Navbar({ title = '' }: NavbarProps) {
         {/* Desktop: always visible | Mobile: toggle with hamburger */}
         <div className={`navbar-user ${menuOpen ? 'navbar-user--open' : ''}`}>
           <div className="user-badge">
-            <span className="user-email">{session?.user?.email || 'Cargando...'}</span>
+            <span className="user-email">{user?.email || 'Cargando...'}</span>
           </div>
           <div className="user-badge">
-            <span className="user-email">Grupo: {groupsLabel}</span>
+            <span className="user-email">Rol: {rolesLabel}</span>
           </div>
           <Button variant="outline" size="small" onClick={handleSignOut}>
             Cerrar Sesión

@@ -15,9 +15,6 @@ export const API_CONFIG = {
 };
 
 export const API_ENDPOINTS = {
-  // Auth
-  validateAdmin: '/auth/validate-admin',
-  
   // Restrictions
   restrictions: '/restrictions',
   restrictionById: (id: string) => `/restrictions/${id}`,

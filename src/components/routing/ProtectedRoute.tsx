@@ -1,5 +1,9 @@
 /**
  * Componente de Ruta Protegida
+ *
+ * - Sin sesión → /login
+ * - Con sesión pero sin rol (o cuenta desactivada / error al verificar) → /access
+ * - Con rol → renderiza la página
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
@@ -7,13 +11,15 @@ import { useAuthContext } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  /** Roles que habilitan la ruta (alcanza con uno). Por defecto, admin. */
+  roles?: string[];
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading, session } = useAuthContext();
+export function ProtectedRoute({ children, roles = ['admin'] }: ProtectedRouteProps) {
+  const { status, user } = useAuthContext();
   const location = useLocation();
 
-  if (loading) {
+  if (status === 'loading') {
     return (
       <div style={{
         display: 'flex',
@@ -28,14 +34,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (status === 'unauthenticated') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Verificar que el usuario pertenece al grupo admin
-  const isAdmin = session?.user?.groups?.includes('admin');
-  if (!isAdmin) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  const allowed = status === 'authorized' && !!user?.roles.some((role) => roles.includes(role));
+  if (!allowed) {
+    return <Navigate to="/access" replace />;
   }
 
   return <>{children}</>;

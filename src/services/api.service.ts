@@ -10,6 +10,16 @@ import { AuthService } from '../modules/auth/services/auth.service';
 
 const isDev = import.meta.env.DEV;
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /**
+     * No adjuntar el token de la sesión (endpoints públicos o que mandan su propio
+     * Authorization) y no cerrar sesión ante un 401.
+     */
+    skipAuth?: boolean;
+  }
+}
+
 class ApiService {
   private client: AxiosInstance;
 
@@ -25,6 +35,7 @@ class ApiService {
     // Interceptor para agregar token de autenticación
     this.client.interceptors.request.use(
       async (config) => {
+        if (config.skipAuth) return config;
         try {
           const token = await AuthService.getAuthToken();
           if (token) {
@@ -44,7 +55,7 @@ class ApiService {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !error.config?.skipAuth) {
           // Solo cerrar sesión si es un endpoint protegido (no GET /restrictions)
           const isPublicEndpoint = error.config?.url?.includes('/restrictions') && error.config?.method === 'get';
 

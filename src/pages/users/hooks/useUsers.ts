@@ -52,7 +52,7 @@ export function useUsers() {
       // El backend devuelve {success: true, data: {...}}
       const data = response.data || response;
       
-      setUsers(data.users || []);
+      setUsers((data.users || []).map((u: User) => ({ ...u, roles: Array.isArray(u.roles) ? u.roles : [] })));
       setTotal(data.total || 0);
       setCurrentPage(data.page || 1);
       setTotalPages(data.totalPages || 1);
@@ -83,6 +83,11 @@ export function useUsers() {
     fetchUsers(1, newFilters);
   }, [fetchUsers]);
 
+  /** Refleja en la tabla un cambio de roles hecho desde el modal. */
+  const updateUserRoles = useCallback((userId: string, roles: string[]) => {
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, roles } : u)));
+  }, []);
+
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     fetchUsers(page, filters);
@@ -99,5 +104,6 @@ export function useUsers() {
     setError,
     handleFiltersChange,
     handlePageChange,
+    updateUserRoles,
   };
 }

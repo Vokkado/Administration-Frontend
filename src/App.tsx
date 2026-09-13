@@ -6,6 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/routing/ProtectedRoute';
 import { LoginPage } from './pages/auth/LoginPage';
+import { RequestAccessPage } from './pages/auth/RequestAccessPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { AccessPage } from './pages/auth/AccessPage';
 
 // Importar configuración de Amplify
 import './config/amplify';
@@ -31,6 +34,7 @@ const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStati
 const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
 const BadgesPage = lazy(() => import('./pages/statistics/BadgesPage').then(m => ({ default: m.BadgesPage })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
+const AccessRequestsPage = lazy(() => import('./pages/access-requests/AccessRequestsPage').then(m => ({ default: m.AccessRequestsPage })));
 
 function App() {
   return (
@@ -38,8 +42,13 @@ function App() {
       <AuthProvider>
         <Suspense fallback={null}>
           <Routes>
-            {/* Ruta de Login */}
+            {/* Rutas públicas de autenticación */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/request-access" element={<RequestAccessPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+            {/* Con sesión pero sin rol: estado de la solicitud de acceso */}
+            <Route path="/access" element={<AccessPage />} />
 
             {/* Rutas Protegidas */}
             <Route
@@ -137,6 +146,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ReportDetailPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/access-requests"
+              element={
+                <ProtectedRoute>
+                  <AccessRequestsPage />
                 </ProtectedRoute>
               }
             />

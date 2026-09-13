@@ -10,6 +10,15 @@ export interface User {
   lastAccess: string | null;
   createdAt: string;
   updatedAt: string;
+  authProvider?: string;
+  /** Roles de la DB (user_roles). */
+  roles: string[];
+}
+
+export interface Role {
+  code: string;
+  name: string;
+  description: string | null;
 }
 
 export interface UserListResponse {

@@ -2,12 +2,14 @@
  * Componente de Tabla de Usuarios
  */
 import type { User } from '../types';
-import { DataTable } from '../../../components/ui';
+import { Button, DataTable, StatusBadge } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
+import { ROLE_LABELS } from '../../../modules/auth/types';
 
 interface UserTableProps {
   users: User[];
   loading: boolean;
+  onManageRoles: (user: User) => void;
 }
 
 const formatDate = (dateString: string | null) => {
@@ -51,6 +53,20 @@ const columns: DataTableColumn<User>[] = [
     ),
   },
   {
+    key: 'roles',
+    header: 'Roles',
+    render: (user) =>
+      user.roles.length > 0 ? (
+        <div className="user-role-badges">
+          {user.roles.map((role) => (
+            <StatusBadge key={role} variant="info">{ROLE_LABELS[role] || role}</StatusBadge>
+          ))}
+        </div>
+      ) : (
+        <span className="text-muted">Usuario app</span>
+      ),
+  },
+  {
     key: 'lastAccess',
     header: 'Último Acceso',
     hideOnMobile: true,
@@ -68,7 +84,7 @@ const columns: DataTableColumn<User>[] = [
   },
 ];
 
-export function UserTable({ users, loading }: UserTableProps) {
+export function UserTable({ users, loading, onManageRoles }: UserTableProps) {
   return (
     <DataTable<User>
       columns={columns}
@@ -78,6 +94,11 @@ export function UserTable({ users, loading }: UserTableProps) {
       emptyIcon="👤"
       emptyMessage="No se encontraron usuarios"
       keyExtractor={(user) => user.id}
+      renderActions={(user) => (
+        <Button size="small" variant="outline" onClick={() => onManageRoles(user)}>
+          Roles
+        </Button>
+      )}
     />
   );
 }

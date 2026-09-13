@@ -4,15 +4,21 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { type AdminSession, type AuthResult } from '../modules/auth/services/auth.service';
+import { type AuthResult } from '../modules/auth/services/auth.service';
+import { type AuthStatus, type CurrentUser } from '../modules/auth/types';
 
 interface AuthContextType {
-  session: AdminSession | null;
+  user: CurrentUser | null;
+  status: AuthStatus;
+  statusError: string;
   loading: boolean;
+  /** Tiene sesión Y rol para usar el panel. */
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<AuthResult>;
+  /** Tiene sesión de Cognito resuelta (con o sin rol). */
+  hasSession: boolean;
+  signIn: (email: string, password: string) => Promise<AuthResult & { status?: AuthStatus }>;
   signOut: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => Promise<AuthStatus>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
