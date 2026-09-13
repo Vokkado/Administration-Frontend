@@ -7,6 +7,47 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Breadcrumb de navegación (arriba del título) */
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  /* Ocupa el alto que tendría el botón, para no correr el título hacia arriba. */
+  min-height: 28px;
+}
+
+.page-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.page-breadcrumb-sep {
+  margin: 0 8px;
+  color: var(--color-grey-300);
+}
+
+.page-breadcrumb-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--color-grey-500);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.page-breadcrumb-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.page-breadcrumb-current {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
 .page-header-info h2 {
   font-size: 32px;
   font-weight: 700;

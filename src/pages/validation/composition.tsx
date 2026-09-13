@@ -4,7 +4,7 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 import {
   ValidationService,
   type ValidationDetail,
@@ -14,6 +14,8 @@ import {
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
+import { EditIngredientModal } from './EditIngredientModal';
+import './composition.css';
 
 export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
   green: { bg: '#ecfdf5', border: '#a7f3d0', dot: '#10b981', label: 'Ya existía' },
@@ -53,20 +55,42 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
+  // Ficha de ingrediente abierta en el modal compartido con la página de Ingredientes.
+  const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   return (
     <>
       <Section title={`Ingredientes (${detail.ingredients.length})`}
         adder={<AdderButton label="+ Agregar"
+          title="Agregar ingrediente"
+          placeholder="Buscar variante de ingrediente…"
           search={variantSearch}
           onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
-          <IngredientRow key={ing.variantId} productId={productId} ing={ing} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          <IngredientRow
+            key={ing.variantId}
+            productId={productId}
+            ing={ing}
+            busy={busy}
+            setBusy={setBusy}
+            onChanged={onChanged}
+            onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+          />
         ))}
       </Section>
 
+      {editingIngredientId && (
+        <EditIngredientModal
+          ingredientId={editingIngredientId}
+          onClose={() => setEditingIngredientId(null)}
+          onSaved={onChanged}
+        />
+      )}
+
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
+          title="Agregar alérgeno"
+          placeholder="Buscar alérgeno…"
           search={allergenSearch}
           onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
         {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
@@ -91,43 +115,155 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   );
 }
 
-function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
+const MIN_SCORE = 1;
+const MAX_SCORE = 10;
+/** Un campo vacío o no numérico cae al mínimo en vez de dejar NaN. */
+const clampScore = (n: number) => (Number.isFinite(n) ? Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(n))) : MIN_SCORE);
+
+const TOX_OPTIONS = [
+  { value: 'LOW', label: 'Baja' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'HIGH', label: 'Alta' },
+];
+
+/** Qué leyó la IA y con qué lo vinculó: el contexto para decidir el reemplazo. */
+const TIER_HINTS: Record<string, string> = {
+  EXACT: 'Coincidencia exacta con una variante que ya existía',
+  AI: 'Variante creada o vinculada por la IA',
+  MANUAL: 'Vinculado a mano por un admin',
+};
+
+function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
+  const c = COLORS[ing.color];
+  const tier = ing.matchTier ?? '—';
+  return (
+    <div className="vp-detected" style={{ background: c.bg, borderColor: c.border }}>
+      <span className="vp-detected-label">Detectado por la IA en la etiqueta</span>
+      <div className="vp-detected-name"><Dot color={ing.color} /> {ing.variantName}</div>
+      <div className="vp-detected-meta">
+        Vinculado al ingrediente <strong>{ing.ingredientName}</strong>
+        <span style={tierBadge} title={TIER_HINTS[tier] ?? 'Origen del vínculo'}>{tier}</span>
+      </div>
+      {ing.reason && <p className="vp-detected-reason">{ing.reason}</p>}
+    </div>
+  );
+}
+
+function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1 }}>
+      {/* Título a la izquierda y acciones a la derecha; el panel de la IA va debajo, a todo el ancho. */}
+      <div className="vp-row-head">
+        <div className="vp-row-title">
           <div><Dot color={ing.color} /> <strong>{ing.variantName}</strong>
-            <span style={{ color: '#6b7280', fontSize: 13 }}> → {ing.ingredientName}</span>
-            <span style={tierBadge}>{ing.matchTier ?? '—'}</span>
+            <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
+            {/* El ingrediente canónico abre su ficha completa (la misma de la página de Ingredientes). */}
+            <button
+              type="button"
+              className="vp-ingredient-link"
+              onClick={onEditIngredient}
+              title="Editar ficha del ingrediente"
+            >
+              {ing.ingredientName} <span aria-hidden>✎</span>
+            </button>
+            <span style={tierBadge} title={TIER_HINTS[ing.matchTier ?? ''] ?? 'Origen del vínculo'}>
+              {ing.matchTier ?? '—'}
+            </span>
           </div>
-          {ing.color === 'red' && (
-            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 13 }}>Score <input type="number" min={1} max={10} value={score} onChange={(e) => setScore(Number(e.target.value))} style={{ width: 54, marginLeft: 6 }} /></label>
-              <label style={{ fontSize: 13 }}>Toxicidad
-                <select value={tox} onChange={(e) => setTox(e.target.value)} style={{ marginLeft: 6 }}>
-                  <option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option>
-                </select>
-              </label>
-              {ing.reason && <em style={{ fontSize: 12, color: '#6b7280' }}>{ing.reason}</em>}
-              <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>Validar ingrediente</Button>
-            </div>
-          )}
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <Button variant="secondary" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
+        <div className="vp-row-actions">
+          {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+          <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
           <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
         </div>
       </div>
+
+      {ing.color === 'red' && (
+        <div className="vp-ai-panel">
+          <div className="vp-ai-head">
+            <span className="vp-ai-tag">Creado por la IA</span>
+            <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+          </div>
+
+          {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
+
+          <div className="vp-ai-fields">
+            <div className="vp-field">
+              <span className="vp-field-name">Puntaje</span>
+              <div className="vp-score-input">
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s - 1))}
+                  disabled={busy || score <= MIN_SCORE}
+                  aria-label="Bajar puntaje"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={MIN_SCORE}
+                  max={MAX_SCORE}
+                  value={score}
+                  onChange={(e) => setScore(clampScore(Number(e.target.value)))}
+                  disabled={busy}
+                  aria-label="Puntaje"
+                />
+                <span className="vp-score-suffix">/10</span>
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s + 1))}
+                  disabled={busy || score >= MAX_SCORE}
+                  aria-label="Subir puntaje"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="vp-field">
+              <span className="vp-field-name">Toxicidad</span>
+              <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
+                {TOX_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
+                    onClick={() => setTox(o.value)}
+                    disabled={busy}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
+              Validar ingrediente
+            </Button>
+          </div>
+        </div>
+      )}
+
       {correcting && (
-        <SearchPicker placeholder="Buscar la variante correcta…"
-          search={variantSearch}
-          onCancel={() => setCorrecting(false)}
-          onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })} />
+        <Modal show title="Corregir ingrediente" onClose={() => setCorrecting(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <DetectedSummary ing={ing} />
+            <p className="vp-field-label">Elegí la variante correcta</p>
+            <SearchPicker
+              plain
+              placeholder="Buscar la variante correcta…"
+              search={variantSearch}
+              onCancel={() => setCorrecting(false)}
+              onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -175,27 +311,67 @@ function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: st
   }
   return (
     <AdderButton label="+ Agregar nutriente"
+      title="Agregar valor nutricional"
+      placeholder="Buscar nutriente…"
       search={nutritionSearch}
       onPick={(p) => setPicked(p)} />
   );
 }
 
-function AdderButton({ label, search, onPick }: { label: string; search: PickerSearch; onPick: (p: Picked) => void }) {
+/**
+ * Botón de alta que abre el buscador en un modal: inline empujaba la lista hacia abajo
+ * y dejaba el desplegable apretado contra el borde de la card.
+ */
+function AdderButton({ label, title, placeholder, search, onPick }: {
+  label: string; title: string; placeholder: string; search: PickerSearch; onPick: (p: Picked) => void;
+}) {
   const [open, setOpen] = useState(false);
-  if (!open) return <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>;
-  return <SearchPicker placeholder="Buscar…" search={search} onCancel={() => setOpen(false)} onSelect={(p) => { onPick(p); setOpen(false); }} />;
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>
+      {open && (
+        <Modal show title={title} onClose={() => setOpen(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <SearchPicker
+              plain
+              placeholder={placeholder}
+              search={search}
+              onCancel={() => setOpen(false)}
+              onSelect={(p) => { onPick(p); setOpen(false); }}
+            />
+          </div>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 const PICKER_PAGE = 25;
 
-function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
+/** Resalta dentro del nombre la parte que coincide con lo tipeado. */
+function Highlight({ text, term }: { text: string; term: string }) {
+  const at = term ? text.toLowerCase().indexOf(term.toLowerCase()) : -1;
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark className="vp-picker-mark">{text.slice(at, at + term.length)}</mark>
+      {text.slice(at + term.length)}
+    </>
+  );
+}
+
+function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string; plain?: boolean }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Picked[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Fila resaltada, para elegir con ↑/↓ + Enter sin sacar las manos del teclado.
+  const [active, setActive] = useState(0);
   // Token para descartar respuestas viejas (debounce + scroll concurrentes).
   const reqRef = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Primera página: al abrir (q vacío trae todo) y en cada cambio de query (debounce 300ms).
   useEffect(() => {
@@ -205,7 +381,7 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     const t = setTimeout(async () => {
       try {
         const r = await search(term, 0, PICKER_PAGE);
-        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); }
+        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); setActive(0); }
       } finally {
         if (reqRef.current === myReq) setLoading(false);
       }
@@ -233,27 +409,75 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) loadMore();
   };
 
+  /** Mueve el resaltado y arrastra el scroll para que la fila quede visible. */
+  const move = (delta: number) => {
+    if (results.length === 0) return;
+    const next = Math.min(Math.max(active + delta, 0), results.length - 1);
+    setActive(next);
+    listRef.current?.children[next]?.scrollIntoView({ block: 'nearest' });
+    if (next >= results.length - 3) loadMore();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[active]) onSelect(results[active]); }
+    else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
+
+  const term = q.trim();
+
   return (
-    <div style={{ marginTop: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, minWidth: 280 }}>
-      <input autoFocus placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '100%', padding: '6px 8px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: 6 }} />
-      <div style={{ maxHeight: 240, overflowY: 'auto', marginTop: 6 }} onScroll={onScroll}>
-        {loading && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Buscando…</div>}
-        {!loading && results.map((r) => <button key={r.id} onClick={() => onSelect(r)} style={pickerItem}>{r.name}</button>)}
-        {!loading && results.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Sin resultados</div>}
-        {!loading && loadingMore && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Cargando más…</div>}
-        {!loading && !loadingMore && results.length > 0 && results.length < total && (
-          <div style={{ fontSize: 11, color: '#c4c4c4', padding: 4, textAlign: 'center' }}>Scrolleá para ver más ({results.length}/{total})</div>
+    <div className={`vp-picker ${plain ? 'is-plain' : ''}`}>
+      <div className="vp-picker-search">
+        <span className="vp-picker-icon" aria-hidden>🔍</span>
+        <input
+          autoFocus
+          className="vp-picker-input"
+          placeholder={placeholder}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        {q && (
+          <button type="button" className="vp-picker-clear" onClick={() => setQ('')} aria-label="Limpiar búsqueda">
+            ×
+          </button>
         )}
       </div>
-      <button onClick={onCancel} style={{ ...pickerItem, color: '#6b7280' }}>Cancelar</button>
+
+      <div className="vp-picker-list" ref={listRef} onScroll={onScroll}>
+        {loading && <div className="vp-picker-state"><span className="vp-picker-spinner" />Buscando…</div>}
+        {!loading && results.map((r, i) => (
+          <button
+            key={r.id}
+            type="button"
+            className={`vp-picker-item ${i === active ? 'is-active' : ''}`}
+            onMouseEnter={() => setActive(i)}
+            onClick={() => onSelect(r)}
+          >
+            <Highlight text={r.name} term={term} />
+          </button>
+        ))}
+        {!loading && results.length === 0 && (
+          <div className="vp-picker-state">Sin resultados{term ? ` para “${term}”` : ''}</div>
+        )}
+        {!loading && loadingMore && <div className="vp-picker-state"><span className="vp-picker-spinner" />Cargando más…</div>}
+        {!loading && !loadingMore && results.length > 0 && results.length < total && (
+          <div className="vp-picker-more">Scrolleá para ver más ({results.length} de {total})</div>
+        )}
+      </div>
+
+      <div className="vp-picker-footer">
+        <button type="button" className="vp-picker-cancel" onClick={onCancel}>Cancelar</button>
+      </div>
     </div>
   );
 }
 
 // ── helpers de estilo ────────────────────────────────────────────────────────────
-const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280' };
+const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'pointer' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
-const pickerItem: React.CSSProperties = { display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 };

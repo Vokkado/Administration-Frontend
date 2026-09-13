@@ -47,6 +47,7 @@ export function IngredientTable({
     {
       key: 'toxicityLevel',
       header: 'Nivel de Riesgo',
+      align: 'center',
       render: (ingredient) => {
         const riskKey = (ingredient.toxicityLevel || 'NONE') as keyof typeof RISK_LABELS;
         return (
@@ -67,6 +68,7 @@ export function IngredientTable({
       key: 'score',
       header: 'Puntuación',
       hideOnMobile: true,
+      align: 'center',
       render: (ingredient) => (
         <span 
           className="score-badge"
@@ -84,6 +86,7 @@ export function IngredientTable({
       key: 'isNutritive',
       header: 'Nutritivo',
       hideOnMobile: true,
+      align: 'center',
       render: (ingredient) => (
         <span className={`badge ${ingredient.isNutritive ? 'validated-yes' : 'validated-no'}`}>
           {ingredient.isNutritive ? '✓ Sí' : '✗ No'}
@@ -94,6 +97,7 @@ export function IngredientTable({
       key: 'reason',
       header: 'Justificación',
       hideOnMobile: true,
+      align: 'center',
       render: (ingredient) => ingredient.reason ? (
         <span 
           className="score-badge" 
@@ -125,6 +129,7 @@ export function IngredientTable({
     {
       key: 'isInspected',
       header: 'Validado',
+      align: 'center',
       render: (ingredient) => {
         const isValidated = ingredient.isInspected === true;
         return (
@@ -155,6 +160,7 @@ export function IngredientTable({
       loadingMessage="Cargando ingredientes..."
       emptyMessage="No se encontraron ingredientes"
       keyExtractor={(ingredient) => ingredient.id}
+      actionsAlign="center"
       renderActions={(ingredient) => (
         <>
           <button 

@@ -392,6 +392,54 @@ export function IngredientsPage() {
 
   return (
     <AdminLayout title="Gestión de Ingredientes">
+        {/* Success Message */}
+        <NotificationBanner type="success" message={crud.successMessage} />
+
+        {/* Header de la pestaña activa: título, descripción, contador y acciones. */}
+        {activeTab === 'ingredients' ? (
+          <PageHeader
+            title="Ingredientes"
+            description="Gestión de ingredientes del sistema"
+            count={total}
+            countLabel="ingredientes"
+            countLabelSingular="ingrediente"
+            actions={
+              <div className="header-actions">
+                <Button variant="primary" onClick={openMergeModal}>
+                  🔗 Unificar Ingredientes
+                </Button>
+                <Button variant="primary" onClick={openCreateModal}>
+                  + Agregar Ingrediente
+                </Button>
+              </div>
+            }
+          />
+        ) : (
+          <PageHeader
+            breadcrumb={[
+              { label: 'Dashboard', to: '/dashboard' },
+              // Misma ruta que la pestaña de ingredientes: se vuelve cambiando de tab.
+              { label: 'Ingredientes', onClick: () => setActiveTab('ingredients') },
+              { label: 'Variantes' },
+            ]}
+            title="Variantes de Ingrediente"
+            description="Gestión de variantes con sus atributos asignados"
+            count={variantsHook.total}
+            countLabel="variantes"
+            countLabelSingular="variante"
+            actions={
+              <div className="header-actions">
+                <Button variant="primary" onClick={openVariantMergeModal}>
+                  🔗 Unificar Variantes
+                </Button>
+                <Button variant="primary" onClick={openCreateVariantModal}>
+                  + Agregar Variante
+                </Button>
+              </div>
+            }
+          />
+        )}
+
         {/* Page Tabs */}
         <div className="ingredient-page-tabs">
           <button
@@ -410,30 +458,9 @@ export function IngredientsPage() {
           </button>
         </div>
 
-        {/* Success Message */}
-        <NotificationBanner type="success" message={crud.successMessage} />
-
         {/* ===== INGREDIENTS TAB ===== */}
         {activeTab === 'ingredients' && (
           <>
-            <PageHeader
-              title="Ingredientes"
-              description="Gestión de ingredientes del sistema"
-              count={total}
-              countLabel="ingredientes"
-              countLabelSingular="ingrediente"
-              actions={
-                <div className="header-actions">
-                  <Button variant="primary" onClick={openMergeModal}>
-                    🔗 Unificar Ingredientes
-                  </Button>
-                  <Button variant="primary" onClick={openCreateModal}>
-                    + Agregar Ingrediente
-                  </Button>
-                </div>
-              }
-            />
-
             {!showModal && <NotificationBanner type="error" message={error} />}
 
             <IngredientFilters
@@ -511,24 +538,6 @@ export function IngredientsPage() {
         {/* ===== VARIANTS TAB ===== */}
         {activeTab === 'variants' && (
           <>
-            <PageHeader
-              title="Variantes de Ingrediente"
-              description="Gestión de variantes con sus atributos asignados"
-              count={variantsHook.total}
-              countLabel="variantes"
-              countLabelSingular="variante"
-              actions={
-                <div className="header-actions">
-                  <Button variant="primary" onClick={openVariantMergeModal}>
-                    🔗 Unificar Variantes
-                  </Button>
-                  <Button variant="primary" onClick={openCreateVariantModal}>
-                    + Agregar Variante
-                  </Button>
-                </div>
-              }
-            />
-
             {!showVariantModal && <NotificationBanner type="error" message={variantsHook.error} />}
 
             <VariantFilters

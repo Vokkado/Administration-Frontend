@@ -56,12 +56,28 @@
   font-size: var(--font-size-sm);
 }
 
-/* Actions cell */
+/* Alineación por columna (opt-in desde `align` / `actionsAlign`) */
+.dt-table th.dt-align-center,
+.dt-table td.dt-align-center { text-align: center; }
+
+.dt-table th.dt-align-right,
+.dt-table td.dt-align-right { text-align: right; }
+
+/* Actions cell: el <td> sigue siendo table-cell para centrarse vertical con la fila; el flex
+   con los botones vive en el div interno. */
+.dt-table td.dt-actions-cell {
+  vertical-align: middle;
+}
+
 .dt-actions {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
 }
+
+/* Al ser flex, se alinea con justify-content: el text-align de la celda no le aplica. */
+.dt-table td.dt-actions-cell.dt-align-center .dt-actions { justify-content: center; }
+.dt-table td.dt-actions-cell.dt-align-right .dt-actions { justify-content: flex-end; }
 
 /* Inactive row variant (used by RestrictionTable, etc.) */
 .dt-table tbody tr.row-inactive {

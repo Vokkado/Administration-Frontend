@@ -3,7 +3,7 @@
  */
 
 import { apiService } from './api.service';
-import type { Ingredient } from '../pages/ingredients/types';
+import type { Ingredient, UpdateIngredientData } from '../pages/ingredients/types';
 
 export interface AdminIngredientListQuery {
   limit: number;
@@ -37,5 +37,15 @@ export class IngredientsService {
       data: response.data || [],
       total: response.total || 0,
     };
+  }
+
+  /** Ficha completa de un ingrediente, con sus restricciones. */
+  static async getAdminIngredient(id: string): Promise<Ingredient> {
+    const response = await apiService.get<{ success: boolean; data: Ingredient }>(`/ingredients/${id}`);
+    return response.data;
+  }
+
+  static async updateAdminIngredient(id: string, data: UpdateIngredientData): Promise<void> {
+    await apiService.put(`/ingredients/${id}`, data);
   }
 }
