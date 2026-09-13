@@ -25,7 +25,7 @@ export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
 
 // Re-export types
-export type { DataTableColumn } from './DataTable';
+export type { DataTableColumn, DataTableSort } from './DataTable';
 export type { DateRange } from './DateRangePicker';
 export type { FilterOption } from './FilterButtonGroup';
 export type { CountBadge } from './PageHeader';

@@ -3,7 +3,7 @@
  */
 import { useMemo } from 'react';
 import { DataTable } from '../../../components/ui';
-import type { DataTableColumn } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort } from '../../../components/ui';
 import type { Ingredient } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
@@ -19,7 +19,16 @@ interface IngredientTableProps {
   onDelete: (id: string) => void;
   onValidationChange: (id: string, currentState: boolean) => void;
   validatingId: string | null;
+  sort: DataTableSort;
+  onSortChange: (sort: DataTableSort) => void;
 }
+
+/** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
+const formatDate = (value?: string): string => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-UY');
+};
 
 export function IngredientTable({
   ingredients,
@@ -27,7 +36,9 @@ export function IngredientTable({
   onEdit,
   onDelete,
   onValidationChange,
-  validatingId
+  validatingId,
+  sort,
+  onSortChange,
 }: IngredientTableProps) {
   const getScoreColor = (score: number): string => {
     if (score >= 8) return '#388E3C';
@@ -48,6 +59,7 @@ export function IngredientTable({
       key: 'toxicityLevel',
       header: 'Nivel de Riesgo',
       align: 'center',
+      width: '170px',
       render: (ingredient) => {
         const riskKey = (ingredient.toxicityLevel || 'NONE') as keyof typeof RISK_LABELS;
         return (
@@ -69,6 +81,7 @@ export function IngredientTable({
       header: 'Puntuación',
       hideOnMobile: true,
       align: 'center',
+      width: '140px',
       render: (ingredient) => (
         <span 
           className="score-badge"
@@ -87,6 +100,7 @@ export function IngredientTable({
       header: 'Nutritivo',
       hideOnMobile: true,
       align: 'center',
+      width: '130px',
       render: (ingredient) => (
         <span className={`badge ${ingredient.isNutritive ? 'validated-yes' : 'validated-no'}`}>
           {ingredient.isNutritive ? '✓ Sí' : '✗ No'}
@@ -98,6 +112,7 @@ export function IngredientTable({
       header: 'Justificación',
       hideOnMobile: true,
       align: 'center',
+      width: '150px',
       render: (ingredient) => ingredient.reason ? (
         <span 
           className="score-badge" 
@@ -127,9 +142,23 @@ export function IngredientTable({
       ),
     },
     {
+      key: 'createdAt',
+      header: 'Creado',
+      sortable: true,
+      align: 'center',
+      hideOnMobile: true,
+      width: '150px',
+      render: (ingredient) => (
+        <span title={ingredient.createdAt ? new Date(ingredient.createdAt).toLocaleString('es-UY') : ''}>
+          {formatDate(ingredient.createdAt)}
+        </span>
+      ),
+    },
+    {
       key: 'isInspected',
       header: 'Validado',
       align: 'center',
+      width: '160px',
       render: (ingredient) => {
         const isValidated = ingredient.isInspected === true;
         return (
@@ -161,6 +190,10 @@ export function IngredientTable({
       emptyMessage="No se encontraron ingredientes"
       keyExtractor={(ingredient) => ingredient.id}
       actionsAlign="center"
+      actionsWidth="120px"
+      fixedLayout
+      sort={sort}
+      onSortChange={onSortChange}
       renderActions={(ingredient) => (
         <>
           <button 

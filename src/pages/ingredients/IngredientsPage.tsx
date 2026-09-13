@@ -33,12 +33,14 @@ export function IngredientsPage() {
     filterRisk,
     filterInspected,
     filterReason,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterRisk,
     setFilterInspected,
     setFilterReason,
+    setSort,
     setCurrentPage,
     setError,
     createIngredient,
@@ -481,6 +483,10 @@ export function IngredientsPage() {
               onDelete={crud.requestDelete}
               onValidationChange={crud.requestValidation}
               validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
+              sort={sort}
+              // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
+              // muestra un tramo arbitrario de la lista.
+              onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
             />
 
             <Pagination

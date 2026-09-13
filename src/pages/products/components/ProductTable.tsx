@@ -3,7 +3,7 @@
  */
 import { useMemo } from 'react';
 import { DataTable } from '../../../components/ui';
-import type { DataTableColumn } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort } from '../../../components/ui';
 import type { Product } from '../types';
 import { IoSparkles } from 'react-icons/io5';
 import { GiWineBottle } from 'react-icons/gi';
@@ -35,7 +35,16 @@ interface ProductTableProps {
   onShowPrices: (product: Product) => void;
   onValidationChange: (id: string, currentState: boolean) => void;
   validatingId: string | null;
+  sort: DataTableSort;
+  onSortChange: (sort: DataTableSort) => void;
 }
+
+/** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
+const formatDate = (value?: string): string => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-UY');
+};
 
 export function ProductTable({
   products,
@@ -47,6 +56,8 @@ export function ProductTable({
   onShowPrices,
   onValidationChange,
   validatingId,
+  sort,
+  onSortChange,
 }: ProductTableProps) {
   const columns = useMemo<DataTableColumn<Product>[]>(
     () => [
@@ -95,18 +106,21 @@ export function ProductTable({
       {
         key: 'brand',
         header: 'Marca',
+        width: '160px',
         render: (product) => product.brand,
       },
       {
         key: 'barcode',
         header: 'Código de Barras',
         hideOnMobile: true,
+        width: '190px',
         render: (product) => product.barcode,
       },
       {
         key: 'category',
         header: 'Categoría',
         hideOnMobile: true,
+        width: '170px',
         render: (product) => (
           <span className="badge badge-category">
             {categories.find((cat) => cat.id === product.categoryId)?.name ||
@@ -118,6 +132,7 @@ export function ProductTable({
         key: 'score',
         header: 'Puntaje',
         hideOnMobile: true,
+        width: '120px',
         render: (product) => {
           if (product.aiGenerated && !product.inspected) {
             return <span className="badge-score badge-score-ai" title="Producto IA sin inspeccionar"><IoSparkles size={16} /></span>;
@@ -142,8 +157,22 @@ export function ProductTable({
         },
       },
       {
+        key: 'createdAt',
+        header: 'Creado',
+        sortable: true,
+        align: 'center',
+        hideOnMobile: true,
+        width: '150px',
+        render: (product) => (
+          <span title={product.createdAt ? new Date(product.createdAt).toLocaleString('es-UY') : ''}>
+            {formatDate(product.createdAt)}
+          </span>
+        ),
+      },
+      {
         key: 'inspected',
         header: 'Validado',
+        width: '160px',
         render: (product) =>
           product.isReference ? (
             // Un reference no se "valida" suelto: hay que completarlo (modal) y eso lo promueve.
@@ -229,6 +258,11 @@ export function ProductTable({
       emptyIcon="📦"
       emptyMessage="Sin productos"
       keyExtractor={(product) => product.id}
+      // 4 botones de acción: necesita más ancho que el resto de las tablas.
+      actionsWidth="190px"
+      fixedLayout
+      sort={sort}
+      onSortChange={onSortChange}
       renderActions={renderActions}
       className="product-table-container"
     />

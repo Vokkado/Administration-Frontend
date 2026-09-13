@@ -3,7 +3,8 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../../services/api.service';
-import { ProductsService } from '../../../services/products.service';
+import { ProductsService, type ProductSortBy } from '../../../services/products.service';
+import type { DataTableSort } from '../../../components/ui/DataTable';
 import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Product } from '../types';
@@ -83,6 +84,11 @@ export function useProducts() {
 
   const isReference = filterReference === 'REFERENCE' ? true : undefined;
 
+  // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
+  // (ordenar solo la página visible daría un resultado engañoso). El default del backend
+  // siempre fue "más nuevos primero".
+  const [sort, setSort] = useState<DataTableSort>({ key: 'createdAt', direction: 'desc' });
+
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) => {
       // Compute categoryIds for parent category filtering:
@@ -104,9 +110,11 @@ export function useProducts() {
         categoryIds: resolvedCategoryIds,
         inspected,
         isReference,
+        sortBy: sort.key as ProductSortBy,
+        sortDir: sort.direction,
       });
     },
-    [categoryId, filterCategory, filterParentCategory, categories, inspected, isReference],
+    [categoryId, filterCategory, filterParentCategory, categories, inspected, isReference, sort],
   );
 
   const {
@@ -210,8 +218,10 @@ export function useProducts() {
     filterCategory,
     filterInspected,
     filterReference,
+    sort,
     currentPage,
     totalPages,
+    setSort,
     setSearchTerm,
     setFilterParentCategory,
     setFilterCategory,

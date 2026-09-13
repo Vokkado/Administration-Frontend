@@ -5,11 +5,17 @@
 import { apiService } from './api.service';
 import type { Allergen } from '../pages/allergens/types';
 
+/** Columnas admitidas por el backend para ordenar. */
+export type AllergenSortBy = 'name' | 'createdAt';
+
 export interface AdminAllergenListQuery {
   limit: number;
   offset: number;
   search?: string;
   inspected?: boolean;
+  /** Default en el backend: name asc. */
+  sortBy?: AllergenSortBy;
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface AdminAllergenListResponse {
@@ -26,6 +32,8 @@ export class AllergensService {
 
     if (query.search) params.append('search', query.search);
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
+    if (query.sortBy) params.append('sortBy', query.sortBy);
+    if (query.sortDir) params.append('sortDir', query.sortDir);
 
     const response = await apiService.get<any>(`/allergens?${params.toString()}`);
 

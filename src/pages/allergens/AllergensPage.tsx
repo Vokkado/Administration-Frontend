@@ -21,9 +21,11 @@ export function AllergensPage() {
     loading,
     error,
     searchTerm,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
+    setSort,
     setCurrentPage,
     setError,
     createAllergen,
@@ -199,6 +201,10 @@ export function AllergensPage() {
           onDelete={crud.requestDelete}
           onValidationChange={crud.requestValidation}
           validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
+          sort={sort}
+          // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
+          // muestra un tramo arbitrario de la lista.
+          onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
         />
 
         {/* Pagination */}

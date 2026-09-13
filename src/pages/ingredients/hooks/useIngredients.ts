@@ -3,7 +3,8 @@
  */
 import { useState, useCallback } from 'react';
 import { apiService } from '../../../services/api.service';
-import { IngredientsService } from '../../../services/ingredients.service';
+import { IngredientsService, type IngredientSortBy } from '../../../services/ingredients.service';
+import type { DataTableSort } from '../../../components/ui/DataTable';
 import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, CreateIngredientData, UpdateIngredientData } from '../types';
@@ -14,6 +15,9 @@ export function useIngredients() {
   const [filterRisk, setFilterRisk] = useState<string>('ALL');
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
   const [filterReason, setFilterReason] = useState<string>('ALL');
+  // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
+  // (ordenar solo la página visible daría un resultado engañoso).
+  const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
 
   // Derived API params
   const toxicityLevel = filterRisk === 'ALL' ? undefined : filterRisk;
@@ -38,8 +42,10 @@ export function useIngredients() {
         toxicityLevel,
         inspected,
         reason,
+        sortBy: sort.key as IngredientSortBy,
+        sortDir: sort.direction,
       }),
-    [toxicityLevel, inspected, reason],
+    [toxicityLevel, inspected, reason, sort],
   );
 
   const {
@@ -100,12 +106,14 @@ export function useIngredients() {
     filterRisk,
     filterInspected,
     filterReason,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterRisk,
     setFilterInspected,
     setFilterReason,
+    setSort,
     setCurrentPage,
     setError,
     createIngredient,
