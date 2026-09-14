@@ -44,34 +44,34 @@ export function ProductAllergensSection({
   const options = allAllergens.filter((a) => matchesSearch(a.name, searchAllergen));
 
   return (
-    <div className="form-group form-group-full allergen-section">
-      <div className="pa-split">
+    <div className="form-group form-group-full modal-picker">
+      <div className="mp-split">
         {/* ── Elegidos ─────────────────────────────────────────────────── */}
-        <section className="pa-panel">
-          <header className="pa-panel-head">
-            <span className="pa-panel-title">Alérgenos del producto</span>
-            <span className="pa-count">{allergenData.length}</span>
+        <section className="mp-panel">
+          <header className="mp-panel-head">
+            <span className="mp-panel-title">Alérgenos del producto</span>
+            <span className="mp-count">{allergenData.length}</span>
           </header>
 
           {allergenData.length === 0 ? (
-            <p className="pa-empty">
+            <p className="mp-empty">
               Todavía no elegiste ninguno. Buscalos en la lista de la derecha.
             </p>
           ) : (
-            <ul className="pa-selected-list">
+            <ul className="mp-selected-list">
               {allergenData.map((item) => {
                 const name = nameById.get(item.allergenId) ?? item.name ?? 'Alérgeno';
                 return (
-                  <li key={item.allergenId} className="pa-selected-item">
-                    <span className="pa-name" title={name}>{name}</span>
+                  <li key={item.allergenId} className="mp-selected-item">
+                    <span className="mp-name" title={name}>{name}</span>
 
-                    <div className="pa-presence" role="group" aria-label={`Presencia de ${name}`}>
+                    <div className="mp-presence" role="group" aria-label={`Presencia de ${name}`}>
                       {PRESENCE_OPTIONS.map((option) => (
                         <button
                           key={option.value}
                           type="button"
                           title={option.title}
-                          className={`pa-presence-btn${item.presence === option.value ? ' is-active' : ''}`}
+                          className={`mp-presence-btn${item.presence === option.value ? ' is-active' : ''}`}
                           onClick={() => onPresenceChange(item.allergenId, option.value)}
                         >
                           {option.label}
@@ -81,7 +81,7 @@ export function ProductAllergensSection({
 
                     <button
                       type="button"
-                      className="pa-remove"
+                      className="mp-remove"
                       title="Quitar del producto"
                       aria-label={`Quitar ${name}`}
                       onClick={() => onAllergenToggle(item.allergenId, name)}
@@ -96,9 +96,9 @@ export function ProductAllergensSection({
         </section>
 
         {/* ── Catálogo ─────────────────────────────────────────────────── */}
-        <section className="pa-panel">
-          <header className="pa-panel-head">
-            <span className="pa-panel-title">Agregar alérgeno</span>
+        <section className="mp-panel">
+          <header className="mp-panel-head">
+            <span className="mp-panel-title">Agregar alérgeno</span>
           </header>
 
           <Input
@@ -115,23 +115,23 @@ export function ProductAllergensSection({
               <p>Cargando alérgenos...</p>
             </div>
           ) : (
-            <div className="pa-options">
+            <div className="mp-options">
               {options.map((allergen) => (
                 <label
                   key={allergen.id}
-                  className={`pa-option${selectedIds.has(allergen.id) ? ' is-selected' : ''}`}
+                  className={`mp-option${selectedIds.has(allergen.id) ? ' is-selected' : ''}`}
                 >
                   <input
                     type="checkbox"
                     checked={selectedIds.has(allergen.id)}
                     onChange={() => onAllergenToggle(allergen.id, allergen.name)}
                   />
-                  <span className="pa-name" title={allergen.name}>{allergen.name}</span>
+                  <span className="mp-name" title={allergen.name}>{allergen.name}</span>
                 </label>
               ))}
 
               {options.length === 0 && (
-                <p className="pa-empty">No se encontraron alérgenos</p>
+                <p className="mp-empty">No se encontraron alérgenos</p>
               )}
             </div>
           )}

@@ -713,16 +713,23 @@
   font-weight: 500;
 }
 
-/* ── Alérgenos del producto ─────────────────────────────────────────────── */
-/* Dos paneles: los elegidos a la izquierda, el catálogo a la derecha. */
-.pa-split {
+/* ── Picker de dos paneles del modal de producto ─────────────────────────
+   Lo comparten alérgenos e ingredientes: a la izquierda lo elegido (con su dato
+   extra: presencia o posición), a la derecha el buscador y el catálogo. Con una
+   sola lista, lo elegido se perdía entre decenas de opciones.
+
+   Varias reglas van scopeadas con `.modal-picker` a propósito: el bloque vive
+   dentro de un `.form-group`, y `.form-group label` (0,1,1) le gana a una clase
+   suelta (0,1,0) — volvía los labels bloques en negrita, sin flex y con margen,
+   que era lo que pegaba el checkbox al texto. */
+.mp-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
-.pa-panel {
+.mp-panel {
   border: 1px solid var(--color-grey-200);
   border-radius: 12px;
   padding: 14px;
@@ -730,14 +737,14 @@
   min-width: 0;
 }
 
-.pa-panel-head {
+.mp-panel-head {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.pa-panel-title {
+.mp-panel-title {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -745,7 +752,7 @@
   color: var(--color-grey-500);
 }
 
-.pa-count {
+.mp-count {
   min-width: 22px;
   padding: 1px 8px;
   border-radius: 999px;
@@ -756,7 +763,7 @@
   text-align: center;
 }
 
-.allergen-section .pa-empty {
+.modal-picker .mp-empty {
   margin: 0;
   padding: 18px 4px;
   font-size: 13px;
@@ -764,8 +771,8 @@
   text-align: center;
 }
 
-/* ── Panel izquierdo: elegidos ─────────────────────────────────────────── */
-.pa-selected-list {
+/* ── Panel izquierdo: lo elegido ───────────────────────────────────────── */
+.mp-selected-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -776,7 +783,7 @@
   overflow-y: auto;
 }
 
-.pa-selected-item {
+.mp-selected-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -786,13 +793,13 @@
   border-radius: 10px;
 }
 
-.pa-selected-item .pa-name {
+.mp-selected-item .mp-name {
   flex: 1;
   font-weight: 600;
   color: var(--color-primary-dark);
 }
 
-.pa-remove {
+.mp-remove {
   flex-shrink: 0;
   width: 26px;
   height: 26px;
@@ -810,13 +817,13 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.pa-remove:hover {
+.mp-remove:hover {
   background: #fef2f2;
   color: var(--color-error);
 }
 
 /* ── Panel derecho: catálogo ───────────────────────────────────────────── */
-.pa-options {
+.mp-options {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -826,10 +833,7 @@
   padding-right: 4px;
 }
 
-/* Scopeado con `.allergen-section` a propósito: `.form-group label` (0,1,1) le gana a
-   `.pa-option` (0,1,0) y lo volvía un bloque en negrita, sin flex y con margen abajo —
-   por eso el checkbox y el texto salían pegados. Con dos clases, gana esta. */
-.allergen-section .pa-option {
+.modal-picker .mp-option {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -843,14 +847,14 @@
   transition: background-color 0.15s ease;
 }
 
-.allergen-section .pa-option:hover { background: var(--color-grey-100); }
+.modal-picker .mp-option:hover { background: var(--color-grey-100); }
 
-.allergen-section .pa-option.is-selected {
+.modal-picker .mp-option.is-selected {
   color: var(--color-primary-dark);
   font-weight: 600;
 }
 
-.allergen-section .pa-option input[type="checkbox"] {
+.modal-picker .mp-option input[type="checkbox"] {
   width: 17px;
   height: 17px;
   /* El navegador le pone márgenes propios (~3px) que descentran el texto y comen el gap. */
@@ -860,7 +864,7 @@
   flex-shrink: 0;
 }
 
-.allergen-section .pa-name {
+.modal-picker .mp-name {
   /* Sin line-height heredado: el alto extra de la línea desplaza el texto respecto
      del centro del cuadrado. */
   line-height: 1.2;
@@ -870,8 +874,8 @@
   min-width: 0;
 }
 
-/* ── Presencia: dos opciones a la vista en vez de un <select> cerrado ──── */
-.pa-presence {
+/* ── Presencia del alérgeno: dos opciones a la vista, no un <select> ───── */
+.mp-presence {
   display: inline-flex;
   flex-shrink: 0;
   background: #fff;
@@ -880,7 +884,7 @@
   overflow: hidden;
 }
 
-.pa-presence-btn {
+.mp-presence-btn {
   padding: 5px 11px;
   border: none;
   background: none;
@@ -894,19 +898,52 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.pa-presence-btn + .pa-presence-btn {
+.mp-presence-btn + .mp-presence-btn {
   border-left: 1px solid var(--color-grey-200);
 }
 
-.pa-presence-btn:hover:not(.is-active) { background: var(--color-grey-100); }
+.mp-presence-btn:hover:not(.is-active) { background: var(--color-grey-100); }
 
-/* "Contiene" es la afirmación fuerte; "Trazas" es la advertencia menor. */
-.pa-presence-btn.is-active { background: #fef2f2; color: #b91c1c; }
-.pa-presence-btn.is-active:last-child { background: #fffbeb; color: #b45309; }
+/* "Contiene" es la afirmación fuerte; "Puede contener" es la advertencia menor. */
+.mp-presence-btn.is-active { background: #fef2f2; color: #b91c1c; }
+.mp-presence-btn.is-active:last-child { background: #fffbeb; color: #b45309; }
+
+/* ── Posición del ingrediente ──────────────────────────────────────────── */
+/* Scopeado: es un <label> y `.form-group label` (0,1,1) le ganaba, volviéndolo bloque
+   en negrita — "Pos." quedaba arriba del input en vez de al lado. */
+.modal-picker .mp-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-grey-500);
+}
+
+.modal-picker .mp-position input {
+  width: 48px;
+  padding: 5px 6px;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-grey-800);
+  text-align: center;
+}
+
+.modal-picker .mp-position input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.12);
+}
 
 /* En pantallas angostas los paneles se apilan. */
 @media (max-width: 900px) {
-  .pa-split { grid-template-columns: 1fr; }
+  .mp-split { grid-template-columns: 1fr; }
 }
 
 .ingredients-loading {

@@ -1,3 +1,14 @@
+/**
+ * Ingredientes del producto: el texto crudo del envase arriba y, debajo, el picker de
+ * variantes en dos paneles.
+ *
+ * Izquierda: las elegidas, ordenadas por su posición en la etiqueta (que es información
+ * real: el orden indica cantidad decreciente). Derecha: el buscador y el catálogo paginado.
+ *
+ * El campo de posición queda FUERA del <label> del checkbox. Cuando estaba adentro había
+ * que frenar la propagación en cada evento para que escribir un número no desmarcara la
+ * variante que se estaba editando.
+ */
 import { useState } from 'react';
 import type { ProductFormData, IngredientVariant } from './types';
 import { Input, Pagination } from '../../../../components/ui';
@@ -29,31 +40,32 @@ export function ProductIngredientsSection({
   const [searchIngredient, setSearchIngredient] = useState('');
   const [currentPageIngredients, setCurrentPageIngredients] = useState(1);
 
-  const filteredVariants = ingredientVariants.filter(v =>
-    matchesSearch(v.name, searchIngredient)
-  );
-
-  const sortedVariants = [...filteredVariants].sort((a, b) => {
-    const aSelected = selectedIngredients.has(a.id);
-    const bSelected = selectedIngredients.has(b.id);
-    if (aSelected && !bSelected) return -1;
-    if (!aSelected && bSelected) return 1;
-    if (aSelected && bSelected) {
+  // Elegidas, ordenadas por posición; las que no tienen número van al final.
+  const selected = ingredientVariants
+    .filter((v) => selectedIngredients.has(String(v.id)))
+    .sort((a, b) => {
       const posA = ingredientPositions[String(a.id)] ?? Infinity;
       const posB = ingredientPositions[String(b.id)] ?? Infinity;
-      if (posA !== posB) return posA - posB;
-      return a.name.localeCompare(b.name);
-    }
-    return a.name.localeCompare(b.name);
-  });
+      return posA !== posB ? posA - posB : a.name.localeCompare(b.name);
+    });
 
-  const totalPages = Math.ceil(sortedVariants.length / ITEMS_PER_PAGE);
+  const options = ingredientVariants
+    .filter((v) => matchesSearch(v.name, searchIngredient))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const totalPages = Math.ceil(options.length / ITEMS_PER_PAGE);
   const startIndex = (currentPageIngredients - 1) * ITEMS_PER_PAGE;
-  const paginatedVariants = sortedVariants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedOptions = options.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  /** Al vaciar el campo se le asigna la última posición libre, para no dejarla sin número. */
+  const handlePositionBlur = (variantId: string, raw: string) => {
+    if (raw && parseInt(raw, 10) >= 1) return;
+    const positions = Object.values(ingredientPositions).filter((v) => typeof v === 'number' && !Number.isNaN(v));
+    onIngredientPositionChange(variantId, (positions.length > 0 ? Math.max(...positions) : 0) + 1);
+  };
 
   return (
     <div className="ingredients-tab-content">
-
       <div className="form-group form-group-full">
         <label>Lista de Ingredientes</label>
         <textarea
@@ -68,100 +80,120 @@ export function ProductIngredientsSection({
         </small>
       </div>
 
-      <div className="ingredients-search">
-        <Input
-          type="text"
-          placeholder="Buscar variante de ingrediente..."
-          value={searchIngredient}
-          onChange={(e) => {
-            setSearchIngredient(e.target.value);
-            setCurrentPageIngredients(1);
-          }}
-          fullWidth
-        />
-        <small className="form-hint">
-          {selectedIngredients.size} variante(s) de ingrediente seleccionada(s)
-        </small>
-      </div>
+      <div className="form-group form-group-full modal-picker">
+        <div className="mp-split">
+          {/* ── Elegidas ───────────────────────────────────────────────── */}
+          <section className="mp-panel">
+            <header className="mp-panel-head">
+              <span className="mp-panel-title">Ingredientes del producto</span>
+              <span className="mp-count">{selected.length}</span>
+            </header>
 
-      {loadingIngredients ? (
-        <div className="ingredients-loading">
-          <div className="spinner"></div>
-          <p>Cargando variantes de ingredientes...</p>
-        </div>
-      ) : (
-        <>
-          <div className="ingredients-list">
-            {paginatedVariants.map(variant => {
-              const isChecked = selectedIngredients.has(String(variant.id));
-              return (
-                <label key={variant.id} className="ingredient-item">
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => onIngredientToggle(variant.id)}
-                  />
-                  <div className="ingredient-info">
-                    <span className="ingredient-name">{variant.name}</span>
-                    {isChecked && (
+            {selected.length === 0 ? (
+              <p className="mp-empty">
+                Todavía no elegiste ninguno. Buscalos en la lista de la derecha.
+              </p>
+            ) : (
+              <ul className="mp-selected-list">
+                {selected.map((variant) => (
+                  <li key={variant.id} className="mp-selected-item">
+                    <span className="mp-name" title={variant.name}>{variant.name}</span>
+
+                    <label className="mp-position" title="Posición en la etiqueta (1 = el que más aporta)">
+                      Pos.
                       <input
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className="ingredient-position-input"
                         value={ingredientPositions[String(variant.id)] ?? ''}
                         onChange={(e) => {
-                          e.stopPropagation();
                           const raw = e.target.value;
-                          // Allow empty (user is deleting); notify parent to clear position
+                          // Vacío = el usuario está borrando; se limpia hasta que escriba.
                           if (raw === '') {
                             onIngredientPositionChange(String(variant.id), NaN);
                             return;
                           }
-                          // Only accept digits
                           if (!/^\d+$/.test(raw)) return;
-                          const val = parseInt(raw);
-                          if (val >= 1) {
-                            onIngredientPositionChange(String(variant.id), val);
-                          }
+                          const value = parseInt(raw, 10);
+                          if (value >= 1) onIngredientPositionChange(String(variant.id), value);
                         }}
-                        onBlur={(e) => {
-                          // On blur, if empty assign next available position (max existing + 1)
-                          const raw = e.target.value;
-                          if (!raw || parseInt(raw) < 1) {
-                            const maxPos = Object.values(ingredientPositions).length > 0
-                              ? Math.max(...Object.values(ingredientPositions).filter(v => typeof v === 'number'))
-                              : 0;
-                            onIngredientPositionChange(String(variant.id), maxPos + 1);
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="Pos."
-                        title="Posición del ingrediente en el producto (escribí el número)"
+                        onBlur={(e) => handlePositionBlur(String(variant.id), e.target.value)}
                       />
-                    )}
-                  </div>
-                </label>
-              );
-            })}
-            {filteredVariants.length === 0 && (
-              <div className="no-ingredients">
-                No se encontraron variantes de ingredientes
-              </div>
-            )}
-          </div>
+                    </label>
 
-          {filteredVariants.length > ITEMS_PER_PAGE && (
-            <div style={{ marginTop: '16px' }}>
-              <Pagination
-                currentPage={currentPageIngredients}
-                totalPages={totalPages}
-                onPageChange={setCurrentPageIngredients}
-              />
-            </div>
-          )}
-        </>
-      )}
+                    <button
+                      type="button"
+                      className="mp-remove"
+                      title="Quitar del producto"
+                      aria-label={`Quitar ${variant.name}`}
+                      onClick={() => onIngredientToggle(variant.id)}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* ── Catálogo ───────────────────────────────────────────────── */}
+          <section className="mp-panel">
+            <header className="mp-panel-head">
+              <span className="mp-panel-title">Agregar ingrediente</span>
+            </header>
+
+            <Input
+              type="text"
+              placeholder="Buscar variante de ingrediente..."
+              value={searchIngredient}
+              onChange={(e) => {
+                setSearchIngredient(e.target.value);
+                setCurrentPageIngredients(1);
+              }}
+              fullWidth
+            />
+
+            {loadingIngredients ? (
+              <div className="ingredients-loading">
+                <div className="spinner"></div>
+                <p>Cargando variantes de ingredientes...</p>
+              </div>
+            ) : (
+              <>
+                <div className="mp-options">
+                  {paginatedOptions.map((variant) => (
+                    <label
+                      key={variant.id}
+                      className={`mp-option${selectedIngredients.has(String(variant.id)) ? ' is-selected' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedIngredients.has(String(variant.id))}
+                        onChange={() => onIngredientToggle(variant.id)}
+                      />
+                      <span className="mp-name" title={variant.name}>{variant.name}</span>
+                    </label>
+                  ))}
+
+                  {options.length === 0 && (
+                    <p className="mp-empty">No se encontraron variantes de ingredientes</p>
+                  )}
+                </div>
+
+                {options.length > ITEMS_PER_PAGE && (
+                  <div style={{ marginTop: 12 }}>
+                    <Pagination
+                      currentPage={currentPageIngredients}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPageIngredients}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
