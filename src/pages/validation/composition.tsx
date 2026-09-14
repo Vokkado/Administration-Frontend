@@ -9,11 +9,13 @@ import {
   ValidationService,
   type ValidationDetail,
   type ValidationIngredient,
+  type ValidationTag,
   type LinkColor,
 } from '../../services/validation.service';
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
+import { TagsService, type ApplicableTagGroup } from '../../services/tags.service';
 import { EditIngredientModal } from './EditIngredientModal';
 import './composition.css';
 
@@ -472,6 +474,49 @@ function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }
         <button type="button" className="vp-picker-cancel" onClick={onCancel}>Cancelar</button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Sección de TAGS del producto (paso "Más info" del wizard, junto a Categoría). A diferencia
+ * de ingredientes/alérgenos (listas planas), los tags están agrupados por eje (Grano, Relleno,
+ * Certificaciones...) y los grupos APLICABLES dependen de la categoría elegida — por eso este
+ * componente recarga la lista de aplicables cada vez que cambia `categoryId`.
+ * 🔴 = tag creado por la IA sin revisar (is_inspected=false); 🟢 = ya validado.
+ */
+export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChanged }: {
+  productId: string; categoryId: string; tags: ValidationTag[]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
+}) {
+  const [groups, setGroups] = useState<ApplicableTagGroup[]>([]);
+  useEffect(() => {
+    let alive = true;
+    TagsService.getApplicableGroups(categoryId || null).then((g) => { if (alive) setGroups(g); });
+    return () => { alive = false; };
+  }, [categoryId]);
+
+  const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
+
+  const linkedIds = new Set(tags.map((t) => t.tagId));
+  const pool = groups.flatMap((g) => g.tags.filter((t) => !linkedIds.has(t.id)).map((t) => ({ id: t.id, name: `${t.name} — ${g.name}` })));
+  const tagSearch: PickerSearch = async (term) => {
+    const filtered = term ? pool.filter((p) => p.name.toLowerCase().includes(term.toLowerCase())) : pool;
+    return { items: filtered.slice(0, PICKER_PAGE), total: filtered.length };
+  };
+
+  return (
+    <Section title={`Tags (${tags.length})`}
+      adder={groups.length > 0 && <AdderButton label="+ Agregar" title="Agregar tag" placeholder="Buscar tag…" search={tagSearch}
+        onPick={(p) => run(() => ValidationService.addTag(productId, p.id))} />}>
+      {tags.length === 0 && <Muted>{groups.length === 0 ? 'Sin grupos de tags aplicables a esta categoría.' : 'Sin tags.'}</Muted>}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {tags.map((t) => (
+          <span key={t.tagId} style={chip(t.color)}>
+            <Dot color={t.color} /> {t.tagGroupName}: {t.tagName}
+            <span onClick={() => !busy && run(() => ValidationService.removeTag(productId, t.tagId))} style={xStyle} title="Quitar">✕</span>
+          </span>
+        ))}
+      </div>
+    </Section>
   );
 }
 

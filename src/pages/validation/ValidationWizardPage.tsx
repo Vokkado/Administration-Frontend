@@ -11,7 +11,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
-import { CompositionStep, Legend } from './composition';
+import { CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import './ValidationWizardPage.css';
 
@@ -246,6 +246,16 @@ export function ValidationWizardPage() {
                   <option value="">— Sin categoría —</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+              </div>
+              <div className="form-group form-group-full">
+                <TagsSection
+                  productId={id}
+                  categoryId={meta.categoryId}
+                  tags={detail?.tags ?? []}
+                  busy={busy}
+                  setBusy={setBusy}
+                  onChanged={loadDetail}
+                />
               </div>
               <div className="form-group">
                 <Input label="Nombre de registro" value={meta.registrationName} onChange={(e) => set('registrationName', e.target.value)} fullWidth />

@@ -65,12 +65,23 @@ export interface ValidationCompany {
   role: string;
 }
 
+export interface ValidationTag {
+  tagId: string;
+  tagName: string;
+  tagGroupId: string;
+  tagGroupName: string;
+  isInspected: boolean;
+  source: 'ai' | 'admin';
+  color: LinkColor;
+}
+
 export interface ValidationDetail {
   product: ValidationProduct;
   ingredients: ValidationIngredient[];
   allergens: ValidationAllergen[];
   nutrition: ValidationNutrition[];
   companies: ValidationCompany[];
+  tags: ValidationTag[];
 }
 
 export interface CategoryOption { id: string; name: string }
@@ -143,6 +154,12 @@ export class ValidationService {
   }
   static async removeAllergen(id: string, allergenId: string): Promise<void> {
     await apiService.delete(`${BASE}/${id}/allergen/${allergenId}`);
+  }
+  static async addTag(id: string, tagId: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/tag`, { tagId });
+  }
+  static async removeTag(id: string, tagId: string): Promise<void> {
+    await apiService.delete(`${BASE}/${id}/tag/${tagId}`);
   }
   static async upsertNutrition(id: string, nutritionFactId: string, value: number, unit: string | null): Promise<void> {
     await apiService.post(`${BASE}/${id}/nutrition`, { nutritionFactId, value, unit });
