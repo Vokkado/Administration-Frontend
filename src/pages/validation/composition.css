@@ -1,3 +1,115 @@
+/* ── Ayuda del paso ─────────────────────────────────────────────────────── */
+/* Botón "i" al lado del título; abre la explicación en un modal. */
+.vp-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1.5px solid var(--color-grey-400);
+  border-radius: 50%;
+  background: none;
+  color: var(--color-grey-500);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vp-help-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.vp-help {
+  padding: 20px 24px;
+  font-size: 13px;
+}
+
+.vp-help-row {
+  margin: 0;
+  color: var(--color-grey-800);
+}
+
+.vp-help-muted { color: var(--color-grey-500); }
+
+.vp-help-note {
+  display: block;
+  margin: 6px 0 0;
+  color: var(--color-grey-600);
+  line-height: 1.5;
+}
+
+/* Glosario de orígenes: término a la izquierda, explicación a la derecha. */
+.vp-help-tiers {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-grey-200);
+}
+
+.vp-help-tiers dt {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-grey-600);
+  background: var(--color-grey-100);
+  border-radius: 6px;
+  padding: 2px 8px;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.vp-help-tiers dd {
+  margin: 0;
+  color: var(--color-grey-600);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .vp-help-tiers { grid-template-columns: 1fr; gap: 2px; }
+  .vp-help-tiers dd { margin-bottom: 8px; }
+}
+
+/* Nombre de la variante: abre su ficha. Es el nombre principal de la fila, así que
+   conserva el peso del <strong> que tenía antes. */
+.vp-variant-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.vp-variant-link span {
+  font-weight: 400;
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+.vp-variant-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.vp-variant-link:hover span,
+.vp-variant-link:focus-visible span {
+  opacity: 1;
+}
+
 /* Nombre del ingrediente canónico: abre su ficha completa. */
 .vp-ingredient-link {
   padding: 0;
