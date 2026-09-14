@@ -391,30 +391,75 @@ export function IngredientsPage() {
     }
   };
 
+  const activeTotal = activeTab === 'ingredients' ? total : variantsHook.total;
+  const countLabel = activeTab === 'ingredients'
+    ? (activeTotal === 1 ? 'ingrediente' : 'ingredientes')
+    : (activeTotal === 1 ? 'variante' : 'variantes');
+
+  // Pestañas arriba del título, dentro del header, para que título + contador +
+  // buscador + botones compartan una sola línea debajo.
+  const tabs = (
+    <div className="ingredient-page-tabs">
+      <button
+        type="button"
+        className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
+        onClick={() => setActiveTab('ingredients')}
+      >
+        🧪 Ingredientes
+      </button>
+      <button
+        type="button"
+        className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
+        onClick={() => setActiveTab('variants')}
+      >
+        🔀 Variantes de Ingrediente
+      </button>
+    </div>
+  );
+
+  // El buscador apunta a la pestaña activa.
+  const searchBox = (
+    <div className="header-search">
+      <SearchInput
+        value={activeTab === 'ingredients' ? searchTerm : variantsHook.searchTerm}
+        onChange={activeTab === 'ingredients' ? setSearchTerm : variantsHook.setSearchTerm}
+        placeholder="Buscar por nombre..."
+      />
+    </div>
+  );
+
+  const headerActions = (
+    <div className="header-actions">
+      {/* Mismas clases que usa PageHeader para su contador. */}
+      <div className="header-count">
+        <span className="count-number">{activeTotal}</span>
+        <span className="count-label">{countLabel}</span>
+      </div>
+      {searchBox}
+      {/* Sin repetir la entidad: ya está en el título de la página. */}
+      <Button
+        variant="primary"
+        onClick={activeTab === 'ingredients' ? openMergeModal : openVariantMergeModal}
+      >
+        🔗 Unificar
+      </Button>
+      <Button
+        variant="primary"
+        onClick={activeTab === 'ingredients' ? openCreateModal : openCreateVariantModal}
+      >
+        + Agregar
+      </Button>
+    </div>
+  );
+
   return (
     <AdminLayout title="Gestión de Ingredientes">
         {/* Success Message */}
         <NotificationBanner type="success" message={crud.successMessage} />
 
-        {/* Header de la pestaña activa: título, descripción, contador y acciones. */}
+        {/* Pestañas arriba del título; título, contador, buscador y botones en una línea. */}
         {activeTab === 'ingredients' ? (
-          <PageHeader
-            title="Ingredientes"
-            description="Gestión de ingredientes del sistema"
-            count={total}
-            countLabel="ingredientes"
-            countLabelSingular="ingrediente"
-            actions={
-              <div className="header-actions">
-                <Button variant="primary" onClick={openMergeModal}>
-                  🔗 Unificar Ingredientes
-                </Button>
-                <Button variant="primary" onClick={openCreateModal}>
-                  + Agregar Ingrediente
-                </Button>
-              </div>
-            }
-          />
+          <PageHeader title="Ingredientes" aboveTitle={tabs} actions={headerActions} />
         ) : (
           <PageHeader
             breadcrumb={[
@@ -424,50 +469,10 @@ export function IngredientsPage() {
               { label: 'Variantes' },
             ]}
             title="Variantes de Ingrediente"
-            description="Gestión de variantes con sus atributos asignados"
-            count={variantsHook.total}
-            countLabel="variantes"
-            countLabelSingular="variante"
-            actions={
-              <div className="header-actions">
-                <Button variant="primary" onClick={openVariantMergeModal}>
-                  🔗 Unificar Variantes
-                </Button>
-                <Button variant="primary" onClick={openCreateVariantModal}>
-                  + Agregar Variante
-                </Button>
-              </div>
-            }
+            aboveTitle={tabs}
+            actions={headerActions}
           />
         )}
-
-        {/* Tabs a la izquierda, buscador a la derecha. El buscador apunta al tab activo. */}
-        <div className="ingredient-tabs-row">
-          <div className="ingredient-page-tabs">
-            <button
-              type="button"
-              className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
-              onClick={() => setActiveTab('ingredients')}
-            >
-              🧪 Ingredientes
-            </button>
-            <button
-              type="button"
-              className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
-              onClick={() => setActiveTab('variants')}
-            >
-              🔀 Variantes de Ingrediente
-            </button>
-          </div>
-
-          <div className="ingredient-tabs-search">
-            <SearchInput
-              value={activeTab === 'ingredients' ? searchTerm : variantsHook.searchTerm}
-              onChange={activeTab === 'ingredients' ? setSearchTerm : variantsHook.setSearchTerm}
-              placeholder="Buscar por nombre..."
-            />
-          </div>
-        </div>
 
         {/* ===== INGREDIENTS TAB ===== */}
         {activeTab === 'ingredients' && (

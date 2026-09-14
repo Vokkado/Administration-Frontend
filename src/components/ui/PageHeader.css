@@ -61,6 +61,12 @@
   gap: 12px;
 }
 
+/* Sin descripción ni contador, el título es la última línea: su margen inferior
+   desalinearía las acciones respecto del título (van con `align-items: flex-end`). */
+.page-header-info > h2:last-child {
+  margin-bottom: 0;
+}
+
 .page-header-info p {
   color: #555;
   font-size: 14px;
@@ -125,9 +131,10 @@
   margin-bottom: 0;
 }
 
-/* Los botones no se achican: si se comprimen, la etiqueta se parte en dos renglones
-   (el ícono arriba y el texto abajo). El que cede espacio es el buscador. */
-.header-actions .btn {
+/* Ni los botones ni el contador se achican: si se comprimen, la etiqueta se parte en dos
+   renglones (el ícono arriba y el texto abajo). El que cede espacio es el buscador. */
+.header-actions .btn,
+.header-actions .header-count {
   flex-shrink: 0;
 }
 

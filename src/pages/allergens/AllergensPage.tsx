@@ -166,17 +166,18 @@ export function AllergensPage() {
 
   return (
     <AdminLayout title="Gestión de Alérgenos">
-        {/* Header */}
+        {/* Sin descripción: el título y todo lo demás comparten una sola línea. */}
         <PageHeader
           title="Alérgenos"
-          description="Gestión de alérgenos del sistema"
-          count={total}
-          countLabel="alérgenos"
-          countLabelSingular="alérgeno"
           actions={
             <div className="header-actions">
-              {/* El buscador va en el header, a la izquierda de los botones. El filtro de
-                  validado vive en el embudo de su columna, así que no hay barra de filtros. */}
+              {/* Mismas clases que usa PageHeader para su contador. */}
+              <div className="header-count">
+                <span className="count-number">{total}</span>
+                <span className="count-label">{total === 1 ? 'alérgeno' : 'alérgenos'}</span>
+              </div>
+
+              {/* El filtro de validado vive en el embudo de su columna: no hay barra de filtros. */}
               <div className="header-search">
                 <SearchInput
                   value={searchTerm}
@@ -184,6 +185,7 @@ export function AllergensPage() {
                   placeholder="Buscar por nombre..."
                 />
               </div>
+
               {/* Sin repetir "Alérgenos": ya está en el título de la página. */}
               <Button variant="primary" onClick={openMergeModal}>
                 🔗 Unificar
