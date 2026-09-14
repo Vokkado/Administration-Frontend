@@ -16,6 +16,7 @@ import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
 import { EditIngredientModal } from './EditIngredientModal';
 import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
+import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
 import './composition.css';
 
 export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
@@ -59,9 +60,28 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
   // Son dos entidades distintas: la variante (lo que se vincula al producto) y el
   // ingrediente canónico al que apunta.
-  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  // null = cerrado | { id: null } = crear una variante | { id } = editar esa variante.
+  const [variantEditor, setVariantEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+
+  /** Editar solo refresca; una variante recién creada además se vincula al producto. */
+  const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
+    if (isNew && saved.id) { void run(() => ValidationService.addIngredient(productId, saved.id)); return; }
+    onChanged();
+  };
+
+  /**
+   * Un ingrediente solo no se vincula a nada: lo que se vincula son sus variantes.
+   * Por eso al crearlo se encadena el alta de su primera variante, ya con el
+   * ingrediente elegido como padre (mismo flujo que el modal de producto).
+   */
+  const handleIngredientCreated = (ingredient: { id: string }) => {
+    setCreatingIngredient(false);
+    if (ingredient.id) setVariantEditor({ id: null, ingredientId: ingredient.id });
+  };
+
   return (
     <>
       <Section
@@ -77,11 +97,33 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             i
           </button>
         }
-        adder={<AdderButton label="+ Agregar"
-          title="Agregar ingrediente"
-          placeholder="Buscar variante de ingrediente…"
-          search={variantSearch}
-          onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
+        adder={
+          <div className="vp-section-actions">
+            <AdderButton label="+ Agregar"
+              title="Agregar una variante que ya existe"
+              placeholder="Buscar variante de ingrediente…"
+              search={variantSearch}
+              onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />
+            {/* El ingrediente es la entidad base; la variante es lo que se vincula al
+                producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+            <Button
+              variant="outline"
+              onClick={() => setCreatingIngredient(true)}
+              disabled={busy}
+              title="Crear un ingrediente nuevo y su primera variante"
+            >
+              + Ingrediente
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setVariantEditor({ id: null })}
+              disabled={busy}
+              title="Crear una variante nueva de un ingrediente que ya existe"
+            >
+              + Variante
+            </Button>
+          </div>
+        }>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
           <IngredientRow
@@ -91,17 +133,25 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             busy={busy}
             setBusy={setBusy}
             onChanged={onChanged}
-            onEditVariant={() => setEditingVariantId(ing.variantId)}
+            onEditVariant={() => setVariantEditor({ id: ing.variantId })}
             onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
           />
         ))}
       </Section>
 
-      {editingVariantId && (
+      {variantEditor && (
         <VariantEditorModal
-          variantId={editingVariantId}
-          onClose={() => setEditingVariantId(null)}
-          onSaved={onChanged}
+          variantId={variantEditor.id}
+          initialIngredientId={variantEditor.ingredientId}
+          onClose={() => setVariantEditor(null)}
+          onSaved={(saved) => handleVariantSaved(saved, variantEditor.id === null)}
+        />
+      )}
+
+      {creatingIngredient && (
+        <IngredientEditorModal
+          onClose={() => setCreatingIngredient(false)}
+          onSaved={handleIngredientCreated}
         />
       )}
 
@@ -173,6 +223,25 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         creó el ingrediente y su variante de una, con el mismo nombre.
       </p>
 
+      <h4 className="vp-help-title">Qué hace cada botón</h4>
+      <dl className="vp-help-actions">
+        <dt>+ Agregar</dt>
+        <dd>Vincula al producto una variante que <strong>ya existe</strong> en el catálogo. Es para lo que la IA no detectó, o lo que quitaste sin querer.</dd>
+        <dt>+ Ingrediente</dt>
+        <dd>Crea un ingrediente que todavía no existe en la base. Como lo que se vincula son las variantes, al guardarlo se encadena el alta de su primera variante.</dd>
+        <dt>+ Variante</dt>
+        <dd>Crea un alias nuevo de un ingrediente que ya existe, y lo vincula al producto.</dd>
+        <dt>✓ Está bien</dt>
+        <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Solo aparece en las que no lo están.</dd>
+        <dt>✎ Corregir</dt>
+        <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior.</dd>
+        <dt>✕ Quitar</dt>
+        <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
+        <dt>Validar ingrediente</dt>
+        <dd>Solo en las filas rojas: guarda el puntaje y la toxicidad que revisaste, y da por aprobada la ficha que inventó la IA.</dd>
+      </dl>
+
+      <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
       <dl className="vp-help-tiers">
         <dt>INS</dt>
         <dd>Aditivo reconocido por su número INS (ej. E-322). Match seguro.</dd>

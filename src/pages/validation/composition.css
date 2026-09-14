@@ -46,14 +46,41 @@
   line-height: 1.5;
 }
 
+/* Encabezado de cada bloque del modal; también hace de separador entre bloques. */
+.vp-help-title {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-grey-200);
+  font-size: 13px;
+  color: var(--color-grey-800);
+}
+
 /* Glosario de orígenes: término a la izquierda, explicación a la derecha. */
-.vp-help-tiers {
+.vp-help-tiers,
+.vp-help-actions {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 14px;
-  margin: 14px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-grey-200);
+  margin: 10px 0 0;
+}
+
+/* El término imita al botón que describe, para encontrarlo de un vistazo en la pantalla. */
+.vp-help-actions dt {
+  justify-self: start;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-grey-700);
+  background: #fff;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.vp-help-actions dd {
+  margin: 0;
+  color: var(--color-grey-600);
+  line-height: 1.5;
 }
 
 .vp-help-tiers dt {
@@ -75,8 +102,10 @@
 }
 
 @media (max-width: 720px) {
-  .vp-help-tiers { grid-template-columns: 1fr; gap: 2px; }
-  .vp-help-tiers dd { margin-bottom: 8px; }
+  .vp-help-tiers,
+  .vp-help-actions { grid-template-columns: 1fr; gap: 2px; }
+  .vp-help-tiers dd,
+  .vp-help-actions dd { margin-bottom: 8px; }
 }
 
 /* Nombre de la variante: abre su ficha. Es el nombre principal de la fila, así que
@@ -161,6 +190,14 @@
 /* Dentro de un modal el chrome sobra: el modal ya es la tarjeta. */
 .vp-picker-modal {
   padding: 20px 24px 24px;
+}
+
+/* Altas del encabezado de una sección: vincular una existente o crear a mano. */
+.vp-section-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* ── Fila de ingrediente ─────────────────────────────────────────────── */
