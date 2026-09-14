@@ -575,6 +575,11 @@ export function IngredientsPage() {
                 variantsHook.setFilterInspected(next);
                 variantsHook.setCurrentPage(1);
               }}
+              sort={variantsHook.sort}
+              onSortChange={(next) => {
+                variantsHook.setSort(next);
+                variantsHook.setCurrentPage(1);
+              }}
             />
 
             <Pagination
