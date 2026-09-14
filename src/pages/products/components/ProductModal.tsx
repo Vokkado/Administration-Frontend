@@ -37,7 +37,7 @@ interface ProductModalProps {
   onValidate?: (id: string, currentState: boolean) => void;
 }
 
-type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'origen';
+type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'origen';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'basic', label: 'Información Básica' },
@@ -45,6 +45,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'manufacturer', label: 'Fabricante y Distribución' },
   { id: 'nutrition', label: 'Información Nutricional' },
   { id: 'ingredients', label: 'Ingredientes' },
+  { id: 'allergens', label: 'Alérgenos' },
   { id: 'origen', label: 'Origen' },
 ];
 
@@ -325,13 +326,6 @@ export function ProductModal({
                   onChange={onChange}
                 />
                 <ProductSourceImagesSection productId={editingProduct?.id} />
-                <ProductAllergensSection
-                  allergenData={formData.allergenData || []}
-                  allAllergens={allAllergens}
-                  loadingAllergens={loadingAllergens}
-                  onAllergenToggle={handleAllergenToggle}
-                  onPresenceChange={handleAllergenPresenceChange}
-                />
               </>
             )}
 
@@ -370,6 +364,16 @@ export function ProductModal({
                 onChange={onChange}
                 onIngredientToggle={handleIngredientToggle}
                 onIngredientPositionChange={handleIngredientPositionChange}
+              />
+            )}
+
+            {activeTab === 'allergens' && (
+              <ProductAllergensSection
+                allergenData={formData.allergenData || []}
+                allAllergens={allAllergens}
+                loadingAllergens={loadingAllergens}
+                onAllergenToggle={handleAllergenToggle}
+                onPresenceChange={handleAllergenPresenceChange}
               />
             )}
 

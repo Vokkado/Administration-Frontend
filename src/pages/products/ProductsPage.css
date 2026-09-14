@@ -713,11 +713,200 @@
   font-weight: 500;
 }
 
-.allergen-presence-select {
-  width: auto;
-  min-width: 140px;
-  padding: 6px 10px;
+/* ── Alérgenos del producto ─────────────────────────────────────────────── */
+/* Dos paneles: los elegidos a la izquierda, el catálogo a la derecha. */
+.pa-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.pa-panel {
+  border: 1px solid var(--color-grey-200);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  min-width: 0;
+}
+
+.pa-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pa-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-grey-500);
+}
+
+.pa-count {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
   font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.allergen-section .pa-empty {
+  margin: 0;
+  padding: 18px 4px;
+  font-size: 13px;
+  color: var(--color-grey-400);
+  text-align: center;
+}
+
+/* ── Panel izquierdo: elegidos ─────────────────────────────────────────── */
+.pa-selected-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.pa-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(91, 136, 6, 0.07);
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+}
+
+.pa-selected-item .pa-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.pa-remove {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 16px;
+  /* El glifo ✕ no tiene variante bold en la fuente; el peso lo da el trazo simulado. */
+  font-weight: 700;
+  -webkit-text-stroke: 0.6px currentColor;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pa-remove:hover {
+  background: #fef2f2;
+  color: var(--color-error);
+}
+
+/* ── Panel derecho: catálogo ───────────────────────────────────────────── */
+.pa-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-right: 4px;
+}
+
+/* Scopeado con `.allergen-section` a propósito: `.form-group label` (0,1,1) le gana a
+   `.pa-option` (0,1,0) y lo volvía un bloque en negrita, sin flex y con margen abajo —
+   por eso el checkbox y el texto salían pegados. Con dos clases, gana esta. */
+.allergen-section .pa-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-grey-800);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.allergen-section .pa-option:hover { background: var(--color-grey-100); }
+
+.allergen-section .pa-option.is-selected {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.allergen-section .pa-option input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  /* El navegador le pone márgenes propios (~3px) que descentran el texto y comen el gap. */
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.allergen-section .pa-name {
+  /* Sin line-height heredado: el alto extra de la línea desplaza el texto respecto
+     del centro del cuadrado. */
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Presencia: dos opciones a la vista en vez de un <select> cerrado ──── */
+.pa-presence {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pa-presence-btn {
+  padding: 5px 11px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-grey-500);
+  /* "Puede contener" es largo: nunca se parte en dos renglones. */
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pa-presence-btn + .pa-presence-btn {
+  border-left: 1px solid var(--color-grey-200);
+}
+
+.pa-presence-btn:hover:not(.is-active) { background: var(--color-grey-100); }
+
+/* "Contiene" es la afirmación fuerte; "Trazas" es la advertencia menor. */
+.pa-presence-btn.is-active { background: #fef2f2; color: #b91c1c; }
+.pa-presence-btn.is-active:last-child { background: #fffbeb; color: #b45309; }
+
+/* En pantallas angostas los paneles se apilan. */
+@media (max-width: 900px) {
+  .pa-split { grid-template-columns: 1fr; }
 }
 
 .ingredients-loading {
