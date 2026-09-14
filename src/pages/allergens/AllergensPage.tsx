@@ -22,10 +22,12 @@ export function AllergensPage() {
     error,
     searchTerm,
     sort,
+    filterInspected,
     currentPage,
     totalPages,
     setSearchTerm,
     setSort,
+    setFilterInspected,
     setCurrentPage,
     setError,
     createAllergen,
@@ -205,6 +207,9 @@ export function AllergensPage() {
           // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
           // muestra un tramo arbitrario de la lista.
           onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
+          filterInspected={filterInspected}
+          // Idem al filtrar: la página 5 puede no existir con menos resultados.
+          onFilterInspectedChange={(next) => { setFilterInspected(next); setCurrentPage(1); }}
         />
 
         {/* Pagination */}

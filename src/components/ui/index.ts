@@ -8,6 +8,7 @@ export { Button } from './Button';
 export { ConfirmDialog } from './ConfirmDialog';
 export { DashboardCard } from './DashboardCard';
 export { DataTable } from './DataTable';
+export { ColumnFilter } from './ColumnFilter';
 export { DateRangePicker } from './DateRangePicker';
 export { EmptyState } from './EmptyState';
 export { FilterButtonGroup } from './FilterButtonGroup';
@@ -26,6 +27,7 @@ export { StatusBadge } from './StatusBadge';
 
 // Re-export types
 export type { DataTableColumn, DataTableSort } from './DataTable';
+export type { ColumnFilterOption } from './ColumnFilter';
 export type { DateRange } from './DateRangePicker';
 export type { FilterOption } from './FilterButtonGroup';
 export type { CountBadge } from './PageHeader';

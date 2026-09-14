@@ -2,8 +2,8 @@
  * Componente de Tabla de Productos
  */
 import { useMemo } from 'react';
-import { DataTable } from '../../../components/ui';
-import type { DataTableColumn, DataTableSort } from '../../../components/ui';
+import { DataTable, ColumnFilter } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { Product } from '../types';
 import { IoSparkles } from 'react-icons/io5';
 import { GiWineBottle } from 'react-icons/gi';
@@ -37,7 +37,16 @@ interface ProductTableProps {
   validatingId: string | null;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
+  /** Mismo estado que el grupo de botones de la barra de filtros: se mantienen en sincronía. */
+  filterInspected: string;
+  onFilterInspectedChange: (value: string) => void;
 }
+
+const INSPECTED_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'VALIDATED', label: 'Validados' },
+  { value: 'NOT_VALIDATED', label: 'No Validados' },
+];
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
 const formatDate = (value?: string): string => {
@@ -58,6 +67,8 @@ export function ProductTable({
   validatingId,
   sort,
   onSortChange,
+  filterInspected,
+  onFilterInspectedChange,
 }: ProductTableProps) {
   const columns = useMemo<DataTableColumn<Product>[]>(
     () => [
@@ -173,6 +184,14 @@ export function ProductTable({
         key: 'inspected',
         header: 'Validado',
         width: '160px',
+        headerAction: (
+          <ColumnFilter
+            value={filterInspected}
+            options={INSPECTED_OPTIONS}
+            onChange={onFilterInspectedChange}
+            title="Filtrar por estado de validación"
+          />
+        ),
         render: (product) =>
           product.isReference ? (
             // Un reference no se "valida" suelto: hay que completarlo (modal) y eso lo promueve.
@@ -200,7 +219,7 @@ export function ProductTable({
           ),
       },
     ],
-    [categories, onValidationChange, validatingId, onEdit],
+    [categories, onValidationChange, validatingId, onEdit, filterInspected, onFilterInspectedChange],
   );
 
   const renderActions = useMemo(

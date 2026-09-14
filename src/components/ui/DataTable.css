@@ -123,6 +123,16 @@
   font-size: var(--font-size-sm);
 }
 
+/* Envoltorio del encabezado: alinea el título con los controles extra (filtro). */
+.dt-th-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-table th.dt-align-center .dt-th-content { justify-content: center; }
+.dt-table th.dt-align-right .dt-th-content { justify-content: flex-end; }
+
 /* Encabezado ordenable: el th mantiene su padding y el botón ocupa todo el alto. */
 .dt-table th.dt-sortable {
   padding: 0;

@@ -2,8 +2,8 @@
  * Componente de Tabla de Ingredientes
  */
 import { useMemo } from 'react';
-import { DataTable } from '../../../components/ui';
-import type { DataTableColumn, DataTableSort } from '../../../components/ui';
+import { DataTable, ColumnFilter } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { Ingredient } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
@@ -21,7 +21,16 @@ interface IngredientTableProps {
   validatingId: string | null;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
+  /** Mismo estado que el grupo de botones de la barra de filtros: se mantienen en sincronía. */
+  filterInspected: string;
+  onFilterInspectedChange: (value: string) => void;
 }
+
+const INSPECTED_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'VALIDATED', label: 'Validados' },
+  { value: 'NOT_VALIDATED', label: 'Sin validar' },
+];
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
 const formatDate = (value?: string): string => {
@@ -39,6 +48,8 @@ export function IngredientTable({
   validatingId,
   sort,
   onSortChange,
+  filterInspected,
+  onFilterInspectedChange,
 }: IngredientTableProps) {
   const getScoreColor = (score: number): string => {
     if (score >= 8) return '#388E3C';
@@ -159,6 +170,14 @@ export function IngredientTable({
       header: 'Validado',
       align: 'center',
       width: '160px',
+      headerAction: (
+        <ColumnFilter
+          value={filterInspected}
+          options={INSPECTED_OPTIONS}
+          onChange={onFilterInspectedChange}
+          title="Filtrar por estado de validación"
+        />
+      ),
       render: (ingredient) => {
         const isValidated = ingredient.isInspected === true;
         return (
@@ -179,7 +198,7 @@ export function IngredientTable({
         );
       },
     },
-  ], [onValidationChange, validatingId]);
+  ], [onValidationChange, validatingId, filterInspected, onFilterInspectedChange]);
 
   return (
     <DataTable<Ingredient>
@@ -190,7 +209,8 @@ export function IngredientTable({
       emptyMessage="No se encontraron ingredientes"
       keyExtractor={(ingredient) => ingredient.id}
       actionsAlign="center"
-      actionsWidth="120px"
+      // 150px: con menos, el encabezado "ACCIONES" no entra y se recorta.
+      actionsWidth="150px"
       fixedLayout
       sort={sort}
       onSortChange={onSortChange}

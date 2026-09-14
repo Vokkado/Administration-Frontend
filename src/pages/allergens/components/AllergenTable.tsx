@@ -3,8 +3,8 @@
  */
 import { useMemo } from 'react';
 import type { Allergen } from '../types';
-import { DataTable } from '../../../components/ui';
-import type { DataTableColumn, DataTableSort } from '../../../components/ui';
+import { DataTable, ColumnFilter } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 
@@ -17,7 +17,16 @@ interface AllergenTableProps {
   validatingId: string | null;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
+  /** ALL | VALIDATED | NOT_VALIDATED */
+  filterInspected: string;
+  onFilterInspectedChange: (value: string) => void;
 }
+
+const INSPECTED_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'VALIDATED', label: 'Validados' },
+  { value: 'NOT_VALIDATED', label: 'Sin validar' },
+];
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
 const formatDate = (value?: string): string => {
@@ -35,6 +44,8 @@ export function AllergenTable({
   validatingId,
   sort,
   onSortChange,
+  filterInspected,
+  onFilterInspectedChange,
 }: AllergenTableProps) {
   const columns = useMemo<DataTableColumn<Allergen>[]>(() => [
     {
@@ -62,6 +73,14 @@ export function AllergenTable({
       header: 'Validado',
       align: 'center',
       width: '160px',
+      headerAction: (
+        <ColumnFilter
+          value={filterInspected}
+          options={INSPECTED_OPTIONS}
+          onChange={onFilterInspectedChange}
+          title="Filtrar por estado de validación"
+        />
+      ),
       render: (allergen) => {
         const isValidated = allergen.inspected === true;
 
@@ -81,7 +100,7 @@ export function AllergenTable({
         );
       },
     },
-  ], [onValidationChange, validatingId]);
+  ], [onValidationChange, validatingId, filterInspected, onFilterInspectedChange]);
 
   const renderActions = (allergen: Allergen) => (
     <>
@@ -111,7 +130,8 @@ export function AllergenTable({
       emptyMessage="No se encontraron alérgenos"
       renderActions={renderActions}
       actionsAlign="center"
-      actionsWidth="120px"
+      // 150px: con menos, el encabezado "ACCIONES" no entra y se recorta.
+      actionsWidth="150px"
       fixedLayout
       sort={sort}
       onSortChange={onSortChange}

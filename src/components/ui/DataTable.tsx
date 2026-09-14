@@ -28,6 +28,11 @@ export interface DataTableColumn<T> {
    * resuelve quien usa la tabla (normalmente el backend): acá solo se emite el cambio.
    */
   sortable?: boolean;
+  /**
+   * Control extra al lado del título (por ejemplo, un filtro). Va FUERA del botón de
+   * ordenar: anidar botones es HTML inválido y rompe el click.
+   */
+  headerAction?: React.ReactNode;
 }
 
 interface DataTableProps<T> {
@@ -118,26 +123,29 @@ export function DataTable<T>({
                   style={col.width ? { width: col.width } : undefined}
                   aria-sort={active ? (sort!.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                 >
-                  {isSortable ? (
-                    <button
-                      type="button"
-                      className="dt-sort-btn"
-                      // Clickear la columna activa invierte; una nueva columna arranca ascendente.
-                      onClick={() =>
-                        onSortChange!({
-                          key: col.key,
-                          direction: active && sort!.direction === 'asc' ? 'desc' : 'asc',
-                        })
-                      }
-                    >
-                      {col.header}
-                      <span className={`dt-sort-arrow${active ? ' is-active' : ''}`}>
-                        {active ? (sort!.direction === 'asc' ? '▲' : '▼') : '↕'}
-                      </span>
-                    </button>
-                  ) : (
-                    col.header
-                  )}
+                  <span className="dt-th-content">
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        className="dt-sort-btn"
+                        // Clickear la columna activa invierte; una nueva columna arranca ascendente.
+                        onClick={() =>
+                          onSortChange!({
+                            key: col.key,
+                            direction: active && sort!.direction === 'asc' ? 'desc' : 'asc',
+                          })
+                        }
+                      >
+                        {col.header}
+                        <span className={`dt-sort-arrow${active ? ' is-active' : ''}`}>
+                          {active ? (sort!.direction === 'asc' ? '▲' : '▼') : '↕'}
+                        </span>
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                    {col.headerAction}
+                  </span>
                 </th>
               );
             })}
