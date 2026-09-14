@@ -16,8 +16,8 @@
   align-items: center;
   flex-wrap: wrap;
   font-size: 13px;
-  /* Ocupa el alto que tendría el botón, para no correr el título hacia arriba. */
-  min-height: 28px;
+  /* Sin min-height: la caja ajusta al texto. Con alto fijo quedaba aire interno que hacía
+     ver más grande la separación con lo que sigue que la del resto del bloque. */
 }
 
 .page-breadcrumb-item {

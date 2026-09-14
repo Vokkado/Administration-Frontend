@@ -23,6 +23,8 @@ interface Category {
   id: string;
   name: string;
   isAssignable: boolean;
+  /** null = categoría raíz. Se usa para anidar las subcategorías en el menú de filtro. */
+  parentCategoryId: string | null;
 }
 
 interface ProductTableProps {
@@ -37,15 +39,26 @@ interface ProductTableProps {
   validatingId: string | null;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
-  /** Mismo estado que el grupo de botones de la barra de filtros: se mantienen en sincronía. */
   filterInspected: string;
   onFilterInspectedChange: (value: string) => void;
+  /** NORMAL | REFERENCE. El backend muestra uno u otro, nunca ambos. */
+  filterReference: string;
+  onFilterReferenceChange: (value: string) => void;
+  /** ALL | NONE | p:<parentId> | c:<categoryId> */
+  filterCategoryValue: string;
+  onFilterCategoryValueChange: (value: string) => void;
 }
 
 const INSPECTED_OPTIONS: ColumnFilterOption[] = [
   { value: 'ALL', label: 'Todos' },
   { value: 'VALIDATED', label: 'Validados' },
   { value: 'NOT_VALIDATED', label: 'No Validados' },
+];
+
+/** Sin opción "Todos": una ficha de referencia y un producto normal no conviven en la lista. */
+const TYPE_OPTIONS: ColumnFilterOption[] = [
+  { value: 'NORMAL', label: 'Normales' },
+  { value: 'REFERENCE', label: 'Referencia' },
 ];
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
@@ -69,7 +82,39 @@ export function ProductTable({
   onSortChange,
   filterInspected,
   onFilterInspectedChange,
+  filterReference,
+  onFilterReferenceChange,
+  filterCategoryValue,
+  onFilterCategoryValueChange,
 }: ProductTableProps) {
+  /**
+   * Un solo menú con las dos jerarquías: las categorías padre y, indentadas, sus
+   * subcategorías asignables. Evita el paso extra de "mostrar subcategorías" que tenía
+   * la barra de filtros.
+   */
+  const categoryOptions = useMemo<ColumnFilterOption[]>(() => {
+    const parents = categories
+      .filter((cat) => !cat.isAssignable)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const options: ColumnFilterOption[] = [
+      { value: 'ALL', label: 'Todas' },
+      { value: 'NONE', label: 'Sin categoría' },
+    ];
+    for (const parent of parents) {
+      options.push({ value: `p:${parent.id}`, label: parent.name });
+      const children = categories
+        .filter((cat) => cat.isAssignable && cat.parentCategoryId === parent.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      for (const child of children) options.push({ value: `c:${child.id}`, label: `— ${child.name}` });
+    }
+    // Asignables sin padre: quedarían fuera del recorrido anterior.
+    for (const orphan of categories.filter((c) => c.isAssignable && !c.parentCategoryId)) {
+      options.push({ value: `c:${orphan.id}`, label: orphan.name });
+    }
+    return options;
+  }, [categories]);
+
   const columns = useMemo<DataTableColumn<Product>[]>(
     () => [
       {
@@ -91,47 +136,63 @@ export function ProductTable({
                 📦
               </span>
             )}
-            <span className="td-name">
-              {product.name}
-              {product.isReference && (
-                <span
-                  title="Ficha de referencia (sin nutrición). Editala para completar los datos y validarla."
-                  style={{
-                    marginLeft: 8,
-                    padding: '2px 6px',
-                    borderRadius: 6,
-                    background: '#ECBF0A22',
-                    color: '#7A5F00',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    verticalAlign: 'middle',
-                  }}
-                >
-                  REF
-                </span>
-              )}
-            </span>
+            {/* El badge REF salió de acá: ahora el dato vive en la columna Tipo. */}
+            <span className="td-name">{product.name}</span>
+          </span>
+        ),
+      },
+      {
+        key: 'type',
+        header: 'Tipo',
+        align: 'center',
+        width: '135px',
+        headerAction: (
+          <ColumnFilter
+            value={filterReference}
+            options={TYPE_OPTIONS}
+            onChange={onFilterReferenceChange}
+            neutralValue="NORMAL"
+            title="Filtrar por tipo de producto"
+          />
+        ),
+        render: (product) => (
+          <span
+            className={`badge ${product.isReference ? 'badge-reference' : 'badge-normal'}`}
+            title={product.isReference
+              ? 'Ficha de referencia (sin nutrición). Completala para validarla.'
+              : 'Producto completo'}
+          >
+            {product.isReference ? 'Referencia' : 'Normal'}
           </span>
         ),
       },
       {
         key: 'brand',
         header: 'Marca',
-        width: '160px',
+        width: '140px',
         render: (product) => product.brand,
       },
       {
         key: 'barcode',
-        header: 'Código de Barras',
+        // "Código de Barras" no entra en un ancho razonable y se recortaba.
+        header: 'Código',
         hideOnMobile: true,
-        width: '190px',
+        width: '160px',
         render: (product) => product.barcode,
       },
       {
         key: 'category',
         header: 'Categoría',
         hideOnMobile: true,
-        width: '170px',
+        width: '165px',
+        headerAction: (
+          <ColumnFilter
+            value={filterCategoryValue}
+            options={categoryOptions}
+            onChange={onFilterCategoryValueChange}
+            title="Filtrar por categoría"
+          />
+        ),
         render: (product) => (
           <span className="badge badge-category">
             {categories.find((cat) => cat.id === product.categoryId)?.name ||
@@ -143,7 +204,8 @@ export function ProductTable({
         key: 'score',
         header: 'Puntaje',
         hideOnMobile: true,
-        width: '120px',
+        align: 'center',
+        width: '115px',
         render: (product) => {
           if (product.aiGenerated && !product.inspected) {
             return <span className="badge-score badge-score-ai" title="Producto IA sin inspeccionar"><IoSparkles size={16} /></span>;
@@ -173,7 +235,7 @@ export function ProductTable({
         sortable: true,
         align: 'center',
         hideOnMobile: true,
-        width: '150px',
+        width: '135px',
         render: (product) => (
           <span title={product.createdAt ? new Date(product.createdAt).toLocaleString('es-UY') : ''}>
             {formatDate(product.createdAt)}
@@ -183,7 +245,8 @@ export function ProductTable({
       {
         key: 'inspected',
         header: 'Validado',
-        width: '160px',
+        align: 'center',
+        width: '155px',
         headerAction: (
           <ColumnFilter
             value={filterInspected}
@@ -219,7 +282,12 @@ export function ProductTable({
           ),
       },
     ],
-    [categories, onValidationChange, validatingId, onEdit, filterInspected, onFilterInspectedChange],
+    [
+      categories, categoryOptions, onValidationChange, validatingId, onEdit,
+      filterInspected, onFilterInspectedChange,
+      filterReference, onFilterReferenceChange,
+      filterCategoryValue, onFilterCategoryValueChange,
+    ],
   );
 
   const renderActions = useMemo(

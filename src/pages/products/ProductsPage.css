@@ -7,29 +7,6 @@
   align-items: center;
 }
 
-/* ========================= */
-/* Search Controls            */
-/* ========================= */
-.product-controls {
-  background: var(--color-white);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  animation: slideUp 0.5s ease-out 0.1s both;
-}
-
-/* ========================= */
-/* Filters                    */
-/* ========================= */
-.product-filters {
-  background: var(--color-white);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  animation: slideUp 0.5s ease-out 0.15s both;
-}
 
 @keyframes slideUp {
   from {
@@ -79,39 +56,6 @@
   color: var(--color-white);
 }
 
-.subcategory-toggle {
-  margin-bottom: 16px;
-}
-
-.subcategory-toggle:last-child {
-  margin-bottom: 0;
-}
-
-.subcategory-toggle-btn {
-  padding: 10px 18px;
-  border: 2px dashed var(--color-border);
-  border-radius: 10px;
-  background: var(--color-white);
-  color: var(--color-primary-dark);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.subcategory-toggle-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.subcategory-toggle-btn.active {
-  border-style: solid;
-  border-color: var(--color-primary);
-  background: rgba(91, 136, 6, 0.08);
-  color: var(--color-primary-dark);
-}
 
 /* ========================= */
 /* Table Badges               */
@@ -133,6 +77,19 @@
   background: var(--color-info-light);
   color: #1565C0;
   border-color: #42A5F5;
+}
+
+/* Tipo de producto: ficha de referencia (incompleta) vs producto completo. */
+.badge-reference {
+  background: #ECBF0A22;
+  color: #7A5F00;
+  border-color: #E0B700;
+}
+
+.badge-normal {
+  background: var(--color-grey-100);
+  color: var(--color-grey-600);
+  border-color: var(--color-grey-300);
 }
 
 .badge-score {

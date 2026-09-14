@@ -30,6 +30,10 @@ interface ColumnFilterProps {
 const MENU_WIDTH = 190;
 const MENU_GAP = 6;
 const VIEWPORT_MARGIN = 8;
+/** Tope de alto; con más opciones (categorías) el menú scrollea por dentro. */
+const MENU_MAX_HEIGHT = 320;
+/** Menos espacio que esto abajo del botón y el menú se abre hacia arriba. */
+const MIN_SPACE_BELOW = 200;
 
 export function ColumnFilter({
   value,
@@ -41,7 +45,7 @@ export function ColumnFilter({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   // Coordenadas de viewport calculadas al abrir. null = cerrado.
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
   const isOpen = position !== null;
   const isActive = value !== neutralValue;
 
@@ -55,16 +59,21 @@ export function ColumnFilter({
       close();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    // Si se scrollea la página, las coordenadas guardadas quedan viejas y el menú se cierra.
+    // El scroll DENTRO del menú se ignora: si no, scrollear la lista lo cerraría.
+    const onScroll = (e: Event) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      close();
+    };
 
     document.addEventListener('mousedown', onPointerDown);
     window.addEventListener('keydown', onKey);
-    // Al scrollear o redimensionar, las coordenadas guardadas quedan viejas: se cierra.
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
       window.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };
   }, [isOpen]);
@@ -80,7 +89,18 @@ export function ColumnFilter({
     // Alineado por la derecha con el botón, sin salirse de la pantalla.
     const maxLeft = document.documentElement.clientWidth - MENU_WIDTH - VIEWPORT_MARGIN;
     const left = Math.max(VIEWPORT_MARGIN, Math.min(rect.right - MENU_WIDTH, maxLeft));
-    setPosition({ top: rect.bottom + MENU_GAP, left });
+
+    // Si abajo no entra, se abre hacia arriba; el alto se acota al espacio disponible.
+    const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP - VIEWPORT_MARGIN;
+    const spaceAbove = rect.top - MENU_GAP - VIEWPORT_MARGIN;
+    const openUp = spaceBelow < MIN_SPACE_BELOW && spaceAbove > spaceBelow;
+    const maxHeight = Math.min(MENU_MAX_HEIGHT, Math.max(120, openUp ? spaceAbove : spaceBelow));
+
+    setPosition({
+      top: openUp ? rect.top - MENU_GAP - maxHeight : rect.bottom + MENU_GAP,
+      left,
+      maxHeight,
+    });
   };
 
   return (
@@ -116,7 +136,7 @@ export function ColumnFilter({
           ref={menuRef}
           className="dt-column-filter-menu"
           role="listbox"
-          style={{ top: position.top, left: position.left }}
+          style={{ top: position.top, left: position.left, maxHeight: position.maxHeight }}
         >
           {options.map((option) => (
             <button

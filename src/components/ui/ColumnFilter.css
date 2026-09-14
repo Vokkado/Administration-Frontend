@@ -35,6 +35,12 @@
   width: 190px;
   padding: 6px;
   box-sizing: border-box;
+  /* El alto máximo lo fija el componente según el espacio disponible. */
+  overflow-y: auto;
+  /* Al llegar al final de la lista, la rueda NO sigue scrolleando la página (eso movía
+     el fondo y cerraba el menú). */
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   background: #fff;
   border: 1px solid var(--color-grey-200);
   border-radius: 10px;

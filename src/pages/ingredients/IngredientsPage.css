@@ -771,10 +771,13 @@
 /* Page Tabs                  */
 /* ========================= */
 /* Pestañas entre el breadcrumb y el título, dentro del header. */
+/* 16px arriba y abajo: la misma distancia entre breadcrumb → pestañas → título.
+   El de abajo colapsa con el margen superior del h2 (16px), así que ambos gaps son 16. */
 .ingredient-page-tabs {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 16px;
+  margin-bottom: 16px;
   overflow-x: auto;
 }
 

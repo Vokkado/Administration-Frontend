@@ -83,13 +83,24 @@ export function ValidationListPage() {
       <PageHeader
         title="Validar productos"
         description="Productos cargados por IA pendientes de validación."
-        count={total}
-        countLabel="productos"
-        countLabelSingular="producto"
+        actions={
+          <div className="header-actions">
+            {/* Mismas clases que usa PageHeader para su contador. */}
+            <div className="header-count">
+              <span className="count-number">{total}</span>
+              <span className="count-label">{total === 1 ? 'producto' : 'productos'}</span>
+            </div>
+
+            <div className="header-search">
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="🔍 Buscar por nombre o código…"
+              />
+            </div>
+          </div>
+        }
       />
-      <div style={{ marginBottom: 12, maxWidth: 360 }}>
-        <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="🔍 Buscar por nombre o código…" />
-      </div>
       <DataTable
         columns={columns}
         data={items}
