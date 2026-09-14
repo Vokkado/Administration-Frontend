@@ -882,6 +882,27 @@
   font-style: italic;
 }
 
+/* Crear el ingrediente que no existe, desde el propio buscador. */
+.autocomplete-create {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-top: 1px solid var(--color-border-light);
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.autocomplete-create:hover {
+  background: rgba(91, 136, 6, 0.08);
+}
+
 /* ========================= */
 /* Inherited Restrictions     */
 /* (VariantModal)             */

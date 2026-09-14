@@ -34,6 +34,14 @@
   color: var(--color-primary-dark);
 }
 
+/* Dentro de un `.form-group`, la regla `.form-group label` (0,1,1) le gana a `.input-label`
+   y le mete su propio `margin-bottom`, que se SUMA al `gap` del wrapper. Resultado: el campo
+   queda más abajo que un <select> vecino, que solo tiene el margen. Se anula el gap y el
+   espaciado lo define el margen de la página, igual que en los controles sin este componente. */
+.form-group .input-wrapper {
+  gap: 0;
+}
+
 .input {
   padding: 12px 16px;
   border: 2px solid var(--color-border);

@@ -822,6 +822,60 @@
   color: var(--color-error);
 }
 
+.mp-edit {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mp-edit:hover {
+  background: rgba(91, 136, 6, 0.12);
+  color: var(--color-primary-dark);
+}
+
+/* Grupo de altas a la derecha del título del panel. */
+.mp-head-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Dentro del grupo no se empujan entre sí. */
+.mp-head-actions .mp-new {
+  margin-left: 0;
+}
+
+/* Crear uno nuevo desde el propio picker. El `margin-left: auto` lo empuja a la derecha
+   cuando va solo; dentro de `.mp-head-actions` el que empuja es el grupo. */
+.mp-new {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 7px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mp-new:hover {
+  border-color: var(--color-primary);
+  background: rgba(91, 136, 6, 0.08);
+}
+
 /* ── Panel derecho: catálogo ───────────────────────────────────────────── */
 .mp-options {
   display: flex;

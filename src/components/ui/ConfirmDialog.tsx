@@ -1,8 +1,8 @@
 /**
  * Modal de Confirmación - Componente Reutilizable
  */
-import { useEffect } from 'react';
 import { Button } from './Button';
+import { useBodyScrollLock } from './useBodyScrollLock';
 import './ConfirmDialog.css';
 
 interface ConfirmDialogProps {
@@ -28,14 +28,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel
 }: ConfirmDialogProps) {
-  useEffect(() => {
-    if (show) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [show]);
+  useBodyScrollLock(show);
 
   if (!show) return null;
 

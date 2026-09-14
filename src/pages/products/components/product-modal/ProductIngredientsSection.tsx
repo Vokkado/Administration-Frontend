@@ -13,6 +13,8 @@ import { useState } from 'react';
 import type { ProductFormData, IngredientVariant } from './types';
 import { Input, Pagination } from '../../../../components/ui';
 import { matchesSearch } from '../../../../utils/search';
+import { VariantEditorModal } from './VariantEditorModal';
+import { IngredientEditorModal } from './IngredientEditorModal';
 
 interface ProductIngredientsSectionProps {
   formData: Pick<ProductFormData, 'rawIngredients'>;
@@ -23,6 +25,8 @@ interface ProductIngredientsSectionProps {
   onChange: (data: Partial<ProductFormData>) => void;
   onIngredientToggle: (variantId: string) => void;
   onIngredientPositionChange: (variantId: string, position: number) => void;
+  /** Vuelve a pedir el catálogo tras crear o editar una variante. */
+  onVariantsChanged: () => Promise<void> | void;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -36,9 +40,29 @@ export function ProductIngredientsSection({
   onChange,
   onIngredientToggle,
   onIngredientPositionChange,
+  onVariantsChanged,
 }: ProductIngredientsSectionProps) {
   const [searchIngredient, setSearchIngredient] = useState('');
   const [currentPageIngredients, setCurrentPageIngredients] = useState(1);
+  // null = cerrado | { id: null } = crear | { id } = editar esa variante.
+  const [editor, setEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
+
+  /** Tras guardar: refresca el catálogo y, si es nueva, la agrega al producto. */
+  const handleSaved = async (saved: { id: string; name: string }, isNew: boolean) => {
+    await onVariantsChanged();
+    if (isNew && saved.id) onIngredientToggle(saved.id);
+  };
+
+  /**
+   * Crear un ingrediente solo no agrega nada al producto: lo que se vincula son las
+   * variantes. Así que al terminar se encadena el alta de su primera variante, ya con
+   * el ingrediente elegido como padre.
+   */
+  const handleIngredientCreated = (ingredient: { id: string }) => {
+    setCreatingIngredient(false);
+    if (ingredient.id) setEditor({ id: null, ingredientId: ingredient.id });
+  };
 
   // Elegidas, ordenadas por posición; las que no tienen número van al final.
   const selected = ingredientVariants
@@ -99,6 +123,16 @@ export function ProductIngredientsSection({
                   <li key={variant.id} className="mp-selected-item">
                     <span className="mp-name" title={variant.name}>{variant.name}</span>
 
+                    <button
+                      type="button"
+                      className="mp-edit"
+                      title="Editar esta variante (ingrediente, nombre y atributos)"
+                      aria-label={`Editar ${variant.name}`}
+                      onClick={() => setEditor({ id: String(variant.id) })}
+                    >
+                      ✎
+                    </button>
+
                     <label className="mp-position" title="Posición en la etiqueta (1 = el que más aporta)">
                       Pos.
                       <input
@@ -140,6 +174,16 @@ export function ProductIngredientsSection({
           <section className="mp-panel">
             <header className="mp-panel-head">
               <span className="mp-panel-title">Agregar ingrediente</span>
+              <div className="mp-head-actions">
+                {/* El ingrediente es la entidad base; la variante es lo que se vincula al
+                    producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+                <button type="button" className="mp-new" onClick={() => setCreatingIngredient(true)}>
+                  + Ingrediente
+                </button>
+                <button type="button" className="mp-new" onClick={() => setEditor({ id: null })}>
+                  + Variante
+                </button>
+              </div>
             </header>
 
             <Input
@@ -194,6 +238,22 @@ export function ProductIngredientsSection({
           </section>
         </div>
       </div>
+
+      {editor && (
+        <VariantEditorModal
+          variantId={editor.id}
+          initialIngredientId={editor.ingredientId}
+          onClose={() => setEditor(null)}
+          onSaved={(saved) => handleSaved(saved, editor.id === null)}
+        />
+      )}
+
+      {creatingIngredient && (
+        <IngredientEditorModal
+          onClose={() => setCreatingIngredient(false)}
+          onSaved={handleIngredientCreated}
+        />
+      )}
     </div>
   );
 }

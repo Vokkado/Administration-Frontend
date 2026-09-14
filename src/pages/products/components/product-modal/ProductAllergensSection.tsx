@@ -15,6 +15,7 @@ import type { Allergen } from './types';
 import type { ProductAllergen, AllergenPresence } from '../../types';
 import { Input } from '../../../../components/ui';
 import { matchesSearch } from '../../../../utils/search';
+import { AllergenEditorModal } from './AllergenEditorModal';
 
 interface ProductAllergensSectionProps {
   allergenData: ProductAllergen[];
@@ -22,6 +23,8 @@ interface ProductAllergensSectionProps {
   loadingAllergens: boolean;
   onAllergenToggle: (allergenId: string, allergenName: string) => void;
   onPresenceChange: (allergenId: string, presence: AllergenPresence) => void;
+  /** Vuelve a pedir el catálogo tras crear o editar uno. */
+  onAllergensChanged: () => Promise<void> | void;
 }
 
 const PRESENCE_OPTIONS: Array<{ value: AllergenPresence; label: string; title: string }> = [
@@ -35,8 +38,17 @@ export function ProductAllergensSection({
   loadingAllergens,
   onAllergenToggle,
   onPresenceChange,
+  onAllergensChanged,
 }: ProductAllergensSectionProps) {
   const [searchAllergen, setSearchAllergen] = useState('');
+  // null = cerrado | { id: null } = crear | { id } = editar ese alérgeno.
+  const [editor, setEditor] = useState<{ id: string | null } | null>(null);
+
+  /** Tras guardar: refresca el catálogo y, si es uno nuevo, lo agrega al producto. */
+  const handleSaved = async (saved: { id: string; name: string }, isNew: boolean) => {
+    await onAllergensChanged();
+    if (isNew && saved.id) onAllergenToggle(saved.id, saved.name);
+  };
 
   const selectedIds = new Set(allergenData.map((pa) => pa.allergenId));
   // El nombre se toma del catálogo; `allergenData` puede venir del backend sin él.
@@ -64,6 +76,16 @@ export function ProductAllergensSection({
                 return (
                   <li key={item.allergenId} className="mp-selected-item">
                     <span className="mp-name" title={name}>{name}</span>
+
+                    <button
+                      type="button"
+                      className="mp-edit"
+                      title="Editar este alérgeno (nombre y restricciones)"
+                      aria-label={`Editar ${name}`}
+                      onClick={() => setEditor({ id: item.allergenId })}
+                    >
+                      ✎
+                    </button>
 
                     <div className="mp-presence" role="group" aria-label={`Presencia de ${name}`}>
                       {PRESENCE_OPTIONS.map((option) => (
@@ -99,6 +121,10 @@ export function ProductAllergensSection({
         <section className="mp-panel">
           <header className="mp-panel-head">
             <span className="mp-panel-title">Agregar alérgeno</span>
+            {/* Si el que buscás no existe, se crea acá sin perder lo cargado del producto. */}
+            <button type="button" className="mp-new" onClick={() => setEditor({ id: null })}>
+              + Nuevo
+            </button>
           </header>
 
           <Input
@@ -137,6 +163,14 @@ export function ProductAllergensSection({
           )}
         </section>
       </div>
+
+      {editor && (
+        <AllergenEditorModal
+          allergenId={editor.id}
+          onClose={() => setEditor(null)}
+          onSaved={(saved) => handleSaved(saved, editor.id === null)}
+        />
+      )}
     </div>
   );
 }

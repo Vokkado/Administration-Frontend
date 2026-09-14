@@ -29,6 +29,11 @@ interface VariantModalProps {
   onSubmit: (e: React.FormEvent) => void;
   onChange: (data: Partial<IngredientVariantFormData>) => void;
   onValidate?: (id: string, currentState: boolean) => void;
+  /**
+   * Si se pasa, el buscador de ingrediente base ofrece crear el que no existe (con el
+   * texto ya tipeado). Sin esta prop el comportamiento es el de siempre.
+   */
+  onCreateIngredient?: (name: string) => void;
 }
 
 export function VariantModal({
@@ -44,6 +49,7 @@ export function VariantModal({
   onSubmit,
   onChange,
   onValidate,
+  onCreateIngredient,
 }: VariantModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -236,6 +242,19 @@ export function VariantModal({
                   {showIngredientDropdown && ingredientSearch && filteredIngredients.length === 0 && (
                     <div className="autocomplete-dropdown">
                       <div className="autocomplete-empty">No se encontraron ingredientes</div>
+                      {/* Sin salida: la variante necesita un padre. Se ofrece crearlo acá. */}
+                      {onCreateIngredient && (
+                        <button
+                          type="button"
+                          className="autocomplete-create"
+                          onClick={() => {
+                            setShowIngredientDropdown(false);
+                            onCreateIngredient(ingredientSearch.trim());
+                          }}
+                        >
+                          + Crear «{ingredientSearch.trim()}»
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
