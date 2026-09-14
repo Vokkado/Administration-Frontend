@@ -2,9 +2,8 @@
  * Página de Gestión de Alérgenos
  */
 import { useState } from 'react';
-import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
+import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner, SearchInput } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { AllergenFilters } from './components/AllergenFilters';
 import { AllergenTable } from './components/AllergenTable';
 import { AllergenModal } from './components/AllergenModal';
 import { MergeAllergensModal } from './components/MergeAllergensModal';
@@ -176,20 +175,24 @@ export function AllergensPage() {
           countLabelSingular="alérgeno"
           actions={
             <div className="header-actions">
+              {/* El buscador va en el header, a la izquierda de los botones. El filtro de
+                  validado vive en el embudo de su columna, así que no hay barra de filtros. */}
+              <div className="header-search">
+                <SearchInput
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Buscar por nombre..."
+                />
+              </div>
+              {/* Sin repetir "Alérgenos": ya está en el título de la página. */}
               <Button variant="primary" onClick={openMergeModal}>
-                🔗 Unificar Alérgenos
+                🔗 Unificar
               </Button>
               <Button variant="primary" onClick={openCreateModal}>
-                + Nuevo Alérgeno
+                + Agregar
               </Button>
             </div>
           }
-        />
-
-        {/* Filters */}
-        <AllergenFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
         />
 
         {/* Success Message */}

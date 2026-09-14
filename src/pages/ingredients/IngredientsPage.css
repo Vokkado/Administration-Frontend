@@ -788,6 +788,11 @@
   min-width: 220px;
 }
 
+/* Mismo caso que en el header: el margen del SearchInput lo descentra respecto de las tabs. */
+.ingredient-tabs-search .search-input-wrapper {
+  margin-bottom: 0;
+}
+
 .ingredient-page-tabs {
   display: flex;
   gap: 8px;
