@@ -3,6 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { apiService } from '../../../services/api.service';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 import './ProductsByIngredientModal.css';
 
 interface Product {
@@ -31,6 +32,9 @@ export function ProductsByIngredientModal({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Este modal se monta solo cuando está abierto, así que el bloqueo va siempre activo.
+  useBodyScrollLock(true);
 
   useEffect(() => {
     fetchProducts();

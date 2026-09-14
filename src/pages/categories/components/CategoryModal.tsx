@@ -3,6 +3,7 @@
  */
 import { Button, Input } from '../../../components/ui';
 import type { Category, CategoryFormData } from '../types';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface CategoryModalProps {
   show: boolean;
@@ -27,6 +28,9 @@ export function CategoryModal({
   onSubmit,
   onChange
 }: CategoryModalProps) {
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+  useBodyScrollLock(show);
+
   if (!show) return null;
 
   // Filtrar categorías disponibles para padre (no puede ser su propio hijo)
