@@ -21,15 +21,29 @@ interface IngredientTableProps {
   validatingId: string | null;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
-  /** Mismo estado que el grupo de botones de la barra de filtros: se mantienen en sincronía. */
   filterInspected: string;
   onFilterInspectedChange: (value: string) => void;
+  filterRisk: string;
+  onFilterRiskChange: (value: string) => void;
+  filterReason: string;
+  onFilterReasonChange: (value: string) => void;
 }
 
 const INSPECTED_OPTIONS: ColumnFilterOption[] = [
   { value: 'ALL', label: 'Todos' },
   { value: 'VALIDATED', label: 'Validados' },
   { value: 'NOT_VALIDATED', label: 'Sin validar' },
+];
+
+const REASON_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'WITH_REASON', label: 'Con justificación' },
+  { value: 'WITHOUT_REASON', label: 'Sin justificación' },
+];
+
+const RISK_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  ...Object.entries(RISK_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
@@ -50,6 +64,10 @@ export function IngredientTable({
   onSortChange,
   filterInspected,
   onFilterInspectedChange,
+  filterRisk,
+  onFilterRiskChange,
+  filterReason,
+  onFilterReasonChange,
 }: IngredientTableProps) {
   const getScoreColor = (score: number): string => {
     if (score >= 8) return '#388E3C';
@@ -70,7 +88,15 @@ export function IngredientTable({
       key: 'toxicityLevel',
       header: 'Nivel de Riesgo',
       align: 'center',
-      width: '170px',
+      width: '190px',
+      headerAction: (
+        <ColumnFilter
+          value={filterRisk}
+          options={RISK_OPTIONS}
+          onChange={onFilterRiskChange}
+          title="Filtrar por nivel de riesgo"
+        />
+      ),
       render: (ingredient) => {
         const riskKey = (ingredient.toxicityLevel || 'NONE') as keyof typeof RISK_LABELS;
         return (
@@ -123,7 +149,15 @@ export function IngredientTable({
       header: 'Justificación',
       hideOnMobile: true,
       align: 'center',
-      width: '150px',
+      width: '175px',
+      headerAction: (
+        <ColumnFilter
+          value={filterReason}
+          options={REASON_OPTIONS}
+          onChange={onFilterReasonChange}
+          title="Filtrar por justificación"
+        />
+      ),
       render: (ingredient) => ingredient.reason ? (
         <span 
           className="score-badge" 
@@ -198,7 +232,12 @@ export function IngredientTable({
         );
       },
     },
-  ], [onValidationChange, validatingId, filterInspected, onFilterInspectedChange]);
+  ], [
+    onValidationChange, validatingId,
+    filterInspected, onFilterInspectedChange,
+    filterRisk, onFilterRiskChange,
+    filterReason, onFilterReasonChange,
+  ]);
 
   return (
     <DataTable<Ingredient>

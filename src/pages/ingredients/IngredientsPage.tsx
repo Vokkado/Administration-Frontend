@@ -4,13 +4,12 @@
 import { useState } from 'react';
 import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { IngredientFilters } from './components/IngredientFilters';
+import { SearchInput } from '../../components/ui';
 import { IngredientTable } from './components/IngredientTable';
 import { IngredientModal } from './components/IngredientModal';
 import { ProductsByIngredientModal } from './components/ProductsByIngredientModal';
 import { MergeIngredientsModal } from './components/MergeIngredientsModal';
 import { MergeIngredientVariantsModal } from './components/MergeIngredientVariantsModal';
-import { VariantFilters } from './components/VariantFilters';
 import { VariantTable } from './components/VariantTable';
 import { VariantModal } from './components/VariantModal';
 import { useIngredients } from './hooks/useIngredients';
@@ -442,22 +441,32 @@ export function IngredientsPage() {
           />
         )}
 
-        {/* Page Tabs */}
-        <div className="ingredient-page-tabs">
-          <button
-            type="button"
-            className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ingredients')}
-          >
-            🧪 Ingredientes
-          </button>
-          <button
-            type="button"
-            className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
-            onClick={() => setActiveTab('variants')}
-          >
-            🔀 Variantes de Ingrediente
-          </button>
+        {/* Tabs a la izquierda, buscador a la derecha. El buscador apunta al tab activo. */}
+        <div className="ingredient-tabs-row">
+          <div className="ingredient-page-tabs">
+            <button
+              type="button"
+              className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ingredients')}
+            >
+              🧪 Ingredientes
+            </button>
+            <button
+              type="button"
+              className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
+              onClick={() => setActiveTab('variants')}
+            >
+              🔀 Variantes de Ingrediente
+            </button>
+          </div>
+
+          <div className="ingredient-tabs-search">
+            <SearchInput
+              value={activeTab === 'ingredients' ? searchTerm : variantsHook.searchTerm}
+              onChange={activeTab === 'ingredients' ? setSearchTerm : variantsHook.setSearchTerm}
+              placeholder="Buscar por nombre..."
+            />
+          </div>
         </div>
 
         {/* ===== INGREDIENTS TAB ===== */}
@@ -465,17 +474,8 @@ export function IngredientsPage() {
           <>
             {!showModal && <NotificationBanner type="error" message={error} />}
 
-            <IngredientFilters
-              searchTerm={searchTerm}
-              filterRisk={filterRisk}
-              filterInspected={filterInspected}
-              filterReason={filterReason}
-              onSearchChange={setSearchTerm}
-              onFilterRiskChange={setFilterRisk}
-              onFilterInspectedChange={setFilterInspected}
-              onFilterReasonChange={setFilterReason}
-            />
-
+            {/* Sin barra de filtros: riesgo, justificación y validado se filtran desde
+                el embudo de su propia columna. */}
             <IngredientTable
               ingredients={ingredients}
               loading={loading}
@@ -490,6 +490,10 @@ export function IngredientsPage() {
               filterInspected={filterInspected}
               // Idem al filtrar: la página 5 puede no existir con menos resultados.
               onFilterInspectedChange={(next) => { setFilterInspected(next); setCurrentPage(1); }}
+              filterRisk={filterRisk}
+              onFilterRiskChange={(next) => { setFilterRisk(next); setCurrentPage(1); }}
+              filterReason={filterReason}
+              onFilterReasonChange={(next) => { setFilterReason(next); setCurrentPage(1); }}
             />
 
             <Pagination
@@ -549,13 +553,7 @@ export function IngredientsPage() {
           <>
             {!showVariantModal && <NotificationBanner type="error" message={variantsHook.error} />}
 
-            <VariantFilters
-              searchTerm={variantsHook.searchTerm}
-              filterInspected={variantsHook.filterInspected}
-              onSearchChange={variantsHook.setSearchTerm}
-              onFilterInspectedChange={variantsHook.setFilterInspected}
-            />
-
+            {/* Sin barra de filtros: validado se filtra desde el embudo de su columna. */}
             <VariantTable
               variants={variantsHook.variants}
               loading={variantsHook.loading}
@@ -566,6 +564,12 @@ export function IngredientsPage() {
               onValidationChange={variantCrud.requestValidation}
               onViewProducts={handleViewProducts}
               validatingId={variantCrud.isValidating ? variantCrud.validatingItem?.id ?? null : null}
+              filterInspected={variantsHook.filterInspected}
+              // Al filtrar se vuelve a la página 1: con menos resultados, la actual puede no existir.
+              onFilterInspectedChange={(next) => {
+                variantsHook.setFilterInspected(next);
+                variantsHook.setCurrentPage(1);
+              }}
             />
 
             <Pagination

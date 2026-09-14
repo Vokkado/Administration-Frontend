@@ -770,13 +770,27 @@
 /* ========================= */
 /* Page Tabs                  */
 /* ========================= */
-/* Van debajo del header de la pestaña activa; el margen negativo recorta los 32px
-   que deja `.page-header` para que queden pegadas al contador. */
+/* Fila de tabs: pestañas a la izquierda, buscador a la derecha.
+   El margen negativo recorta los 32px que deja `.page-header`, para que quede
+   pegada al contador del header. */
+.ingredient-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: -16px;
+  margin-bottom: 24px;
+}
+
+.ingredient-tabs-search {
+  flex: 0 1 320px;
+  min-width: 220px;
+}
+
 .ingredient-page-tabs {
   display: flex;
   gap: 8px;
-  margin-top: -16px;
-  margin-bottom: 24px;
   overflow-x: auto;
   padding-bottom: 8px;
 }

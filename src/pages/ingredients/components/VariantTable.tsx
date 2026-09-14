@@ -3,8 +3,8 @@
  * Usa el componente genérico DataTable para renderizar la tabla.
  */
 import { useMemo } from 'react';
-import { DataTable } from '../../../components/ui';
-import type { DataTableColumn } from '../../../components/ui';
+import { DataTable, ColumnFilter } from '../../../components/ui';
+import type { DataTableColumn, ColumnFilterOption } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
@@ -19,7 +19,15 @@ interface VariantTableProps {
   onValidationChange: (id: string, currentState: boolean) => void;
   onViewProducts: (variant: IngredientVariant) => void;
   validatingId: string | null;
+  filterInspected: string;
+  onFilterInspectedChange: (value: string) => void;
 }
+
+const INSPECTED_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'VALIDATED', label: 'Validados' },
+  { value: 'NOT_VALIDATED', label: 'Sin validar' },
+];
 
 export function VariantTable({
   variants,
@@ -31,6 +39,8 @@ export function VariantTable({
   onValidationChange,
   onViewProducts,
   validatingId,
+  filterInspected,
+  onFilterInspectedChange,
 }: VariantTableProps) {
   const columns = useMemo<DataTableColumn<IngredientVariant>[]>(
     () => [
@@ -82,6 +92,15 @@ export function VariantTable({
         key: 'validated',
         header: 'Validado',
         align: 'center',
+        width: '160px',
+        headerAction: (
+          <ColumnFilter
+            value={filterInspected}
+            options={INSPECTED_OPTIONS}
+            onChange={onFilterInspectedChange}
+            title="Filtrar por estado de validación"
+          />
+        ),
         render: (variant) => {
           const isValidated = variant.isInspected === true;
           return (
@@ -107,7 +126,7 @@ export function VariantTable({
         },
       },
     ],
-    [getIngredientName, getAttributeName, onValidationChange, validatingId],
+    [getIngredientName, getAttributeName, onValidationChange, validatingId, filterInspected, onFilterInspectedChange],
   );
 
   const renderActions = useMemo(
