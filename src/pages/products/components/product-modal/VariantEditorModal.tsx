@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { VariantModal } from '../../../ingredients/components/VariantModal';
 import { IngredientEditorModal } from './IngredientEditorModal';
+import { Modal, LoadingSpinner } from '../../../../components/ui';
 import { apiService } from '../../../../services/api.service';
 import type {
   Ingredient,
@@ -64,7 +65,10 @@ export function VariantEditorModal({
   const [attributeTypes, setAttributeTypes] = useState<AttributeTypeForVariant[]>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [ready, setReady] = useState(false);
+  // Dos esperas distintas: la variante que se edita (sin ella no hay qué precargar en el
+  // formulario) y los catálogos de los selectores (el formulario se usa igual sin ellos).
+  const [formReady, setFormReady] = useState(!variantId);
+  const [catalogReady, setCatalogReady] = useState(false);
   // Nombre con el que abrir el alta de ingrediente base; null = cerrada.
   const [creatingIngredient, setCreatingIngredient] = useState<string | null>(null);
 
@@ -75,26 +79,20 @@ export function VariantEditorModal({
     setFormData((prev) => ({ ...prev, ingredientId: ingredient.id }));
   };
 
+  // La variante que se edita: es una sola fila y llega rápido, pero hasta que no está no
+  // se puede precargar el formulario (si no, el usuario escribiría sobre datos que después
+  // se pisan solos).
   useEffect(() => {
+    if (!variantId) { setFormReady(true); return; }
     let active = true;
+    setFormReady(false);
     (async () => {
       try {
-        // El formulario necesita el catálogo de ingredientes y atributos para sus selectores.
-        const [ingredientsRes, attributesRes, typesRes, variantRes] = await Promise.all([
-          apiService.get<unknown>('/ingredients'),
-          apiService.get<unknown>('/attributes'),
-          apiService.get<unknown>('/attribute-types'),
-          variantId
-            ? apiService.get<{ success: boolean; data: IngredientVariant }>(`/ingredient-variants/${variantId}`)
-            : Promise.resolve(null),
-        ]);
+        const res = await apiService.get<{ success: boolean; data: IngredientVariant }>(
+          `/ingredient-variants/${variantId}`,
+        );
         if (!active) return;
-
-        setIngredients(unwrap<Ingredient>(ingredientsRes));
-        setAttributes(unwrap<AttributeForVariant>(attributesRes));
-        setAttributeTypes(unwrap<AttributeTypeForVariant>(typesRes));
-
-        const variant = variantRes?.data ?? null;
+        const variant = res?.data ?? null;
         if (variant) {
           setEditing(variant);
           setFormData({
@@ -104,13 +102,36 @@ export function VariantEditorModal({
             attributeIds: variant.attributeIds || [],
           });
         }
-        setReady(true);
+        setFormReady(true);
       } catch {
-        if (active) setError('No pudimos cargar los datos. Cerrá y probá de nuevo.');
+        if (active) setError('No pudimos cargar la variante. Cerrá y probá de nuevo.');
       }
     })();
     return () => { active = false; };
   }, [variantId]);
+
+  // Catálogos de los dos selectores. Son listas enteras y tardan, así que van por separado:
+  // el modal abre sin ellas y cada sección avisa que está cargando.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [ingredientsRes, attributesRes, typesRes] = await Promise.all([
+          apiService.get<unknown>('/ingredients'),
+          apiService.get<unknown>('/attributes'),
+          apiService.get<unknown>('/attribute-types'),
+        ]);
+        if (!active) return;
+        setIngredients(unwrap<Ingredient>(ingredientsRes));
+        setAttributes(unwrap<AttributeForVariant>(attributesRes));
+        setAttributeTypes(unwrap<AttributeTypeForVariant>(typesRes));
+        setCatalogReady(true);
+      } catch {
+        if (active) setError('No pudimos cargar ingredientes y atributos. Cerrá y probá de nuevo.');
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +169,21 @@ export function VariantEditorModal({
     }
   };
 
-  if (!ready) return null;
+  // Solo al editar: el formulario se llena con la variante, así que se espera a tenerla.
+  // Al crear esto nunca se ve, porque `formReady` arranca en true.
+  if (!formReady) {
+    return (
+      <Modal
+        show
+        title={variantId ? 'Editar Variante de Ingrediente' : 'Agregar Variante de Ingrediente'}
+        onClose={onClose}
+        error={error}
+        maxWidth="1100px"
+      >
+        {error ? <div style={{ padding: 24 }} /> : <LoadingSpinner message="Cargando la variante…" />}
+      </Modal>
+    );
+  }
 
   // El wrapper le da especificidad a los estilos de restricciones (ver restrictions-picker.css).
   return (
@@ -166,6 +201,7 @@ export function VariantEditorModal({
       onSubmit={onSubmit}
       onChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}
       onCreateIngredient={(name) => setCreatingIngredient(name)}
+      catalogLoading={!catalogReady}
     />
 
     {creatingIngredient !== null && (
