@@ -62,7 +62,8 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
     colorEnd: 'var(--color-border)',
     cards: [
       { title: 'Usuarios', description: 'Administra a los usuarios y sus roles', path: '/users', buttonLabel: 'Ver Usuarios' },
-      { title: 'Solicitudes de acceso', description: 'Aprobá o rechazá los pedidos de acceso a las webs', path: '/access-requests', buttonLabel: 'Ver Solicitudes' },
+      { title: 'Solicitudes de acceso', description: 'Aprobá o rechazá los pedidos de acceso al panel', path: '/access-requests', buttonLabel: 'Ver Solicitudes' },
+      { title: 'Verificaciones profesionales', description: 'Verificá el registro de los nutricionistas que piden acceso a su web', path: '/professional-verifications', buttonLabel: 'Ver Verificaciones' },
       { title: 'Reportes', description: 'Gestiona reportes de BUG y productos faltantes', path: '/reports', buttonLabel: 'Ver Reportes' },
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
       { title: 'Notificaciones', description: 'Envía notificaciones push a los usuarios', path: '/notifications', buttonLabel: 'Ver Notificaciones' },

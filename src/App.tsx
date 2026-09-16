@@ -35,6 +35,7 @@ const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsP
 const BadgesPage = lazy(() => import('./pages/statistics/BadgesPage').then(m => ({ default: m.BadgesPage })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
 const AccessRequestsPage = lazy(() => import('./pages/access-requests/AccessRequestsPage').then(m => ({ default: m.AccessRequestsPage })));
+const ProfessionalVerificationsPage = lazy(() => import('./pages/professional-verifications/ProfessionalVerificationsPage').then(m => ({ default: m.ProfessionalVerificationsPage })));
 
 function App() {
   return (
@@ -155,6 +156,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AccessRequestsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/professional-verifications"
+              element={
+                <ProtectedRoute>
+                  <ProfessionalVerificationsPage />
                 </ProtectedRoute>
               }
             />
