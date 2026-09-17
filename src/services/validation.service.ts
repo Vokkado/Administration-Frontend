@@ -12,6 +12,8 @@ export interface ValidationQueueItem {
   image: string | null;
   barcode: string | null;
   createdAt: string;
+  /** Última modificación: para un producto enriquecido, cuándo se completó. */
+  updatedAt: string;
   counts: { green: number; yellow: number; red: number };
 }
 
@@ -84,7 +86,7 @@ export class ValidationService {
     offset = 0,
     search?: string,
     /** Default en el backend: createdAt desc (más nuevos primero). */
-    sortBy?: 'name' | 'createdAt',
+    sortBy?: 'name' | 'createdAt' | 'updatedAt',
     sortDir?: 'asc' | 'desc',
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
