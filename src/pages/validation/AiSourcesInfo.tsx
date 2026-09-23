@@ -18,6 +18,9 @@ const STORE_LABELS: Record<string, string> = {
   geant: 'Géant',
   openfoodfacts: 'OpenFoodFacts',
   conaprole: 'Conaprole (sitio de la marca)',
+  schneck: 'Schneck (sitio de la marca)',
+  eltrigal: 'El Trigal (sitio de la marca)',
+  sarubbi: 'Sarubbi (sitio de la marca)',
 };
 
 function storeLabel(store: string): string {
