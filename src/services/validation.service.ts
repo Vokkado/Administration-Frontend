@@ -50,6 +50,16 @@ export interface ValidationNutrition {
   color: LinkColor;
 }
 
+/** Qué súper/fuente aportó qué campo durante el enriquecimiento IA. Ver Backend aiResultToProductUpdate.ts. */
+export interface EnrichmentSourceSummary {
+  store: string;
+  url: string | null;
+  usedCover: boolean;
+  usedNutritionText: boolean;
+  usedIngredientsText: boolean;
+  galleryCount: number;
+}
+
 export interface ValidationProduct {
   id: string; name: string; brand: string | null; image: string | null; barcode: string | null;
   rawIngredients: string | null; rawNutritionFacts: any; rawAllergens: string | null;
@@ -59,6 +69,8 @@ export interface ValidationProduct {
   isUltraProcessed: boolean | null;
   isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
   servingSizeAmount: number | null; servingSizeUnit: string | null;
+  /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
+  enrichmentSources: EnrichmentSourceSummary[] | null;
 }
 
 export interface ValidationCompany {

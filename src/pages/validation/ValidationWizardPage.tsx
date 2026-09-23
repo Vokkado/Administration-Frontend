@@ -13,6 +13,7 @@ import { ProductSourceImagesSection, ProductCompaniesSection } from '../products
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
+import { AiSourcesInfo } from './AiSourcesInfo';
 import './ValidationWizardPage.css';
 
 const STEPS = ['Básico', 'Composición', 'Más info', 'Finalizar'];
@@ -217,6 +218,7 @@ export function ValidationWizardPage() {
             <div className="vw-card">
               <h3 style={{ fontSize: 15, margin: '0 0 10px', color: 'var(--color-primary-dark)' }}>Fotos cargadas por el usuario</h3>
               <ProductSourceImagesSection productId={id} />
+              <AiSourcesInfo sources={detail.product.enrichmentSources} bordered />
             </div>
           </>
         )}
@@ -232,6 +234,11 @@ export function ValidationWizardPage() {
             </div>
             <div className="vw-split-aside">
               <SourceImagesPanel productId={id} />
+              {detail.product.enrichmentSources && (
+                <div className="vw-photo-panel" style={{ marginTop: 12 }}>
+                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
+                </div>
+              )}
             </div>
           </div>
         )}
