@@ -17,6 +17,7 @@ const STORE_LABELS: Record<string, string> = {
   devoto: 'Devoto',
   geant: 'Géant',
   openfoodfacts: 'OpenFoodFacts',
+  conaprole: 'Conaprole (sitio de la marca)',
 };
 
 function storeLabel(store: string): string {
