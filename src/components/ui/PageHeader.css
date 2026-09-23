@@ -2,7 +2,10 @@
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  /* Al pie: deja las acciones a la altura de la descripción y el contador, que es la
+     última línea del bloque, en vez de pegadas al breadcrumb. */
+  align-items: flex-end;
+  gap: 24px;
   margin-bottom: 32px;
   animation: fadeIn 0.5s ease-out;
 }
@@ -13,8 +16,8 @@
   align-items: center;
   flex-wrap: wrap;
   font-size: 13px;
-  /* Ocupa el alto que tendría el botón, para no correr el título hacia arriba. */
-  min-height: 28px;
+  /* Sin min-height: la caja ajusta al texto. Con alto fijo quedaba aire interno que hacía
+     ver más grande la separación con lo que sigue que la del resto del bloque. */
 }
 
 .page-breadcrumb-item {
@@ -58,6 +61,12 @@
   gap: 12px;
 }
 
+/* Sin descripción ni contador, el título es la última línea: su margen inferior
+   desalinearía las acciones respecto del título (van con `align-items: flex-end`). */
+.page-header-info > h2:last-child {
+  margin-bottom: 0;
+}
+
 .page-header-info p {
   color: #555;
   font-size: 14px;
@@ -68,7 +77,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin: 16px 0 8px 0;
+  /* Sin margen abajo: es la última línea del bloque y con `align-items: flex-end` ese
+     margen desalinearía las acciones respecto de esta fila. */
+  margin: 16px 0 0 0;
 }
 
 .header-count {
@@ -95,7 +106,36 @@
 
 .page-header-actions {
   display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+/* Agrupador que usan las páginas dentro de `actions`. Vivía solo en IngredientsPage.css,
+   así que en el resto de las páginas el div quedaba sin estilo y el contenido no se
+   alineaba. Definido acá, aplica en todas. */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Buscador dentro de las acciones del header, a la izquierda de los botones. */
+.header-search {
+  flex: 0 1 280px;
+  min-width: 200px;
+}
+
+/* SearchInput trae 20px de margen abajo (pensado para cuando va suelto sobre la tabla).
+   Dentro del header ese margen lo descentra respecto de los botones. */
+.header-search .search-input-wrapper {
+  margin-bottom: 0;
+}
+
+/* Ni los botones ni el contador se achican: si se comprimen, la etiqueta se parte en dos
+   renglones (el ícono arriba y el texto abajo). El que cede espacio es el buscador. */
+.header-actions .btn,
+.header-actions .header-count {
+  flex-shrink: 0;
 }
 
 /* Responsive */
@@ -126,5 +166,9 @@
   .header-actions {
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .header-search {
+    flex: 1 1 100%;
   }
 }

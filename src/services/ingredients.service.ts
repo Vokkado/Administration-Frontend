@@ -5,6 +5,9 @@
 import { apiService } from './api.service';
 import type { Ingredient, UpdateIngredientData } from '../pages/ingredients/types';
 
+/** Columnas admitidas por el backend para ordenar. */
+export type IngredientSortBy = 'name' | 'createdAt';
+
 export interface AdminIngredientListQuery {
   limit: number;
   offset: number;
@@ -12,6 +15,9 @@ export interface AdminIngredientListQuery {
   toxicityLevel?: string;
   inspected?: boolean;
   reason?: 'WITH_REASON' | 'WITHOUT_REASON';
+  /** Default en el backend: name asc. */
+  sortBy?: IngredientSortBy;
+  sortDir?: 'asc' | 'desc';
 }
 
 export interface AdminIngredientListResponse {
@@ -30,6 +36,8 @@ export class IngredientsService {
     if (query.toxicityLevel) params.append('toxicityLevel', query.toxicityLevel);
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
     if (query.reason) params.append('reason', query.reason);
+    if (query.sortBy) params.append('sortBy', query.sortBy);
+    if (query.sortDir) params.append('sortDir', query.sortDir);
 
     const response = await apiService.get<any>(`/ingredients?${params.toString()}`);
 

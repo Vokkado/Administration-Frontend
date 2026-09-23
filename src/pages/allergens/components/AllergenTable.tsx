@@ -3,8 +3,8 @@
  */
 import { useMemo } from 'react';
 import type { Allergen } from '../types';
-import { DataTable } from '../../../components/ui';
-import type { DataTableColumn } from '../../../components/ui';
+import { DataTable, ColumnFilter } from '../../../components/ui';
+import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 
@@ -15,7 +15,25 @@ interface AllergenTableProps {
   onDelete: (id: string) => void;
   onValidationChange: (id: string, currentState: boolean) => void;
   validatingId: string | null;
+  sort: DataTableSort;
+  onSortChange: (sort: DataTableSort) => void;
+  /** ALL | VALIDATED | NOT_VALIDATED */
+  filterInspected: string;
+  onFilterInspectedChange: (value: string) => void;
 }
+
+const INSPECTED_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todos' },
+  { value: 'VALIDATED', label: 'Validados' },
+  { value: 'NOT_VALIDATED', label: 'Sin validar' },
+];
+
+/** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
+const formatDate = (value?: string): string => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-UY');
+};
 
 export function AllergenTable({
   allergens,
@@ -23,7 +41,11 @@ export function AllergenTable({
   onEdit,
   onDelete,
   onValidationChange,
-  validatingId
+  validatingId,
+  sort,
+  onSortChange,
+  filterInspected,
+  onFilterInspectedChange,
 }: AllergenTableProps) {
   const columns = useMemo<DataTableColumn<Allergen>[]>(() => [
     {
@@ -34,8 +56,31 @@ export function AllergenTable({
       ),
     },
     {
+      key: 'createdAt',
+      header: 'Creado',
+      sortable: true,
+      align: 'center',
+      hideOnMobile: true,
+      width: '150px',
+      render: (allergen) => (
+        <span title={allergen.createdAt ? new Date(allergen.createdAt).toLocaleString('es-UY') : ''}>
+          {formatDate(allergen.createdAt)}
+        </span>
+      ),
+    },
+    {
       key: 'validated',
       header: 'Validado',
+      align: 'center',
+      width: '160px',
+      headerAction: (
+        <ColumnFilter
+          value={filterInspected}
+          options={INSPECTED_OPTIONS}
+          onChange={onFilterInspectedChange}
+          title="Filtrar por estado de validación"
+        />
+      ),
       render: (allergen) => {
         const isValidated = allergen.inspected === true;
 
@@ -55,7 +100,7 @@ export function AllergenTable({
         );
       },
     },
-  ], [onValidationChange, validatingId]);
+  ], [onValidationChange, validatingId, filterInspected, onFilterInspectedChange]);
 
   const renderActions = (allergen: Allergen) => (
     <>
@@ -84,6 +129,12 @@ export function AllergenTable({
       loadingMessage="Cargando alérgenos..."
       emptyMessage="No se encontraron alérgenos"
       renderActions={renderActions}
+      actionsAlign="center"
+      // 150px: con menos, el encabezado "ACCIONES" no entra y se recorta.
+      actionsWidth="150px"
+      fixedLayout
+      sort={sort}
+      onSortChange={onSortChange}
       className="allergen-table-container"
     />
   );

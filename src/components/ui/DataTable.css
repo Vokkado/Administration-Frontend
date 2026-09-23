@@ -13,6 +13,73 @@
   margin-bottom: var(--spacing-lg);
 }
 
+/* ── Recarga ─────────────────────────────────────────────────────────────
+   Al paginar, ordenar, filtrar o buscar, la tabla NO se reemplaza por un
+   spinner: los encabezados quedan fijos y las filas previas se atenúan, así la
+   página no salta ni pierde el contexto. (La primera carga sí usa spinner: sin
+   filas no hay anchos de columna estables.) */
+.dt-wrapper.is-loading {
+  position: relative;
+}
+
+/* Barra de progreso arriba. Se anima el background-position y no el transform,
+   para no generar scroll horizontal dentro del wrapper (que tiene overflow-x). */
+.dt-wrapper.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-image: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: dtSweep 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dtSweep {
+  from { background-position: -40% 0; }
+  to { background-position: 140% 0; }
+}
+
+/* Las filas viejas siguen visibles pero se ven "en espera" y no se pueden tocar. */
+.dt-wrapper.is-loading tbody tr:not(.dt-skeleton-row) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.dt-skeleton-row td {
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* `pulse` es una animación global (components/ui/shared.css). */
+.dt-skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--color-grey-200);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ── Anchos fijos (opt-in con `fixedLayout`) ─────────────────────────────
+   Los anchos dejan de depender del contenido, así las columnas no se mueven al
+   paginar ni al cargar. Las columnas sin `width` se reparten el sobrante. */
+.dt-table.dt-fixed {
+  table-layout: fixed;
+}
+
+/* Si el título no entra en su ancho, se recorta en vez de pisar a la columna vecina. */
+.dt-table.dt-fixed th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Un nombre largo pasa a varias líneas en vez de desbordar la celda. */
+.dt-table.dt-fixed td {
+  overflow-wrap: break-word;
+}
+
 /* Table base */
 .dt-table {
   width: 100%;
@@ -54,6 +121,53 @@
   padding: var(--spacing-md) var(--spacing-lg);
   color: var(--color-primary-dark);
   font-size: var(--font-size-sm);
+}
+
+/* Envoltorio del encabezado: alinea el título con los controles extra (filtro). */
+.dt-th-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-table th.dt-align-center .dt-th-content { justify-content: center; }
+.dt-table th.dt-align-right .dt-th-content { justify-content: flex-end; }
+
+/* Encabezado ordenable: el th mantiene su padding y el botón ocupa todo el alto. */
+.dt-table th.dt-sortable {
+  padding: 0;
+}
+
+.dt-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.dt-sort-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Centrado/derecha: el botón es flex, no le aplica el text-align de la celda. */
+.dt-table th.dt-align-center .dt-sort-btn { justify-content: center; }
+.dt-table th.dt-align-right .dt-sort-btn { justify-content: flex-end; }
+
+.dt-sort-arrow {
+  font-size: 10px;
+  opacity: 0.45;
+}
+.dt-sort-arrow.is-active { opacity: 1; }
+
+@media (max-width: 767px) {
+  .dt-sort-btn { padding: var(--spacing-sm) var(--spacing-md); }
 }
 
 /* Alineación por columna (opt-in desde `align` / `actionsAlign`) */

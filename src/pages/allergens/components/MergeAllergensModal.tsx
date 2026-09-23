@@ -9,6 +9,7 @@ import { Button, Input } from '../../../components/ui';
 import type { Allergen } from '../types';
 import { matchesSearch } from '../../../utils/search';
 import './MergeAllergensModal.css';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface MergeAllergensModalProps {
   show: boolean;
@@ -107,6 +108,11 @@ export function MergeAllergensModal({
       setIsSubmitting(false);
     }
   };
+
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+
+  useBodyScrollLock(show);
+
 
   if (!show) return null;
 

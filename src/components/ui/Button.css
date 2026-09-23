@@ -7,6 +7,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
+  /* La etiqueta nunca se parte en dos renglones (ícono arriba, texto abajo). */
+  white-space: nowrap;
 }
 
 .btn:hover:not(:disabled) {

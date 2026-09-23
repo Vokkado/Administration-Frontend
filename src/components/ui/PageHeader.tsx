@@ -31,6 +31,8 @@ interface PageHeaderProps {
   countLabelSingular?: string;
   extraCounts?: CountBadge[];
   actions?: React.ReactNode;
+  /** Contenido entre el breadcrumb y el título (por ejemplo, las pestañas de la página). */
+  aboveTitle?: React.ReactNode;
   /** Destino del primer item del breadcrumb. */
   backTo?: string;
   /** Ruta completa a mostrar. Por defecto: Dashboard / {title}. */
@@ -45,6 +47,7 @@ export function PageHeader({
   countLabelSingular,
   extraCounts,
   actions,
+  aboveTitle,
   backTo = '/dashboard',
   breadcrumb,
 }: PageHeaderProps) {
@@ -73,6 +76,7 @@ export function PageHeader({
             </span>
           ))}
         </nav>
+        {aboveTitle}
         <h2>{title}</h2>
         {(description || count !== undefined || extraCounts) && (
           <div className="page-header-row">

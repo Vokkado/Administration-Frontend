@@ -32,6 +32,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
     colorEnd: 'var(--color-primary-light)',
     cards: [
       { title: 'Validar productos', description: 'Revisá los productos cargados por IA: confirmá ingredientes, alérgenos y nutrición', path: '/validation', buttonLabel: 'Validar productos' },
+      { title: 'Enriquecer productos', description: 'Buscá en internet la nutrición e ingredientes que les faltan a las fichas de referencia', path: '/enrichment', buttonLabel: 'Enriquecer' },
     ],
   },
   {

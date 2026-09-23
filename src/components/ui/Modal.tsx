@@ -3,7 +3,7 @@
  * Modal base reutilizable para formularios y diálogos
  */
 
-import { useEffect } from 'react';
+import { useBodyScrollLock } from './useBodyScrollLock';
 import './Modal.css';
 
 interface ModalProps {
@@ -23,14 +23,7 @@ export function Modal({
   error,
   maxWidth = '500px',
 }: ModalProps) {
-  useEffect(() => {
-    if (show) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [show]);
+  useBodyScrollLock(show);
 
   if (!show) return null;
 

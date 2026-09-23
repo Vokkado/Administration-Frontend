@@ -4,7 +4,8 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../../services/api.service';
-import { IngredientVariantsService } from '../../../services/ingredient-variants.service';
+import { IngredientVariantsService, type VariantSortBy } from '../../../services/ingredient-variants.service';
+import type { DataTableSort } from '../../../components/ui/DataTable';
 import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, IngredientVariant, AttributeForVariant, AttributeTypeForVariant } from '../types';
@@ -23,11 +24,20 @@ export function useIngredientVariants() {
     ? undefined
     : filterInspected === 'VALIDATED';
 
-  // Fetch function wrapped in useCallback depending on [inspected]
+  // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
+  // (ordenar solo la página visible daría un resultado engañoso).
+  const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
+
+  // Fetch function wrapped in useCallback depending on [inspected, sort]
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
-      IngredientVariantsService.listAdminVariants({ ...params, inspected }),
-    [inspected],
+      IngredientVariantsService.listAdminVariants({
+        ...params,
+        inspected,
+        sortBy: sort.key as VariantSortBy,
+        sortDir: sort.direction,
+      }),
+    [inspected, sort],
   );
 
   const {
@@ -138,10 +148,12 @@ export function useIngredientVariants() {
     error,
     searchTerm,
     filterInspected,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterInspected,
+    setSort,
     setCurrentPage,
     setError,
     getIngredientName,

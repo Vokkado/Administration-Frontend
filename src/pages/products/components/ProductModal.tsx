@@ -3,6 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Button } from '../../../components/ui';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 import { apiService } from '../../../services/api.service';
 import type { Product, AllergenPresence } from '../types';
 import {
@@ -37,7 +38,7 @@ interface ProductModalProps {
   onValidate?: (id: string, currentState: boolean) => void;
 }
 
-type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'origen';
+type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'origen';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'basic', label: 'Información Básica' },
@@ -45,6 +46,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'manufacturer', label: 'Fabricante y Distribución' },
   { id: 'nutrition', label: 'Información Nutricional' },
   { id: 'ingredients', label: 'Ingredientes' },
+  { id: 'allergens', label: 'Alérgenos' },
   { id: 'origen', label: 'Origen' },
 ];
 
@@ -88,15 +90,9 @@ export function ProductModal({
   const [allNutritionFacts, setAllNutritionFacts] = useState<NutritionFactOption[]>([]);
   const [loadingNutritionFacts, setLoadingNutritionFacts] = useState(false);
 
-  // ── Bloquear scroll de la página de fondo mientras el modal está abierto ──
-  useEffect(() => {
-    if (show) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [show]);
+  // Bloquea el scroll de fondo. El contador compartido evita que un modal anidado
+  // (crear variante, ingrediente o alérgeno) libere el candado al cerrarse.
+  useBodyScrollLock(show);
 
   // ── Load data when modal opens ──
   useEffect(() => {
@@ -325,13 +321,6 @@ export function ProductModal({
                   onChange={onChange}
                 />
                 <ProductSourceImagesSection productId={editingProduct?.id} />
-                <ProductAllergensSection
-                  allergenData={formData.allergenData || []}
-                  allAllergens={allAllergens}
-                  loadingAllergens={loadingAllergens}
-                  onAllergenToggle={handleAllergenToggle}
-                  onPresenceChange={handleAllergenPresenceChange}
-                />
               </>
             )}
 
@@ -370,6 +359,18 @@ export function ProductModal({
                 onChange={onChange}
                 onIngredientToggle={handleIngredientToggle}
                 onIngredientPositionChange={handleIngredientPositionChange}
+                onVariantsChanged={loadIngredientVariants}
+              />
+            )}
+
+            {activeTab === 'allergens' && (
+              <ProductAllergensSection
+                allergenData={formData.allergenData || []}
+                allAllergens={allAllergens}
+                loadingAllergens={loadingAllergens}
+                onAllergenToggle={handleAllergenToggle}
+                onPresenceChange={handleAllergenPresenceChange}
+                onAllergensChanged={loadAllergens}
               />
             )}
 

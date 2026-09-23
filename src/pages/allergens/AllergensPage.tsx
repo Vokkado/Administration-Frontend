@@ -2,9 +2,8 @@
  * Página de Gestión de Alérgenos
  */
 import { useState } from 'react';
-import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
+import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner, SearchInput } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { AllergenFilters } from './components/AllergenFilters';
 import { AllergenTable } from './components/AllergenTable';
 import { AllergenModal } from './components/AllergenModal';
 import { MergeAllergensModal } from './components/MergeAllergensModal';
@@ -21,9 +20,13 @@ export function AllergensPage() {
     loading,
     error,
     searchTerm,
+    sort,
+    filterInspected,
     currentPage,
     totalPages,
     setSearchTerm,
+    setSort,
+    setFilterInspected,
     setCurrentPage,
     setError,
     createAllergen,
@@ -163,29 +166,35 @@ export function AllergensPage() {
 
   return (
     <AdminLayout title="Gestión de Alérgenos">
-        {/* Header */}
+        {/* Sin descripción: el título y todo lo demás comparten una sola línea. */}
         <PageHeader
           title="Alérgenos"
-          description="Gestión de alérgenos del sistema"
-          count={total}
-          countLabel="alérgenos"
-          countLabelSingular="alérgeno"
           actions={
             <div className="header-actions">
+              {/* Mismas clases que usa PageHeader para su contador. */}
+              <div className="header-count">
+                <span className="count-number">{total}</span>
+                <span className="count-label">{total === 1 ? 'alérgeno' : 'alérgenos'}</span>
+              </div>
+
+              {/* El filtro de validado vive en el embudo de su columna: no hay barra de filtros. */}
+              <div className="header-search">
+                <SearchInput
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Buscar por nombre..."
+                />
+              </div>
+
+              {/* Sin repetir "Alérgenos": ya está en el título de la página. */}
               <Button variant="primary" onClick={openMergeModal}>
-                🔗 Unificar Alérgenos
+                🔗 Unificar
               </Button>
               <Button variant="primary" onClick={openCreateModal}>
-                + Nuevo Alérgeno
+                + Agregar
               </Button>
             </div>
           }
-        />
-
-        {/* Filters */}
-        <AllergenFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
         />
 
         {/* Success Message */}
@@ -199,6 +208,13 @@ export function AllergensPage() {
           onDelete={crud.requestDelete}
           onValidationChange={crud.requestValidation}
           validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
+          sort={sort}
+          // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
+          // muestra un tramo arbitrario de la lista.
+          onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
+          filterInspected={filterInspected}
+          // Idem al filtrar: la página 5 puede no existir con menos resultados.
+          onFilterInspectedChange={(next) => { setFilterInspected(next); setCurrentPage(1); }}
         />
 
         {/* Pagination */}

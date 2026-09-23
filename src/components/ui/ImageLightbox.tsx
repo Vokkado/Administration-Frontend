@@ -10,6 +10,7 @@
  * Teclado: ESC cierra, ←/→ navega, +/− ajusta el zoom y 0 lo resetea.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useBodyScrollLock } from './useBodyScrollLock';
 
 export interface LightboxImage {
   src: string;
@@ -126,9 +127,12 @@ export function ImageLightbox({
     handlers.current = { close, go, zoomTo, resetZoom, scale };
   });
 
+  // El contador compartido evita que al cerrar el visor se libere el scroll de un modal
+  // que siga abierto detrás (el lightbox se abre desde adentro del modal de producto).
+  useBodyScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
-    document.body.style.overflow = 'hidden';
 
     const onKey = (e: KeyboardEvent) => {
       const h = handlers.current;
@@ -152,7 +156,6 @@ export function ImageLightbox({
     window.addEventListener('keydown', onKey);
     overlay?.addEventListener('wheel', onWheel, { passive: false });
     return () => {
-      document.body.style.overflow = '';
       window.removeEventListener('keydown', onKey);
       overlay?.removeEventListener('wheel', onWheel);
     };

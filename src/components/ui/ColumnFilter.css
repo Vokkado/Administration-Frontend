@@ -1,0 +1,92 @@
+/* Filtro de columna: embudo en el encabezado + menú de opciones. */
+
+/* Solo el ícono, sin recuadro: el encabezado ya es una barra de color. */
+.dt-column-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--color-white);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.dt-column-filter:hover { opacity: 1; }
+
+/* Con filtro aplicado queda encendido: se ve de un vistazo que la lista está recortada. */
+.dt-column-filter.is-active {
+  opacity: 1;
+  color: var(--color-primary-light);
+}
+
+/* En una columna ordenable, el botón de ordenar trae su propio padding. */
+.dt-table th.dt-sortable .dt-sort-btn { flex: 1; }
+.dt-table th.dt-sortable .dt-column-filter { margin-right: var(--spacing-md); }
+
+/* Menú: va en un portal al body y se posiciona con coordenadas de viewport.
+   El ancho fijo tiene que coincidir con MENU_WIDTH en ColumnFilter.tsx. */
+.dt-column-filter-menu {
+  position: fixed;
+  z-index: 1200;
+  width: 190px;
+  padding: 6px;
+  box-sizing: border-box;
+  /* El alto máximo lo fija el componente según el espacio disponible. */
+  overflow-y: auto;
+  /* Al llegar al final de la lista, la rueda NO sigue scrolleando la página (eso movía
+     el fondo y cerraba el menú). */
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: #fff;
+  border: 1px solid var(--color-grey-200);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.16);
+  animation: slideDown 0.12s ease-out;
+}
+
+.dt-column-filter-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--color-grey-700);
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.dt-column-filter-menu button:hover { background: var(--color-grey-100); }
+
+.dt-column-filter-menu button.is-selected {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+/* Limpiar: separado de las opciones, no es una opción más. */
+.dt-column-filter-menu .dt-column-filter-clear {
+  justify-content: center;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-grey-200);
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-grey-500);
+}
+
+.dt-column-filter-menu .dt-column-filter-clear:hover {
+  background: none;
+  color: var(--color-error);
+}

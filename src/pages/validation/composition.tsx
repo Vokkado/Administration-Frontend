@@ -17,6 +17,8 @@ import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
 import { TagsService, type ApplicableTagGroup } from '../../services/tags.service';
 import { EditIngredientModal } from './EditIngredientModal';
+import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
+import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
 import './composition.css';
 
 export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
@@ -57,16 +59,73 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
-  // Ficha de ingrediente abierta en el modal compartido con la página de Ingredientes.
+  // Fichas abiertas en los modales compartidos con la página de Ingredientes.
+  // Son dos entidades distintas: la variante (lo que se vincula al producto) y el
+  // ingrediente canónico al que apunta.
+  // null = cerrado | { id: null } = crear una variante | { id } = editar esa variante.
+  const [variantEditor, setVariantEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  /** Editar solo refresca; una variante recién creada además se vincula al producto. */
+  const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
+    if (isNew && saved.id) { void run(() => ValidationService.addIngredient(productId, saved.id)); return; }
+    onChanged();
+  };
+
+  /**
+   * Un ingrediente solo no se vincula a nada: lo que se vincula son sus variantes.
+   * Por eso al crearlo se encadena el alta de su primera variante, ya con el
+   * ingrediente elegido como padre (mismo flujo que el modal de producto).
+   */
+  const handleIngredientCreated = (ingredient: { id: string }) => {
+    setCreatingIngredient(false);
+    if (ingredient.id) setVariantEditor({ id: null, ingredientId: ingredient.id });
+  };
+
   return (
     <>
-      <Section title={`Ingredientes (${detail.ingredients.length})`}
-        adder={<AdderButton label="+ Agregar"
-          title="Agregar ingrediente"
-          placeholder="Buscar variante de ingrediente…"
-          search={variantSearch}
-          onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
+      <Section
+        title={`Ingredientes (${detail.ingredients.length})`}
+        help={
+          <button
+            type="button"
+            className="vp-help-btn"
+            onClick={() => setShowHelp(true)}
+            title="Cómo leer esta lista"
+            aria-label="Cómo leer esta lista"
+          >
+            i
+          </button>
+        }
+        adder={
+          <div className="vp-section-actions">
+            <AdderButton label="+ Agregar"
+              title="Agregar una variante que ya existe"
+              placeholder="Buscar variante de ingrediente…"
+              search={variantSearch}
+              onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />
+            {/* El ingrediente es la entidad base; la variante es lo que se vincula al
+                producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+            <Button
+              variant="outline"
+              onClick={() => setCreatingIngredient(true)}
+              disabled={busy}
+              title="Crear un ingrediente nuevo y su primera variante"
+            >
+              + Ingrediente
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setVariantEditor({ id: null })}
+              disabled={busy}
+              title="Crear una variante nueva de un ingrediente que ya existe"
+            >
+              + Variante
+            </Button>
+          </div>
+        }>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
           <IngredientRow
@@ -76,10 +135,27 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             busy={busy}
             setBusy={setBusy}
             onChanged={onChanged}
+            onEditVariant={() => setVariantEditor({ id: ing.variantId })}
             onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
           />
         ))}
       </Section>
+
+      {variantEditor && (
+        <VariantEditorModal
+          variantId={variantEditor.id}
+          initialIngredientId={variantEditor.ingredientId}
+          onClose={() => setVariantEditor(null)}
+          onSaved={(saved) => handleVariantSaved(saved, variantEditor.id === null)}
+        />
+      )}
+
+      {creatingIngredient && (
+        <IngredientEditorModal
+          onClose={() => setCreatingIngredient(false)}
+          onSaved={handleIngredientCreated}
+        />
+      )}
 
       {editingIngredientId && (
         <EditIngredientModal
@@ -88,6 +164,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           onSaved={onChanged}
         />
       )}
+
+      {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
 
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
@@ -122,6 +200,69 @@ const MAX_SCORE = 10;
 /** Un campo vacío o no numérico cae al mínimo en vez de dejar NaN. */
 const clampScore = (n: number) => (Number.isFinite(n) ? Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(n))) : MIN_SCORE);
 
+/**
+ * Ayuda del paso: qué es cada parte de una fila y qué significa cada origen.
+ * Los valores de `matchTier` salen de `IngredientMatcher` (backend); "AI" lo escribe el
+ * linker cuando no hubo match y hubo que crear la ficha.
+ */
+function CompositionHelp({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal show title="Cómo leer esta lista" onClose={onClose} maxWidth="620px">
+      <div className="vp-help">
+      <p className="vp-help-row">
+        <strong>nombre en negrita</strong>
+        <span> → </span>
+        <span className="vp-help-muted">nombre en gris</span>
+        <span className="vp-help-note">
+          El primero es la <strong>variante</strong>: el alias concreto con el que se vinculó
+          el producto. El segundo es el <strong>ingrediente</strong> canónico al que esa
+          variante pertenece. Clickeá cualquiera de los dos para editarlo.
+        </span>
+      </p>
+
+      <p className="vp-help-note">
+        Si los dos dicen lo mismo, es porque la IA no encontró nada parecido en la base y
+        creó el ingrediente y su variante de una, con el mismo nombre.
+      </p>
+
+      <h4 className="vp-help-title">Qué hace cada botón</h4>
+      <dl className="vp-help-actions">
+        <dt>+ Agregar</dt>
+        <dd>Vincula al producto una variante que <strong>ya existe</strong> en el catálogo. Es para lo que la IA no detectó, o lo que quitaste sin querer.</dd>
+        <dt>+ Ingrediente</dt>
+        <dd>Crea un ingrediente que todavía no existe en la base. Como lo que se vincula son las variantes, al guardarlo se encadena el alta de su primera variante.</dd>
+        <dt>+ Variante</dt>
+        <dd>Crea un alias nuevo de un ingrediente que ya existe, y lo vincula al producto.</dd>
+        <dt>✓ Está bien</dt>
+        <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Solo aparece en las que no lo están.</dd>
+        <dt>✎ Corregir</dt>
+        <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior.</dd>
+        <dt>✕ Quitar</dt>
+        <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
+        <dt>Validar ingrediente</dt>
+        <dd>Solo en las filas rojas: guarda el puntaje y la toxicidad que revisaste, y da por aprobada la ficha que inventó la IA.</dd>
+      </dl>
+
+      <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
+      <dl className="vp-help-tiers">
+        <dt>INS</dt>
+        <dd>Aditivo reconocido por su número INS (ej. E-322). Match seguro.</dd>
+        <dt>EXACT</dt>
+        <dd>El texto de la etiqueta coincide exactamente con una variante que ya existía.</dd>
+        <dt>ALIAS</dt>
+        <dd>Coincidió a través de un sinónimo conocido del diccionario.</dd>
+        <dt>EXACT_INGREDIENT</dt>
+        <dd>Coincidió con el nombre de un ingrediente, no con una variante: se creó la variante.</dd>
+        <dt>FUZZY / FUZZY_INGREDIENT</dt>
+        <dd>Coincidencia aproximada por similitud. Es la que más conviene revisar.</dd>
+        <dt>AI</dt>
+        <dd>No coincidió con nada: la IA inventó la ficha y creó ingrediente + variante.</dd>
+      </dl>
+      </div>
+    </Modal>
+  );
+}
+
 const TOX_OPTIONS = [
   { value: 'LOW', label: 'Baja' },
   { value: 'MEDIUM', label: 'Media' },
@@ -151,7 +292,7 @@ function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
   );
 }
 
-function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditIngredient: () => void }) {
+function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditVariant: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
@@ -161,14 +302,23 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditIngredi
       {/* Título a la izquierda y acciones a la derecha; el panel de la IA va debajo, a todo el ancho. */}
       <div className="vp-row-head">
         <div className="vp-row-title">
-          <div><Dot color={ing.color} /> <strong>{ing.variantName}</strong>
+          {/* Cada nombre abre SU ficha: la variante es lo que se vincula al producto,
+              el ingrediente es la entidad canónica a la que esa variante apunta. */}
+          <div><Dot color={ing.color} />{' '}
+            <button
+              type="button"
+              className="vp-variant-link"
+              onClick={onEditVariant}
+              title="Editar la variante (ingrediente base, nombre y atributos)"
+            >
+              {ing.variantName} <span aria-hidden>✎</span>
+            </button>
             <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
-            {/* El ingrediente canónico abre su ficha completa (la misma de la página de Ingredientes). */}
             <button
               type="button"
               className="vp-ingredient-link"
               onClick={onEditIngredient}
-              title="Editar ficha del ingrediente"
+              title="Editar la ficha del ingrediente (riesgo, puntaje, restricciones)"
             >
               {ing.ingredientName} <span aria-hidden>✎</span>
             </button>
@@ -531,11 +681,20 @@ function chip(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
-function Section({ title, adder, children }: { title: string; adder?: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, help, adder, children }: {
+  title: string;
+  /** Control extra al lado del título (por ejemplo, el botón de ayuda). */
+  help?: React.ReactNode;
+  adder?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ fontSize: 15, margin: 0, color: '#374151' }}>{title}</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, margin: 0, color: '#374151' }}>
+          {title}
+          {help}
+        </h3>
         {adder}
       </div>
       {children}

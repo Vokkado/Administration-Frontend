@@ -29,6 +29,17 @@ interface VariantModalProps {
   onSubmit: (e: React.FormEvent) => void;
   onChange: (data: Partial<IngredientVariantFormData>) => void;
   onValidate?: (id: string, currentState: boolean) => void;
+  /**
+   * Si se pasa, el buscador de ingrediente base ofrece crear el que no existe (con el
+   * texto ya tipeado). Sin esta prop el comportamiento es el de siempre.
+   */
+  onCreateIngredient?: (name: string) => void;
+  /**
+   * `ingredients` y `attributes` todavía están en camino. El formulario se muestra igual
+   * (el nombre ya se puede escribir) y solo esas dos secciones avisan que están cargando.
+   * Quien ya tiene los catálogos en memoria no pasa nada y no cambia nada.
+   */
+  catalogLoading?: boolean;
 }
 
 export function VariantModal({
@@ -44,6 +55,8 @@ export function VariantModal({
   onSubmit,
   onChange,
   onValidate,
+  onCreateIngredient,
+  catalogLoading = false,
 }: VariantModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -96,6 +109,15 @@ export function VariantModal({
       setShowIngredientDropdown(false);
     }
   }, [show, editingVariant]);
+
+  // El catálogo puede llegar después de la variante (el modal abre sin esperarlo): recién
+  // ahí se conoce el nombre del ingrediente ya asignado. Solo completa el campo si está
+  // vacío, para no pisar lo que el usuario haya tipeado mientras tanto.
+  useEffect(() => {
+    if (!show || !formData.ingredientId) return;
+    const ing = ingredients.find(i => i.id === formData.ingredientId);
+    if (ing) setIngredientSearch(prev => prev || ing.name);
+  }, [show, ingredients, formData.ingredientId]);
 
   // Compute inherited restrictions from selected attributes
   const inheritedRestrictions = useMemo(() => {
@@ -213,13 +235,15 @@ export function VariantModal({
                 <div className="autocomplete-container" ref={autocompleteRef}>
                   <Input
                     type="text"
-                    placeholder="Buscar ingrediente..."
+                    placeholder={catalogLoading ? 'Cargando ingredientes…' : 'Buscar ingrediente...'}
                     value={ingredientSearch}
                     onChange={(e) => handleIngredientSearchChange(e.target.value)}
                     onFocus={() => setShowIngredientDropdown(true)}
                     fullWidth
+                    disabled={catalogLoading}
                     required={!formData.ingredientId}
                   />
+                  {catalogLoading && <span className="field-spinner" aria-hidden />}
                   {showIngredientDropdown && ingredientSearch && filteredIngredients.length > 0 && (
                     <div className="autocomplete-dropdown">
                       {filteredIngredients.map(ing => (
@@ -236,6 +260,19 @@ export function VariantModal({
                   {showIngredientDropdown && ingredientSearch && filteredIngredients.length === 0 && (
                     <div className="autocomplete-dropdown">
                       <div className="autocomplete-empty">No se encontraron ingredientes</div>
+                      {/* Sin salida: la variante necesita un padre. Se ofrece crearlo acá. */}
+                      {onCreateIngredient && (
+                        <button
+                          type="button"
+                          className="autocomplete-create"
+                          onClick={() => {
+                            setShowIngredientDropdown(false);
+                            onCreateIngredient(ingredientSearch.trim());
+                          }}
+                        >
+                          + Crear «{ingredientSearch.trim()}»
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -305,6 +342,7 @@ export function VariantModal({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     fullWidth
+                    disabled={catalogLoading}
                   />
                 </div>
 
@@ -331,7 +369,13 @@ export function VariantModal({
 
                 {/* Scrollable list */}
                 <div className="restrictions-list-container">
-                  {attributes.length === 0 ? (
+                  {catalogLoading ? (
+                    /* Sin esto diría "No hay atributos disponibles", que mientras cargan es falso. */
+                    <div className="restrictions-loading">
+                      <span className="field-spinner" aria-hidden />
+                      Cargando atributos…
+                    </div>
+                  ) : attributes.length === 0 ? (
                     <div className="restrictions-empty">
                       No hay atributos disponibles
                     </div>

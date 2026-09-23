@@ -2,6 +2,7 @@
  * Modal para mostrar el desglose del cálculo de puntaje
  */
 import { GiWineBottle } from 'react-icons/gi';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface ScoreBreakdown {
   scoreFinal: number | null;
@@ -87,6 +88,9 @@ function ScoreCircle({ score, alcoholGraduation }: { score: number | null; alcoh
 }
 
 export function ScoreBreakdownModal({ show, productName, result, alcoholGraduation, onClose }: ScoreBreakdownModalProps) {
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+  useBodyScrollLock(show);
+
   if (!show || !result) return null;
 
   const { score, breakdown, logs } = result;

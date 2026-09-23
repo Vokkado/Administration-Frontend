@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { ProductsService } from '../../../services/products.service';
 import type { StorePrice } from '../../../services/products.service';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface Props {
   show: boolean;
@@ -41,6 +42,11 @@ export function PricesModal({ show, productId, productName, onClose }: Props) {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [show, productId]);
+
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+
+  useBodyScrollLock(show);
+
 
   if (!show) return null;
 

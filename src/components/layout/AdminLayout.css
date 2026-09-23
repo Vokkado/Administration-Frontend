@@ -9,6 +9,12 @@
   padding: var(--spacing-xl) var(--spacing-md);
 }
 
+/* Páginas con tablas anchas: el espacio "de más" a los costados no es padding, es el
+   max-width centrado. Acá se levanta ese techo para que lo aproveche la tabla. */
+.admin-main.is-wide {
+  max-width: 1760px;
+}
+
 @media (min-width: 768px) {
   .admin-main {
     padding: var(--spacing-xl) var(--spacing-lg);

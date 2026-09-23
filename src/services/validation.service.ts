@@ -12,6 +12,8 @@ export interface ValidationQueueItem {
   image: string | null;
   barcode: string | null;
   createdAt: string;
+  /** Última modificación: para un producto enriquecido, cuándo se completó. */
+  updatedAt: string;
   counts: { green: number; yellow: number; red: number };
 }
 
@@ -90,9 +92,18 @@ export interface CompanyOption { id: string; name: string }
 const BASE = '/products/validation';
 
 export class ValidationService {
-  static async getQueue(limit = 30, offset = 0, search?: string): Promise<{ items: ValidationQueueItem[]; total: number }> {
+  static async getQueue(
+    limit = 30,
+    offset = 0,
+    search?: string,
+    /** Default en el backend: createdAt desc (más nuevos primero). */
+    sortBy?: 'name' | 'createdAt' | 'updatedAt',
+    sortDir?: 'asc' | 'desc',
+  ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (search) params.append('search', search);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortDir) params.append('sortDir', sortDir);
     const res = await apiService.get<any>(`${BASE}/queue?${params.toString()}`);
     return res.data ?? { items: [], total: 0 };
   }
