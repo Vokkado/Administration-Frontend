@@ -22,6 +22,9 @@ const STORE_LABELS: Record<string, string> = {
   eltrigal: 'El Trigal (sitio de la marca)',
   sarubbi: 'Sarubbi (sitio de la marca)',
   felfort: 'Felfort (sitio de la marca)',
+  laespecialista: 'La Especialista (sitio de la marca)',
+  farmashop: 'Farmashop (tienda online)',
+  avanti: 'Avanti (sitio de la marca)',
 };
 
 function storeLabel(store: string): string {
