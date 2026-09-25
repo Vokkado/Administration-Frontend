@@ -14,7 +14,13 @@ export interface AdminProductListQuery {
   inspected?: boolean;
   /** true => lista SOLO productos reference (curaduría). Default: solo normales. */
   isReference?: boolean;
+  /** Default en el backend: createdAt desc (más nuevos primero). */
+  sortBy?: ProductSortBy;
+  sortDir?: 'asc' | 'desc';
 }
+
+/** Columnas admitidas por el backend para ordenar. */
+export type ProductSortBy = 'name' | 'createdAt';
 
 export interface AdminProductListResponse {
   data: Product[];
@@ -65,6 +71,8 @@ export class ProductsService {
     }
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
     if (query.isReference) params.append('isReference', 'true');
+    if (query.sortBy) params.append('sortBy', query.sortBy);
+    if (query.sortDir) params.append('sortDir', query.sortDir);
 
     const response = await apiService.get<any>(`/products?${params.toString()}`);
 

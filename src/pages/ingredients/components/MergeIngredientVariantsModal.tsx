@@ -9,6 +9,7 @@ import { Button, Input } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import { matchesSearch } from '../../../utils/search';
 import './MergeIngredientsModal.css';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface MergeIngredientVariantsModalProps {
   show: boolean;
@@ -117,6 +118,11 @@ export function MergeIngredientVariantsModal({
       setIsSubmitting(false);
     }
   };
+
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+
+  useBodyScrollLock(show);
+
 
   if (!show) return null;
 

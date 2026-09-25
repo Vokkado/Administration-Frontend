@@ -1,0 +1,129 @@
+/**
+ * Estilos del selector de restricciones, scopeados al wrapper `.pm-editor`.
+ *
+ * Los modales de Alérgenos y de Variante se reusan dentro del modal de producto, y ahí
+ * conviven `AllergensPage.css` e `IngredientsPage.css`: las dos definen `.restriction-*`
+ * con valores distintos (flex-basis, overflow, ellipsis) y la cascada las mezcla, dejando
+ * la lista rota. Con dos clases (0,2,0) estas reglas le ganan a ambas y fijan el set que
+ * ya funciona bien en la página de Alérgenos.
+ */
+.pm-editor .restrictions-list-container {
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+  flex: 1;
+  min-height: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pm-editor .restrictions-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-editor .restriction-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pm-editor .restriction-item:last-child {
+  border-bottom: none;
+}
+
+.pm-editor .restriction-item:hover {
+  background: #F1F8E9;
+}
+
+.pm-editor .restriction-item.selected {
+  background: var(--color-success-light);
+}
+
+.pm-editor .restriction-item.inactive {
+  opacity: 0.5;
+  background: #F5F5F5;
+}
+
+.pm-editor .restriction-item.inactive:hover {
+  background: #EFEFEF;
+}
+
+.pm-editor .restriction-item.inactive .restriction-name {
+  color: var(--color-grey);
+}
+
+.pm-editor .restriction-checkbox {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.pm-editor .restriction-info {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.pm-editor .restriction-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.pm-editor .restriction-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.pm-editor .restriction-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pm-editor .restriction-badge.allergy {
+  background: var(--color-error-light);
+  color: #C62828;
+}
+
+.pm-editor .restriction-badge.illness {
+  background: var(--color-warning-light);
+  color: var(--color-warning-darker);
+}
+
+.pm-editor .restriction-badge.voluntary {
+  background: var(--color-info-light);
+  color: #1565C0;
+}
+
+.pm-editor .restriction-badge.involuntary {
+  background: #F3E5F5;
+  color: #6A1B9A;
+}
+
+.pm-editor .restrictions-pagination {
+  flex-shrink: 0;
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

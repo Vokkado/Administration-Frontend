@@ -7,29 +7,6 @@
   align-items: center;
 }
 
-/* ========================= */
-/* Search Controls            */
-/* ========================= */
-.product-controls {
-  background: var(--color-white);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  animation: slideUp 0.5s ease-out 0.1s both;
-}
-
-/* ========================= */
-/* Filters                    */
-/* ========================= */
-.product-filters {
-  background: var(--color-white);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  animation: slideUp 0.5s ease-out 0.15s both;
-}
 
 @keyframes slideUp {
   from {
@@ -79,39 +56,6 @@
   color: var(--color-white);
 }
 
-.subcategory-toggle {
-  margin-bottom: 16px;
-}
-
-.subcategory-toggle:last-child {
-  margin-bottom: 0;
-}
-
-.subcategory-toggle-btn {
-  padding: 10px 18px;
-  border: 2px dashed var(--color-border);
-  border-radius: 10px;
-  background: var(--color-white);
-  color: var(--color-primary-dark);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.subcategory-toggle-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.subcategory-toggle-btn.active {
-  border-style: solid;
-  border-color: var(--color-primary);
-  background: rgba(91, 136, 6, 0.08);
-  color: var(--color-primary-dark);
-}
 
 /* ========================= */
 /* Table Badges               */
@@ -133,6 +77,19 @@
   background: var(--color-info-light);
   color: #1565C0;
   border-color: #42A5F5;
+}
+
+/* Tipo de producto: ficha de referencia (incompleta) vs producto completo. */
+.badge-reference {
+  background: #ECBF0A22;
+  color: #7A5F00;
+  border-color: #E0B700;
+}
+
+.badge-normal {
+  background: var(--color-grey-100);
+  color: var(--color-grey-600);
+  border-color: var(--color-grey-300);
 }
 
 .badge-score {
@@ -756,11 +713,291 @@
   font-weight: 500;
 }
 
-.allergen-presence-select {
-  width: auto;
-  min-width: 140px;
-  padding: 6px 10px;
+/* ── Picker de dos paneles del modal de producto ─────────────────────────
+   Lo comparten alérgenos e ingredientes: a la izquierda lo elegido (con su dato
+   extra: presencia o posición), a la derecha el buscador y el catálogo. Con una
+   sola lista, lo elegido se perdía entre decenas de opciones.
+
+   Varias reglas van scopeadas con `.modal-picker` a propósito: el bloque vive
+   dentro de un `.form-group`, y `.form-group label` (0,1,1) le gana a una clase
+   suelta (0,1,0) — volvía los labels bloques en negrita, sin flex y con margen,
+   que era lo que pegaba el checkbox al texto. */
+.mp-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.mp-panel {
+  border: 1px solid var(--color-grey-200);
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  min-width: 0;
+}
+
+.mp-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mp-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--color-grey-500);
+}
+
+.mp-count {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
   font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.modal-picker .mp-empty {
+  margin: 0;
+  padding: 18px 4px;
+  font-size: 13px;
+  color: var(--color-grey-400);
+  text-align: center;
+}
+
+/* ── Panel izquierdo: lo elegido ───────────────────────────────────────── */
+.mp-selected-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.mp-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(91, 136, 6, 0.07);
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+}
+
+.mp-selected-item .mp-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.mp-remove {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 16px;
+  /* El glifo ✕ no tiene variante bold en la fuente; el peso lo da el trazo simulado. */
+  font-weight: 700;
+  -webkit-text-stroke: 0.6px currentColor;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mp-remove:hover {
+  background: #fef2f2;
+  color: var(--color-error);
+}
+
+.mp-edit {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mp-edit:hover {
+  background: rgba(91, 136, 6, 0.12);
+  color: var(--color-primary-dark);
+}
+
+/* Grupo de altas a la derecha del título del panel. */
+.mp-head-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Dentro del grupo no se empujan entre sí. */
+.mp-head-actions .mp-new {
+  margin-left: 0;
+}
+
+/* Crear uno nuevo desde el propio picker. El `margin-left: auto` lo empuja a la derecha
+   cuando va solo; dentro de `.mp-head-actions` el que empuja es el grupo. */
+.mp-new {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 7px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mp-new:hover {
+  border-color: var(--color-primary);
+  background: rgba(91, 136, 6, 0.08);
+}
+
+/* ── Panel derecho: catálogo ───────────────────────────────────────────── */
+.mp-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-right: 4px;
+}
+
+.modal-picker .mp-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-grey-800);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.modal-picker .mp-option:hover { background: var(--color-grey-100); }
+
+.modal-picker .mp-option.is-selected {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.modal-picker .mp-option input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  /* El navegador le pone márgenes propios (~3px) que descentran el texto y comen el gap. */
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modal-picker .mp-name {
+  /* Sin line-height heredado: el alto extra de la línea desplaza el texto respecto
+     del centro del cuadrado. */
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Presencia del alérgeno: dos opciones a la vista, no un <select> ───── */
+.mp-presence {
+  display: inline-flex;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mp-presence-btn {
+  padding: 5px 11px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-grey-500);
+  /* "Puede contener" es largo: nunca se parte en dos renglones. */
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mp-presence-btn + .mp-presence-btn {
+  border-left: 1px solid var(--color-grey-200);
+}
+
+.mp-presence-btn:hover:not(.is-active) { background: var(--color-grey-100); }
+
+/* "Contiene" es la afirmación fuerte; "Puede contener" es la advertencia menor. */
+.mp-presence-btn.is-active { background: #fef2f2; color: #b91c1c; }
+.mp-presence-btn.is-active:last-child { background: #fffbeb; color: #b45309; }
+
+/* ── Posición del ingrediente ──────────────────────────────────────────── */
+/* Scopeado: es un <label> y `.form-group label` (0,1,1) le ganaba, volviéndolo bloque
+   en negrita — "Pos." quedaba arriba del input en vez de al lado. */
+.modal-picker .mp-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-grey-500);
+}
+
+.modal-picker .mp-position input {
+  width: 48px;
+  padding: 5px 6px;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-grey-800);
+  text-align: center;
+}
+
+.modal-picker .mp-position input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.12);
+}
+
+/* En pantallas angostas los paneles se apilan. */
+@media (max-width: 900px) {
+  .mp-split { grid-template-columns: 1fr; }
 }
 
 .ingredients-loading {

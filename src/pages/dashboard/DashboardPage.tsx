@@ -16,6 +16,8 @@ interface DashboardCardConfig {
   description: string;
   path: string;
   buttonLabel: string;
+  /** Roles que ven la tarjeta, si es más restrictiva que su grupo. Por defecto, los del grupo. */
+  roles?: string[];
 }
 
 interface DashboardGroupConfig {
@@ -37,6 +39,8 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
     colorEnd: 'var(--color-primary-light)',
     cards: [
       { title: 'Validar productos', description: 'Revisá los productos cargados por IA: confirmá ingredientes, alérgenos y nutrición', path: '/validation', buttonLabel: 'Validar productos' },
+      // Enriquecer corre en lote y consume servicios externos: solo admin (ver ROLES.md).
+      { title: 'Enriquecer productos', description: 'Buscá en internet la nutrición e ingredientes que les faltan a las fichas de referencia', path: '/enrichment', buttonLabel: 'Enriquecer', roles: ADMIN_ONLY_ROLES },
     ],
   },
   {
@@ -109,19 +113,21 @@ export function DashboardPage() {
             </h3>
 
             <div className="dashboard-grid">
-              {group.cards.map((card) => (
-                <DashboardCard
-                  key={card.path}
-                  title={card.title}
-                  description={card.description}
-                  color={group.color}
-                  colorEnd={group.colorEnd}
-                >
-                  <Button variant="primary" fullWidth onClick={() => navigate(card.path)}>
-                    {card.buttonLabel}
-                  </Button>
-                </DashboardCard>
-              ))}
+              {group.cards
+                .filter((card) => !card.roles || card.roles.some((role) => roles.includes(role)))
+                .map((card) => (
+                  <DashboardCard
+                    key={card.path}
+                    title={card.title}
+                    description={card.description}
+                    color={group.color}
+                    colorEnd={group.colorEnd}
+                  >
+                    <Button variant="primary" fullWidth onClick={() => navigate(card.path)}>
+                      {card.buttonLabel}
+                    </Button>
+                  </DashboardCard>
+                ))}
             </div>
           </section>
         ))}

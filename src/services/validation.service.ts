@@ -12,6 +12,8 @@ export interface ValidationQueueItem {
   image: string | null;
   barcode: string | null;
   createdAt: string;
+  /** Última modificación: para un producto enriquecido, cuándo se completó. */
+  updatedAt: string;
   counts: { green: number; yellow: number; red: number };
 }
 
@@ -48,6 +50,16 @@ export interface ValidationNutrition {
   color: LinkColor;
 }
 
+/** Qué súper/fuente aportó qué campo durante el enriquecimiento IA. Ver Backend aiResultToProductUpdate.ts. */
+export interface EnrichmentSourceSummary {
+  store: string;
+  url: string | null;
+  usedCover: boolean;
+  usedNutritionText: boolean;
+  usedIngredientsText: boolean;
+  galleryCount: number;
+}
+
 export interface ValidationProduct {
   id: string; name: string; brand: string | null; image: string | null; barcode: string | null;
   rawIngredients: string | null; rawNutritionFacts: any; rawAllergens: string | null;
@@ -57,6 +69,8 @@ export interface ValidationProduct {
   isUltraProcessed: boolean | null;
   isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
   servingSizeAmount: number | null; servingSizeUnit: string | null;
+  /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
+  enrichmentSources: EnrichmentSourceSummary[] | null;
 }
 
 export interface ValidationCompany {
@@ -65,12 +79,23 @@ export interface ValidationCompany {
   role: string;
 }
 
+export interface ValidationTag {
+  tagId: string;
+  tagName: string;
+  tagGroupId: string;
+  tagGroupName: string;
+  isInspected: boolean;
+  source: 'ai' | 'admin';
+  color: LinkColor;
+}
+
 export interface ValidationDetail {
   product: ValidationProduct;
   ingredients: ValidationIngredient[];
   allergens: ValidationAllergen[];
   nutrition: ValidationNutrition[];
   companies: ValidationCompany[];
+  tags: ValidationTag[];
 }
 
 export interface CategoryOption { id: string; name: string }
@@ -79,9 +104,18 @@ export interface CompanyOption { id: string; name: string }
 const BASE = '/products/validation';
 
 export class ValidationService {
-  static async getQueue(limit = 30, offset = 0, search?: string): Promise<{ items: ValidationQueueItem[]; total: number }> {
+  static async getQueue(
+    limit = 30,
+    offset = 0,
+    search?: string,
+    /** Default en el backend: createdAt desc (más nuevos primero). */
+    sortBy?: 'name' | 'createdAt' | 'updatedAt',
+    sortDir?: 'asc' | 'desc',
+  ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (search) params.append('search', search);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortDir) params.append('sortDir', sortDir);
     const res = await apiService.get<any>(`${BASE}/queue?${params.toString()}`);
     return res.data ?? { items: [], total: 0 };
   }
@@ -143,6 +177,12 @@ export class ValidationService {
   }
   static async removeAllergen(id: string, allergenId: string): Promise<void> {
     await apiService.delete(`${BASE}/${id}/allergen/${allergenId}`);
+  }
+  static async addTag(id: string, tagId: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/tag`, { tagId });
+  }
+  static async removeTag(id: string, tagId: string): Promise<void> {
+    await apiService.delete(`${BASE}/${id}/tag/${tagId}`);
   }
   static async upsertNutrition(id: string, nutritionFactId: string, value: number, unit: string | null): Promise<void> {
     await apiService.post(`${BASE}/${id}/nutrition`, { nutritionFactId, value, unit });

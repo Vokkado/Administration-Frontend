@@ -8,6 +8,7 @@ export { Button } from './Button';
 export { ConfirmDialog } from './ConfirmDialog';
 export { DashboardCard } from './DashboardCard';
 export { DataTable } from './DataTable';
+export { ColumnFilter } from './ColumnFilter';
 export { DateRangePicker } from './DateRangePicker';
 export { EmptyState } from './EmptyState';
 export { FilterButtonGroup } from './FilterButtonGroup';
@@ -18,15 +19,18 @@ export { Modal } from './Modal';
 export { NotificationBanner } from './NotificationBanner';
 export { PageHeader } from './PageHeader';
 export { Pagination } from './Pagination';
+export { ScanHeatmapMap } from './ScanHeatmapMap';
 export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
 export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
 
 // Re-export types
-export type { DataTableColumn } from './DataTable';
+export type { DataTableColumn, DataTableSort } from './DataTable';
+export type { ColumnFilterOption } from './ColumnFilter';
 export type { DateRange } from './DateRangePicker';
 export type { FilterOption } from './FilterButtonGroup';
 export type { CountBadge } from './PageHeader';
 export type { DashboardCardProps } from './DashboardCard';
+export type { HeatmapPoint } from './ScanHeatmapMap';
 export type { StatCardProps } from './StatCard';

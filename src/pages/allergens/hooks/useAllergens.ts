@@ -3,7 +3,8 @@
  */
 import { useState, useCallback } from 'react';
 import { apiService } from '../../../services/api.service';
-import { AllergensService } from '../../../services/allergens.service';
+import { AllergensService, type AllergenSortBy } from '../../../services/allergens.service';
+import type { DataTableSort } from '../../../components/ui/DataTable';
 import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Allergen } from '../types';
@@ -17,17 +18,25 @@ const normalizeAllergen = (a: any): Allergen => ({
 export function useAllergens() {
   // Local filter state
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
+  // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
+  // (ordenar solo la página visible daría un resultado engañoso).
+  const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
 
   // Derive the boolean param from the raw filter
   const inspected = filterInspected === 'ALL'
     ? undefined
     : filterInspected === 'VALIDATED';
 
-  // Wrap service call in useCallback that depends on [inspected]
+  // Wrap service call in useCallback that depends on [inspected, sort]
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
-      AllergensService.listAdminAllergens({ ...params, inspected }),
-    [inspected],
+      AllergensService.listAdminAllergens({
+        ...params,
+        inspected,
+        sortBy: sort.key as AllergenSortBy,
+        sortDir: sort.direction,
+      }),
+    [inspected, sort],
   );
 
   const {
@@ -91,10 +100,12 @@ export function useAllergens() {
     error,
     searchTerm,
     filterInspected,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterInspected,
+    setSort,
     setCurrentPage,
     setError,
     createAllergen,

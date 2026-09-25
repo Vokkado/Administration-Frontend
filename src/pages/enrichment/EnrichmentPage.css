@@ -1,0 +1,153 @@
+/* Barra de filtros + acciones de la corrida. */
+.enrich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.enrich-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* El selector de cantidad va pegado a su botón: solo tiene sentido junto a él. */
+.enrich-batch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.enrich-batch select {
+  padding: 8px 10px;
+  border: 1px solid var(--color-grey-300);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-grey-800);
+  cursor: pointer;
+}
+
+.enrich-batch select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.enrich-force {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-grey-600);
+  cursor: pointer;
+  user-select: none;
+}
+
+.enrich-clear {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--color-grey-500);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.enrich-clear:hover {
+  color: var(--color-primary);
+}
+
+.enrich-warn {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #92400e;
+}
+
+/* Nombre + marca en una sola columna: la marca casi nunca viene y no justifica la suya. */
+.enrich-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.enrich-brand {
+  font-size: 12px;
+  color: var(--color-grey-500);
+}
+
+/* El botón de la fila no se encoge: con table-layout fixed, sin esto el texto se recorta
+   contra el borde de la celda en vez de que la columna respete su ancho. */
+.enrich-table .dt-actions .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Progreso de la corrida ── */
+.enrich-progress {
+  margin-bottom: 16px;
+}
+
+.enrich-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--color-grey-600);
+}
+
+.enrich-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-grey-200, #e0e0e0);
+  overflow: hidden;
+}
+
+.enrich-progress-fill {
+  height: 100%;
+  background: var(--color-primary-dark, #388e3c);
+  transition: width 0.3s ease;
+}
+
+.enrich-progress-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-grey-500);
+}
+
+.enrich-footer-link {
+  margin: 14px 0 0;
+  text-align: right;
+}
+
+.enrich-footer-link button {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.enrich-footer-link button:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .enrich-toolbar { align-items: stretch; }
+  .enrich-actions { justify-content: flex-start; }
+}

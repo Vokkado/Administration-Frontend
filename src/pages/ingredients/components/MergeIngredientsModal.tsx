@@ -10,6 +10,7 @@ import type { Ingredient } from '../types';
 import { RISK_LABELS } from '../types';
 import { matchesSearch } from '../../../utils/search';
 import './MergeIngredientsModal.css';
+import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
 
 interface MergeIngredientsModalProps {
   show: boolean;
@@ -108,6 +109,11 @@ export function MergeIngredientsModal({
       setIsSubmitting(false);
     }
   };
+
+  // Bloquea el scroll de fondo (contador compartido con el resto de los modales).
+
+  useBodyScrollLock(show);
+
 
   if (!show) return null;
 

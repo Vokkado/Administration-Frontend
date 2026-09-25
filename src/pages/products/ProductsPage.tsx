@@ -3,10 +3,9 @@
  */
 import { useState } from 'react';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
+import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner, SearchInput } from '../../components/ui';
 import { ProductModal } from './components/ProductModal';
 import { ProductTable } from './components/ProductTable';
-import { ProductFilter } from './components/ProductFilter';
 import { ScoreBreakdownModal } from './components/ScoreBreakdownModal';
 import { PricesModal } from './components/PricesModal';
 import { useProducts } from './hooks/useProducts';
@@ -54,6 +53,8 @@ export function ProductsPage() {
     filterCategory,
     filterInspected,
     filterReference,
+    sort,
+    setSort,
     currentPage,
     totalPages,
     setSearchTerm,
@@ -74,6 +75,35 @@ export function ProductsPage() {
   } = useProducts();
 
   const crud = useCRUDActions();
+
+  /**
+   * El filtro de categoría de la columna maneja los dos niveles en un solo menú, así que
+   * codifica el nivel en el valor: `p:<id>` es categoría padre y `c:<id>` subcategoría.
+   * Acá se traduce a los dos estados que consume el hook.
+   */
+  const categoryFilterValue = filterCategory === 'NONE'
+    ? 'NONE'
+    : filterCategory !== 'ALL'
+      ? `c:${filterCategory}`
+      : filterParentCategory !== 'ALL'
+        ? `p:${filterParentCategory}`
+        : 'ALL';
+
+  const applyCategoryFilter = (value: string) => {
+    if (value === 'ALL' || value === 'NONE') {
+      setFilterParentCategory('ALL');
+      setFilterCategory(value);
+    } else if (value.startsWith('p:')) {
+      setFilterParentCategory(value.slice(2));
+      setFilterCategory('ALL');
+    } else {
+      const categoryId = value.slice(2);
+      // El padre se deriva de la subcategoría elegida, para que ambos queden coherentes.
+      setFilterParentCategory(categories.find((c) => c.id === categoryId)?.parentCategoryId ?? 'ALL');
+      setFilterCategory(categoryId);
+    }
+    setCurrentPage(1);
+  };
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -438,16 +468,26 @@ export function ProductsPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Productos">
-        {/* Header */}
+    <AdminLayout title="Gestión de Productos" wide>
+        {/* Sin descripción: el título y todo lo demás comparten una sola línea. */}
         <PageHeader
           title="Productos"
-          description="Gestión de productos del sistema"
-          count={total}
-          countLabel="productos"
-          countLabelSingular="producto"
           actions={
             <div className="header-actions">
+              {/* Mismas clases que usa PageHeader para su contador. */}
+              <div className="header-count">
+                <span className="count-number">{total}</span>
+                <span className="count-label">{total === 1 ? 'producto' : 'productos'}</span>
+              </div>
+
+              <div className="header-search">
+                <SearchInput
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  placeholder="Buscar por nombre, marca o código..."
+                />
+              </div>
+
               {/* Procesos masivos: tocan el catálogo entero, solo admin. */}
               <AdminOnly>
                 <Button
@@ -455,18 +495,19 @@ export function ProductsPage() {
                   onClick={handleRebuildSnapshots}
                   loading={isRebuildingSnapshots}
                 >
-                  Actualizar Snapshots
+                  Snapshots
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setShowBulkScoreDialog(true)}
                   loading={isCalculatingBulk}
                 >
-                  Calcular Puntajes
+                  Puntajes
                 </Button>
               </AdminOnly>
+              {/* Sin repetir "Producto": ya está en el título de la página. */}
               <Button variant="primary" onClick={openCreateModal}>
-                + Agregar Producto
+                + Agregar
               </Button>
             </div>
           }
@@ -504,20 +545,8 @@ export function ProductsPage() {
         {/* Error Message */}
         {!showModal && <NotificationBanner type="error" message={error} />}
 
-        {/* Filters */}
-        <ProductFilter
-          searchTerm={searchTerm}
-          filterInspected={filterInspected}
-          filterParentCategory={filterParentCategory}
-          filterCategory={filterCategory}
-          filterReference={filterReference}
-          categories={categories}
-          onSearchChange={setSearchTerm}
-          onFilterInspectedChange={setFilterInspected}
-          onFilterParentCategoryChange={setFilterParentCategory}
-          onFilterCategoryChange={setFilterCategory}
-          onFilterReferenceChange={setFilterReference}
-        />
+        {/* Sin barra de filtros: tipo, categoría y validado se filtran desde el embudo
+            de su propia columna. */}
 
         {/* Table */}
         <ProductTable
@@ -530,6 +559,17 @@ export function ProductsPage() {
           onShowPrices={setPricesProduct}
           onValidationChange={crud.requestValidation}
           validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
+          sort={sort}
+          // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
+          // muestra un tramo arbitrario de la lista.
+          onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
+          filterInspected={filterInspected}
+          // Idem al filtrar: la página 5 puede no existir con menos resultados.
+          onFilterInspectedChange={(next) => { setFilterInspected(next); setCurrentPage(1); }}
+          filterReference={filterReference}
+          onFilterReferenceChange={(next) => { setFilterReference(next); setCurrentPage(1); }}
+          filterCategoryValue={categoryFilterValue}
+          onFilterCategoryValueChange={applyCategoryFilter}
         />
 
         {/* Pagination */}

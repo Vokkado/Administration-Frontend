@@ -4,16 +4,22 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 import {
   ValidationService,
   type ValidationDetail,
   type ValidationIngredient,
+  type ValidationTag,
   type LinkColor,
 } from '../../services/validation.service';
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
+import { TagsService, type ApplicableTagGroup } from '../../services/tags.service';
+import { EditIngredientModal } from './EditIngredientModal';
+import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
+import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
+import './composition.css';
 
 export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
   green: { bg: '#ecfdf5', border: '#a7f3d0', dot: '#10b981', label: 'Ya existía' },
@@ -53,20 +59,118 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
+  // Fichas abiertas en los modales compartidos con la página de Ingredientes.
+  // Son dos entidades distintas: la variante (lo que se vincula al producto) y el
+  // ingrediente canónico al que apunta.
+  // null = cerrado | { id: null } = crear una variante | { id } = editar esa variante.
+  const [variantEditor, setVariantEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
+  const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  /** Editar solo refresca; una variante recién creada además se vincula al producto. */
+  const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
+    if (isNew && saved.id) { void run(() => ValidationService.addIngredient(productId, saved.id)); return; }
+    onChanged();
+  };
+
+  /**
+   * Un ingrediente solo no se vincula a nada: lo que se vincula son sus variantes.
+   * Por eso al crearlo se encadena el alta de su primera variante, ya con el
+   * ingrediente elegido como padre (mismo flujo que el modal de producto).
+   */
+  const handleIngredientCreated = (ingredient: { id: string }) => {
+    setCreatingIngredient(false);
+    if (ingredient.id) setVariantEditor({ id: null, ingredientId: ingredient.id });
+  };
+
   return (
     <>
-      <Section title={`Ingredientes (${detail.ingredients.length})`}
-        adder={<AdderButton label="+ Agregar"
-          search={variantSearch}
-          onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />}>
+      <Section
+        title={`Ingredientes (${detail.ingredients.length})`}
+        help={
+          <button
+            type="button"
+            className="vp-help-btn"
+            onClick={() => setShowHelp(true)}
+            title="Cómo leer esta lista"
+            aria-label="Cómo leer esta lista"
+          >
+            i
+          </button>
+        }
+        adder={
+          <div className="vp-section-actions">
+            <AdderButton label="+ Agregar"
+              title="Agregar una variante que ya existe"
+              placeholder="Buscar variante de ingrediente…"
+              search={variantSearch}
+              onPick={(p) => run(() => ValidationService.addIngredient(productId, p.id))} />
+            {/* El ingrediente es la entidad base; la variante es lo que se vincula al
+                producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+            <Button
+              variant="outline"
+              onClick={() => setCreatingIngredient(true)}
+              disabled={busy}
+              title="Crear un ingrediente nuevo y su primera variante"
+            >
+              + Ingrediente
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setVariantEditor({ id: null })}
+              disabled={busy}
+              title="Crear una variante nueva de un ingrediente que ya existe"
+            >
+              + Variante
+            </Button>
+          </div>
+        }>
         {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {detail.ingredients.map((ing) => (
-          <IngredientRow key={ing.variantId} productId={productId} ing={ing} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          <IngredientRow
+            key={ing.variantId}
+            productId={productId}
+            ing={ing}
+            busy={busy}
+            setBusy={setBusy}
+            onChanged={onChanged}
+            onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+            onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+          />
         ))}
       </Section>
 
+      {variantEditor && (
+        <VariantEditorModal
+          variantId={variantEditor.id}
+          initialIngredientId={variantEditor.ingredientId}
+          onClose={() => setVariantEditor(null)}
+          onSaved={(saved) => handleVariantSaved(saved, variantEditor.id === null)}
+        />
+      )}
+
+      {creatingIngredient && (
+        <IngredientEditorModal
+          onClose={() => setCreatingIngredient(false)}
+          onSaved={handleIngredientCreated}
+        />
+      )}
+
+      {editingIngredientId && (
+        <EditIngredientModal
+          ingredientId={editingIngredientId}
+          onClose={() => setEditingIngredientId(null)}
+          onSaved={onChanged}
+        />
+      )}
+
+      {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
+
       <Section title={`Alérgenos (${detail.allergens.length})`}
         adder={<AdderButton label="+ Agregar"
+          title="Agregar alérgeno"
+          placeholder="Buscar alérgeno…"
           search={allergenSearch}
           onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
         {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
@@ -91,43 +195,227 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   );
 }
 
-function IngredientRow({ productId, ing, busy, setBusy, onChanged }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
+const MIN_SCORE = 1;
+const MAX_SCORE = 10;
+/** Un campo vacío o no numérico cae al mínimo en vez de dejar NaN. */
+const clampScore = (n: number) => (Number.isFinite(n) ? Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(n))) : MIN_SCORE);
+
+/**
+ * Ayuda del paso: qué es cada parte de una fila y qué significa cada origen.
+ * Los valores de `matchTier` salen de `IngredientMatcher` (backend); "AI" lo escribe el
+ * linker cuando no hubo match y hubo que crear la ficha.
+ */
+function CompositionHelp({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal show title="Cómo leer esta lista" onClose={onClose} maxWidth="620px">
+      <div className="vp-help">
+      <p className="vp-help-row">
+        <strong>nombre en negrita</strong>
+        <span> → </span>
+        <span className="vp-help-muted">nombre en gris</span>
+        <span className="vp-help-note">
+          El primero es la <strong>variante</strong>: el alias concreto con el que se vinculó
+          el producto. El segundo es el <strong>ingrediente</strong> canónico al que esa
+          variante pertenece. Clickeá cualquiera de los dos para editarlo.
+        </span>
+      </p>
+
+      <p className="vp-help-note">
+        Si los dos dicen lo mismo, es porque la IA no encontró nada parecido en la base y
+        creó el ingrediente y su variante de una, con el mismo nombre.
+      </p>
+
+      <h4 className="vp-help-title">Qué hace cada botón</h4>
+      <dl className="vp-help-actions">
+        <dt>+ Agregar</dt>
+        <dd>Vincula al producto una variante que <strong>ya existe</strong> en el catálogo. Es para lo que la IA no detectó, o lo que quitaste sin querer.</dd>
+        <dt>+ Ingrediente</dt>
+        <dd>Crea un ingrediente que todavía no existe en la base. Como lo que se vincula son las variantes, al guardarlo se encadena el alta de su primera variante.</dd>
+        <dt>+ Variante</dt>
+        <dd>Crea un alias nuevo de un ingrediente que ya existe, y lo vincula al producto.</dd>
+        <dt>✓ Está bien</dt>
+        <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Solo aparece en las que no lo están.</dd>
+        <dt>✎ Corregir</dt>
+        <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior.</dd>
+        <dt>✕ Quitar</dt>
+        <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
+        <dt>Validar ingrediente</dt>
+        <dd>Solo en las filas rojas: guarda el puntaje y la toxicidad que revisaste, y da por aprobada la ficha que inventó la IA.</dd>
+      </dl>
+
+      <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
+      <dl className="vp-help-tiers">
+        <dt>INS</dt>
+        <dd>Aditivo reconocido por su número INS (ej. E-322). Match seguro.</dd>
+        <dt>EXACT</dt>
+        <dd>El texto de la etiqueta coincide exactamente con una variante que ya existía.</dd>
+        <dt>ALIAS</dt>
+        <dd>Coincidió a través de un sinónimo conocido del diccionario.</dd>
+        <dt>EXACT_INGREDIENT</dt>
+        <dd>Coincidió con el nombre de un ingrediente, no con una variante: se creó la variante.</dd>
+        <dt>FUZZY / FUZZY_INGREDIENT</dt>
+        <dd>Coincidencia aproximada por similitud. Es la que más conviene revisar.</dd>
+        <dt>AI</dt>
+        <dd>No coincidió con nada: la IA inventó la ficha y creó ingrediente + variante.</dd>
+      </dl>
+      </div>
+    </Modal>
+  );
+}
+
+const TOX_OPTIONS = [
+  { value: 'LOW', label: 'Baja' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'HIGH', label: 'Alta' },
+];
+
+/** Qué leyó la IA y con qué lo vinculó: el contexto para decidir el reemplazo. */
+const TIER_HINTS: Record<string, string> = {
+  EXACT: 'Coincidencia exacta con una variante que ya existía',
+  AI: 'Variante creada o vinculada por la IA',
+  MANUAL: 'Vinculado a mano por un admin',
+};
+
+function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
+  const c = COLORS[ing.color];
+  const tier = ing.matchTier ?? '—';
+  return (
+    <div className="vp-detected" style={{ background: c.bg, borderColor: c.border }}>
+      <span className="vp-detected-label">Detectado por la IA en la etiqueta</span>
+      <div className="vp-detected-name"><Dot color={ing.color} /> {ing.variantName}</div>
+      <div className="vp-detected-meta">
+        Vinculado al ingrediente <strong>{ing.ingredientName}</strong>
+        <span style={tierBadge} title={TIER_HINTS[tier] ?? 'Origen del vínculo'}>{tier}</span>
+      </div>
+      {ing.reason && <p className="vp-detected-reason">{ing.reason}</p>}
+    </div>
+  );
+}
+
+function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditVariant: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div><Dot color={ing.color} /> <strong>{ing.variantName}</strong>
-            <span style={{ color: '#6b7280', fontSize: 13 }}> → {ing.ingredientName}</span>
-            <span style={tierBadge}>{ing.matchTier ?? '—'}</span>
+      {/* Título a la izquierda y acciones a la derecha; el panel de la IA va debajo, a todo el ancho. */}
+      <div className="vp-row-head">
+        <div className="vp-row-title">
+          {/* Cada nombre abre SU ficha: la variante es lo que se vincula al producto,
+              el ingrediente es la entidad canónica a la que esa variante apunta. */}
+          <div><Dot color={ing.color} />{' '}
+            <button
+              type="button"
+              className="vp-variant-link"
+              onClick={onEditVariant}
+              title="Editar la variante (ingrediente base, nombre y atributos)"
+            >
+              {ing.variantName} <span aria-hidden>✎</span>
+            </button>
+            <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
+            <button
+              type="button"
+              className="vp-ingredient-link"
+              onClick={onEditIngredient}
+              title="Editar la ficha del ingrediente (riesgo, puntaje, restricciones)"
+            >
+              {ing.ingredientName} <span aria-hidden>✎</span>
+            </button>
+            <span style={tierBadge} title={TIER_HINTS[ing.matchTier ?? ''] ?? 'Origen del vínculo'}>
+              {ing.matchTier ?? '—'}
+            </span>
           </div>
-          {ing.color === 'red' && (
-            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 13 }}>Score <input type="number" min={1} max={10} value={score} onChange={(e) => setScore(Number(e.target.value))} style={{ width: 54, marginLeft: 6 }} /></label>
-              <label style={{ fontSize: 13 }}>Toxicidad
-                <select value={tox} onChange={(e) => setTox(e.target.value)} style={{ marginLeft: 6 }}>
-                  <option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option>
-                </select>
-              </label>
-              {ing.reason && <em style={{ fontSize: 12, color: '#6b7280' }}>{ing.reason}</em>}
-              <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>Validar ingrediente</Button>
-            </div>
-          )}
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <Button variant="secondary" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
+        <div className="vp-row-actions">
+          {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+          <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
           <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
         </div>
       </div>
+
+      {ing.color === 'red' && (
+        <div className="vp-ai-panel">
+          <div className="vp-ai-head">
+            <span className="vp-ai-tag">Creado por la IA</span>
+            <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+          </div>
+
+          {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
+
+          <div className="vp-ai-fields">
+            <div className="vp-field">
+              <span className="vp-field-name">Puntaje</span>
+              <div className="vp-score-input">
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s - 1))}
+                  disabled={busy || score <= MIN_SCORE}
+                  aria-label="Bajar puntaje"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={MIN_SCORE}
+                  max={MAX_SCORE}
+                  value={score}
+                  onChange={(e) => setScore(clampScore(Number(e.target.value)))}
+                  disabled={busy}
+                  aria-label="Puntaje"
+                />
+                <span className="vp-score-suffix">/10</span>
+                <button
+                  type="button"
+                  className="vp-score-step"
+                  onClick={() => setScore((s) => clampScore(s + 1))}
+                  disabled={busy || score >= MAX_SCORE}
+                  aria-label="Subir puntaje"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="vp-field">
+              <span className="vp-field-name">Toxicidad</span>
+              <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
+                {TOX_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
+                    onClick={() => setTox(o.value)}
+                    disabled={busy}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
+              Validar ingrediente
+            </Button>
+          </div>
+        </div>
+      )}
+
       {correcting && (
-        <SearchPicker placeholder="Buscar la variante correcta…"
-          search={variantSearch}
-          onCancel={() => setCorrecting(false)}
-          onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })} />
+        <Modal show title="Corregir ingrediente" onClose={() => setCorrecting(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <DetectedSummary ing={ing} />
+            <p className="vp-field-label">Elegí la variante correcta</p>
+            <SearchPicker
+              plain
+              placeholder="Buscar la variante correcta…"
+              search={variantSearch}
+              onCancel={() => setCorrecting(false)}
+              onSelect={(p) => run(async () => { await ValidationService.reassignIngredient(productId, ing.variantId, p.id); setCorrecting(false); })}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
@@ -175,27 +463,67 @@ function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: st
   }
   return (
     <AdderButton label="+ Agregar nutriente"
+      title="Agregar valor nutricional"
+      placeholder="Buscar nutriente…"
       search={nutritionSearch}
       onPick={(p) => setPicked(p)} />
   );
 }
 
-function AdderButton({ label, search, onPick }: { label: string; search: PickerSearch; onPick: (p: Picked) => void }) {
+/**
+ * Botón de alta que abre el buscador en un modal: inline empujaba la lista hacia abajo
+ * y dejaba el desplegable apretado contra el borde de la card.
+ */
+function AdderButton({ label, title, placeholder, search, onPick }: {
+  label: string; title: string; placeholder: string; search: PickerSearch; onPick: (p: Picked) => void;
+}) {
   const [open, setOpen] = useState(false);
-  if (!open) return <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>;
-  return <SearchPicker placeholder="Buscar…" search={search} onCancel={() => setOpen(false)} onSelect={(p) => { onPick(p); setOpen(false); }} />;
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>{label}</Button>
+      {open && (
+        <Modal show title={title} onClose={() => setOpen(false)} maxWidth="560px">
+          <div className="vp-picker-modal">
+            <SearchPicker
+              plain
+              placeholder={placeholder}
+              search={search}
+              onCancel={() => setOpen(false)}
+              onSelect={(p) => { onPick(p); setOpen(false); }}
+            />
+          </div>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 const PICKER_PAGE = 25;
 
-function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string }) {
+/** Resalta dentro del nombre la parte que coincide con lo tipeado. */
+function Highlight({ text, term }: { text: string; term: string }) {
+  const at = term ? text.toLowerCase().indexOf(term.toLowerCase()) : -1;
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark className="vp-picker-mark">{text.slice(at, at + term.length)}</mark>
+      {text.slice(at + term.length)}
+    </>
+  );
+}
+
+function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }: { search: PickerSearch; onSelect: (p: Picked) => void; onCancel: () => void; placeholder: string; plain?: boolean }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Picked[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Fila resaltada, para elegir con ↑/↓ + Enter sin sacar las manos del teclado.
+  const [active, setActive] = useState(0);
   // Token para descartar respuestas viejas (debounce + scroll concurrentes).
   const reqRef = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Primera página: al abrir (q vacío trae todo) y en cada cambio de query (debounce 300ms).
   useEffect(() => {
@@ -205,7 +533,7 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     const t = setTimeout(async () => {
       try {
         const r = await search(term, 0, PICKER_PAGE);
-        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); }
+        if (reqRef.current === myReq) { setResults(r.items); setTotal(r.total); setActive(0); }
       } finally {
         if (reqRef.current === myReq) setLoading(false);
       }
@@ -233,27 +561,118 @@ function SearchPicker({ search, onSelect, onCancel, placeholder }: { search: Pic
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) loadMore();
   };
 
+  /** Mueve el resaltado y arrastra el scroll para que la fila quede visible. */
+  const move = (delta: number) => {
+    if (results.length === 0) return;
+    const next = Math.min(Math.max(active + delta, 0), results.length - 1);
+    setActive(next);
+    listRef.current?.children[next]?.scrollIntoView({ block: 'nearest' });
+    if (next >= results.length - 3) loadMore();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (results[active]) onSelect(results[active]); }
+    else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
+
+  const term = q.trim();
+
   return (
-    <div style={{ marginTop: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, minWidth: 280 }}>
-      <input autoFocus placeholder={placeholder} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '100%', padding: '6px 8px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: 6 }} />
-      <div style={{ maxHeight: 240, overflowY: 'auto', marginTop: 6 }} onScroll={onScroll}>
-        {loading && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Buscando…</div>}
-        {!loading && results.map((r) => <button key={r.id} onClick={() => onSelect(r)} style={pickerItem}>{r.name}</button>)}
-        {!loading && results.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Sin resultados</div>}
-        {!loading && loadingMore && <div style={{ fontSize: 12, color: '#9ca3af', padding: 4 }}>Cargando más…</div>}
-        {!loading && !loadingMore && results.length > 0 && results.length < total && (
-          <div style={{ fontSize: 11, color: '#c4c4c4', padding: 4, textAlign: 'center' }}>Scrolleá para ver más ({results.length}/{total})</div>
+    <div className={`vp-picker ${plain ? 'is-plain' : ''}`}>
+      <div className="vp-picker-search">
+        <span className="vp-picker-icon" aria-hidden>🔍</span>
+        <input
+          autoFocus
+          className="vp-picker-input"
+          placeholder={placeholder}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        {q && (
+          <button type="button" className="vp-picker-clear" onClick={() => setQ('')} aria-label="Limpiar búsqueda">
+            ×
+          </button>
         )}
       </div>
-      <button onClick={onCancel} style={{ ...pickerItem, color: '#6b7280' }}>Cancelar</button>
+
+      <div className="vp-picker-list" ref={listRef} onScroll={onScroll}>
+        {loading && <div className="vp-picker-state"><span className="vp-picker-spinner" />Buscando…</div>}
+        {!loading && results.map((r, i) => (
+          <button
+            key={r.id}
+            type="button"
+            className={`vp-picker-item ${i === active ? 'is-active' : ''}`}
+            onMouseEnter={() => setActive(i)}
+            onClick={() => onSelect(r)}
+          >
+            <Highlight text={r.name} term={term} />
+          </button>
+        ))}
+        {!loading && results.length === 0 && (
+          <div className="vp-picker-state">Sin resultados{term ? ` para “${term}”` : ''}</div>
+        )}
+        {!loading && loadingMore && <div className="vp-picker-state"><span className="vp-picker-spinner" />Cargando más…</div>}
+        {!loading && !loadingMore && results.length > 0 && results.length < total && (
+          <div className="vp-picker-more">Scrolleá para ver más ({results.length} de {total})</div>
+        )}
+      </div>
+
+      <div className="vp-picker-footer">
+        <button type="button" className="vp-picker-cancel" onClick={onCancel}>Cancelar</button>
+      </div>
     </div>
   );
 }
 
+/**
+ * Sección de TAGS del producto (paso "Más info" del wizard, junto a Categoría). A diferencia
+ * de ingredientes/alérgenos (listas planas), los tags están agrupados por eje (Grano, Relleno,
+ * Certificaciones...) y los grupos APLICABLES dependen de la categoría elegida — por eso este
+ * componente recarga la lista de aplicables cada vez que cambia `categoryId`.
+ * 🔴 = tag creado por la IA sin revisar (is_inspected=false); 🟢 = ya validado.
+ */
+export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChanged }: {
+  productId: string; categoryId: string; tags: ValidationTag[]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
+}) {
+  const [groups, setGroups] = useState<ApplicableTagGroup[]>([]);
+  useEffect(() => {
+    let alive = true;
+    TagsService.getApplicableGroups(categoryId || null).then((g) => { if (alive) setGroups(g); });
+    return () => { alive = false; };
+  }, [categoryId]);
+
+  const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
+
+  const linkedIds = new Set(tags.map((t) => t.tagId));
+  const pool = groups.flatMap((g) => g.tags.filter((t) => !linkedIds.has(t.id)).map((t) => ({ id: t.id, name: `${t.name} — ${g.name}` })));
+  const tagSearch: PickerSearch = async (term) => {
+    const filtered = term ? pool.filter((p) => p.name.toLowerCase().includes(term.toLowerCase())) : pool;
+    return { items: filtered.slice(0, PICKER_PAGE), total: filtered.length };
+  };
+
+  return (
+    <Section title={`Tags (${tags.length})`}
+      adder={groups.length > 0 && <AdderButton label="+ Agregar" title="Agregar tag" placeholder="Buscar tag…" search={tagSearch}
+        onPick={(p) => run(() => ValidationService.addTag(productId, p.id))} />}>
+      {tags.length === 0 && <Muted>{groups.length === 0 ? 'Sin grupos de tags aplicables a esta categoría.' : 'Sin tags.'}</Muted>}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {tags.map((t) => (
+          <span key={t.tagId} style={chip(t.color)}>
+            <Dot color={t.color} /> {t.tagGroupName}: {t.tagName}
+            <span onClick={() => !busy && run(() => ValidationService.removeTag(productId, t.tagId))} style={xStyle} title="Quitar">✕</span>
+          </span>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 // ── helpers de estilo ────────────────────────────────────────────────────────────
-const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280' };
+const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'pointer' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
-const pickerItem: React.CSSProperties = { display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 };
@@ -262,11 +681,20 @@ function chip(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
-function Section({ title, adder, children }: { title: string; adder?: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, help, adder, children }: {
+  title: string;
+  /** Control extra al lado del título (por ejemplo, el botón de ayuda). */
+  help?: React.ReactNode;
+  adder?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ fontSize: 15, margin: 0, color: '#374151' }}>{title}</h3>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, margin: 0, color: '#374151' }}>
+          {title}
+          {help}
+        </h3>
         {adder}
       </div>
       {children}

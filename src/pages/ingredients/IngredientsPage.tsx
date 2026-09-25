@@ -4,13 +4,12 @@
 import { useState } from 'react';
 import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { IngredientFilters } from './components/IngredientFilters';
+import { SearchInput } from '../../components/ui';
 import { IngredientTable } from './components/IngredientTable';
 import { IngredientModal } from './components/IngredientModal';
 import { ProductsByIngredientModal } from './components/ProductsByIngredientModal';
 import { MergeIngredientsModal } from './components/MergeIngredientsModal';
 import { MergeIngredientVariantsModal } from './components/MergeIngredientVariantsModal';
-import { VariantFilters } from './components/VariantFilters';
 import { VariantTable } from './components/VariantTable';
 import { VariantModal } from './components/VariantModal';
 import { useIngredients } from './hooks/useIngredients';
@@ -33,12 +32,14 @@ export function IngredientsPage() {
     filterRisk,
     filterInspected,
     filterReason,
+    sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterRisk,
     setFilterInspected,
     setFilterReason,
+    setSort,
     setCurrentPage,
     setError,
     createIngredient,
@@ -390,63 +391,96 @@ export function IngredientsPage() {
     }
   };
 
-  return (
-    <AdminLayout title="Gestión de Ingredientes">
-        {/* Page Tabs */}
-        <div className="ingredient-page-tabs">
-          <button
-            type="button"
-            className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ingredients')}
-          >
-            🧪 Ingredientes
-          </button>
-          <button
-            type="button"
-            className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
-            onClick={() => setActiveTab('variants')}
-          >
-            🔀 Variantes de Ingrediente
-          </button>
-        </div>
+  const activeTotal = activeTab === 'ingredients' ? total : variantsHook.total;
+  const countLabel = activeTab === 'ingredients'
+    ? (activeTotal === 1 ? 'ingrediente' : 'ingredientes')
+    : (activeTotal === 1 ? 'variante' : 'variantes');
 
+  // Pestañas arriba del título, dentro del header, para que título + contador +
+  // buscador + botones compartan una sola línea debajo.
+  const tabs = (
+    <div className="ingredient-page-tabs">
+      <button
+        type="button"
+        className={`ingredient-page-tab ${activeTab === 'ingredients' ? 'active' : ''}`}
+        onClick={() => setActiveTab('ingredients')}
+      >
+        🧪 Ingredientes
+      </button>
+      <button
+        type="button"
+        className={`ingredient-page-tab ${activeTab === 'variants' ? 'active' : ''}`}
+        onClick={() => setActiveTab('variants')}
+      >
+        🔀 Variantes de Ingrediente
+      </button>
+    </div>
+  );
+
+  // El buscador apunta a la pestaña activa.
+  const searchBox = (
+    <div className="header-search">
+      <SearchInput
+        value={activeTab === 'ingredients' ? searchTerm : variantsHook.searchTerm}
+        onChange={activeTab === 'ingredients' ? setSearchTerm : variantsHook.setSearchTerm}
+        placeholder="Buscar por nombre..."
+      />
+    </div>
+  );
+
+  const headerActions = (
+    <div className="header-actions">
+      {/* Mismas clases que usa PageHeader para su contador. */}
+      <div className="header-count">
+        <span className="count-number">{activeTotal}</span>
+        <span className="count-label">{countLabel}</span>
+      </div>
+      {searchBox}
+      {/* Sin repetir la entidad: ya está en el título de la página. */}
+      <Button
+        variant="primary"
+        onClick={activeTab === 'ingredients' ? openMergeModal : openVariantMergeModal}
+      >
+        🔗 Unificar
+      </Button>
+      <Button
+        variant="primary"
+        onClick={activeTab === 'ingredients' ? openCreateModal : openCreateVariantModal}
+      >
+        + Agregar
+      </Button>
+    </div>
+  );
+
+  return (
+    <AdminLayout title="Gestión de Ingredientes" wide>
         {/* Success Message */}
         <NotificationBanner type="success" message={crud.successMessage} />
+
+        {/* Pestañas arriba del título; título, contador, buscador y botones en una línea. */}
+        {activeTab === 'ingredients' ? (
+          <PageHeader title="Ingredientes" aboveTitle={tabs} actions={headerActions} />
+        ) : (
+          <PageHeader
+            breadcrumb={[
+              { label: 'Dashboard', to: '/dashboard' },
+              // Misma ruta que la pestaña de ingredientes: se vuelve cambiando de tab.
+              { label: 'Ingredientes', onClick: () => setActiveTab('ingredients') },
+              { label: 'Variantes' },
+            ]}
+            title="Variantes de Ingrediente"
+            aboveTitle={tabs}
+            actions={headerActions}
+          />
+        )}
 
         {/* ===== INGREDIENTS TAB ===== */}
         {activeTab === 'ingredients' && (
           <>
-            <PageHeader
-              title="Ingredientes"
-              description="Gestión de ingredientes del sistema"
-              count={total}
-              countLabel="ingredientes"
-              countLabelSingular="ingrediente"
-              actions={
-                <div className="header-actions">
-                  <Button variant="primary" onClick={openMergeModal}>
-                    🔗 Unificar Ingredientes
-                  </Button>
-                  <Button variant="primary" onClick={openCreateModal}>
-                    + Agregar Ingrediente
-                  </Button>
-                </div>
-              }
-            />
-
             {!showModal && <NotificationBanner type="error" message={error} />}
 
-            <IngredientFilters
-              searchTerm={searchTerm}
-              filterRisk={filterRisk}
-              filterInspected={filterInspected}
-              filterReason={filterReason}
-              onSearchChange={setSearchTerm}
-              onFilterRiskChange={setFilterRisk}
-              onFilterInspectedChange={setFilterInspected}
-              onFilterReasonChange={setFilterReason}
-            />
-
+            {/* Sin barra de filtros: riesgo, justificación y validado se filtran desde
+                el embudo de su propia columna. */}
             <IngredientTable
               ingredients={ingredients}
               loading={loading}
@@ -454,6 +488,17 @@ export function IngredientsPage() {
               onDelete={crud.requestDelete}
               onValidationChange={crud.requestValidation}
               validatingId={crud.isValidating ? crud.validatingItem?.id ?? null : null}
+              sort={sort}
+              // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden
+              // muestra un tramo arbitrario de la lista.
+              onSortChange={(next) => { setSort(next); setCurrentPage(1); }}
+              filterInspected={filterInspected}
+              // Idem al filtrar: la página 5 puede no existir con menos resultados.
+              onFilterInspectedChange={(next) => { setFilterInspected(next); setCurrentPage(1); }}
+              filterRisk={filterRisk}
+              onFilterRiskChange={(next) => { setFilterRisk(next); setCurrentPage(1); }}
+              filterReason={filterReason}
+              onFilterReasonChange={(next) => { setFilterReason(next); setCurrentPage(1); }}
             />
 
             <Pagination
@@ -511,33 +556,9 @@ export function IngredientsPage() {
         {/* ===== VARIANTS TAB ===== */}
         {activeTab === 'variants' && (
           <>
-            <PageHeader
-              title="Variantes de Ingrediente"
-              description="Gestión de variantes con sus atributos asignados"
-              count={variantsHook.total}
-              countLabel="variantes"
-              countLabelSingular="variante"
-              actions={
-                <div className="header-actions">
-                  <Button variant="primary" onClick={openVariantMergeModal}>
-                    🔗 Unificar Variantes
-                  </Button>
-                  <Button variant="primary" onClick={openCreateVariantModal}>
-                    + Agregar Variante
-                  </Button>
-                </div>
-              }
-            />
-
             {!showVariantModal && <NotificationBanner type="error" message={variantsHook.error} />}
 
-            <VariantFilters
-              searchTerm={variantsHook.searchTerm}
-              filterInspected={variantsHook.filterInspected}
-              onSearchChange={variantsHook.setSearchTerm}
-              onFilterInspectedChange={variantsHook.setFilterInspected}
-            />
-
+            {/* Sin barra de filtros: validado se filtra desde el embudo de su columna. */}
             <VariantTable
               variants={variantsHook.variants}
               loading={variantsHook.loading}
@@ -548,6 +569,17 @@ export function IngredientsPage() {
               onValidationChange={variantCrud.requestValidation}
               onViewProducts={handleViewProducts}
               validatingId={variantCrud.isValidating ? variantCrud.validatingItem?.id ?? null : null}
+              filterInspected={variantsHook.filterInspected}
+              // Al filtrar se vuelve a la página 1: con menos resultados, la actual puede no existir.
+              onFilterInspectedChange={(next) => {
+                variantsHook.setFilterInspected(next);
+                variantsHook.setCurrentPage(1);
+              }}
+              sort={variantsHook.sort}
+              onSortChange={(next) => {
+                variantsHook.setSort(next);
+                variantsHook.setCurrentPage(1);
+              }}
             />
 
             <Pagination
