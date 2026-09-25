@@ -2,8 +2,9 @@
  * Componente de Ruta Protegida
  *
  * - Sin sesión → /login
- * - Con sesión pero sin rol (o cuenta desactivada / error al verificar) → /access
- * - Con rol → renderiza la página
+ * - Sin acceso al panel (o cuenta desactivada / error al verificar) → /access
+ * - Con acceso al panel pero sin el rol de esta sección → /dashboard
+ * - Con el rol → renderiza la página
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
@@ -38,8 +39,12 @@ export function ProtectedRoute({ children, roles = ['admin'] }: ProtectedRoutePr
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const allowed = status === 'authorized' && !!user?.roles.some((role) => roles.includes(role));
-  if (!allowed) {
+  // Con acceso al panel pero sin el rol de esta sección (p. ej. el editor de catálogo entrando a
+  // Usuarios): vuelve al dashboard, que ya muestra solo lo suyo. Sin acceso al panel: /access.
+  if (status === 'authorized' && !user?.roles.some((role) => roles.includes(role))) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (status !== 'authorized') {
     return <Navigate to="/access" replace />;
   }
 

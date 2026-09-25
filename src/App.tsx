@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/routing/ProtectedRoute';
+import { CATALOG_ROLES, PANEL_ROLES } from './modules/auth/types';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RequestAccessPage } from './pages/auth/RequestAccessPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
@@ -55,7 +56,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={PANEL_ROLES}>
                   <DashboardPage />
                 </ProtectedRoute>
               }
@@ -64,7 +65,7 @@ function App() {
             <Route
               path="/restrictions"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <RestrictionPage />
                 </ProtectedRoute>
               }
@@ -73,7 +74,7 @@ function App() {
             <Route
               path="/products"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <ProductsPage />
                 </ProtectedRoute>
               }
@@ -82,7 +83,7 @@ function App() {
             <Route
               path="/validation"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <ValidationListPage />
                 </ProtectedRoute>
               }
@@ -91,7 +92,7 @@ function App() {
             <Route
               path="/validation/:id"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <ValidationWizardPage />
                 </ProtectedRoute>
               }
@@ -100,7 +101,7 @@ function App() {
             <Route
               path="/categories"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <CategoriesPage />
                 </ProtectedRoute>
               }
@@ -109,7 +110,7 @@ function App() {
             <Route
               path="/ingredients"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <IngredientsPage />
                 </ProtectedRoute>
               }
@@ -118,7 +119,7 @@ function App() {
             <Route
               path="/nutrition-facts"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <NutritionFactPage />
                 </ProtectedRoute>
               }
@@ -181,7 +182,7 @@ function App() {
             <Route
               path="/allergens"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <AllergensPage />
                 </ProtectedRoute>
               }
@@ -190,7 +191,7 @@ function App() {
             <Route
               path="/companies"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <CompaniesPage />
                 </ProtectedRoute>
               }
@@ -199,7 +200,7 @@ function App() {
             <Route
               path="/attributes"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={CATALOG_ROLES}>
                   <AttributesPage />
                 </ProtectedRoute>
               }

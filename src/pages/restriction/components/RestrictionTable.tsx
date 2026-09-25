@@ -8,6 +8,7 @@ import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { RESTRICTION_TYPE_LABELS, MODE_LABELS, INGREDIENT_CATEGORY_LABELS } from '../types';
 import type { IngredientCategory } from '../types';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 interface RestrictionTableProps {
   restrictions: Restriction[];
@@ -118,13 +119,15 @@ export function RestrictionTable({
           >
             <img src={editIcon} alt="Editar" className="icon-img" />
           </button>
-          <button
-            className="action-btn delete-btn"
-            onClick={() => onDelete(restriction.id)}
-            title="Eliminar"
-          >
-            <img src={deleteIcon} alt="Eliminar" className="icon-img" />
-          </button>
+          <AdminOnly>
+            <button
+              className="action-btn delete-btn"
+              onClick={() => onDelete(restriction.id)}
+              title="Eliminar"
+            >
+              <img src={deleteIcon} alt="Eliminar" className="icon-img" />
+            </button>
+          </AdminOnly>
         </>
       )}
     />

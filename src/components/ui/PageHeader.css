@@ -55,6 +55,13 @@
 .page-header-actions {
   display: flex;
   gap: 12px;
+  /* La descripción ocupa el ancho disponible: sin esto los botones se achican y el texto se
+     parte en dos líneas, dejando el botón el doble de alto. */
+  flex-shrink: 0;
+}
+
+.page-header-actions .btn {
+  white-space: nowrap;
 }
 
 /* Responsive */

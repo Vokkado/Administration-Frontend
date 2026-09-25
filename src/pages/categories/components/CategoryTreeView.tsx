@@ -2,6 +2,7 @@
  * Vista de Árbol de Categorías
  */
 import type { Category, CategoryTree } from '../types';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 interface CategoryTreeViewProps {
   categoryTree: CategoryTree[];
@@ -45,13 +46,15 @@ export function CategoryTreeView({
           >
             <img src="../../../../assets/icons/brownPencil.png" alt="Editar" className="icon-img" />
           </button>
-          <button
-            className="action-btn delete-btn"
-            onClick={() => onDelete(node)}
-            title="Eliminar categoría"
-          >
-            <img src="../../../../assets/icons/trashcan.png" alt="Eliminar" className="icon-img" />
-          </button>
+          <AdminOnly>
+            <button
+              className="action-btn delete-btn"
+              onClick={() => onDelete(node)}
+              title="Eliminar categoría"
+            >
+              <img src="../../../../assets/icons/trashcan.png" alt="Eliminar" className="icon-img" />
+            </button>
+          </AdminOnly>
         </div>
       </div>
       {node.children.length > 0 && (

@@ -10,6 +10,7 @@ import { ProductFilter } from './components/ProductFilter';
 import { ScoreBreakdownModal } from './components/ScoreBreakdownModal';
 import { PricesModal } from './components/PricesModal';
 import { useProducts } from './hooks/useProducts';
+import { AdminOnly } from '../../components/routing/AdminOnly';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
 import type { Product, ProductAllergen, ProductIngredientVariant, ProductNutritionFact } from './types';
 import './ProductsPage.css';
@@ -447,20 +448,23 @@ export function ProductsPage() {
           countLabelSingular="producto"
           actions={
             <div className="header-actions">
-              <Button
-                variant="outline"
-                onClick={handleRebuildSnapshots}
-                loading={isRebuildingSnapshots}
-              >
-                Actualizar Snapshots
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowBulkScoreDialog(true)}
-                loading={isCalculatingBulk}
-              >
-                Calcular Puntajes
-              </Button>
+              {/* Procesos masivos: tocan el catálogo entero, solo admin. */}
+              <AdminOnly>
+                <Button
+                  variant="outline"
+                  onClick={handleRebuildSnapshots}
+                  loading={isRebuildingSnapshots}
+                >
+                  Actualizar Snapshots
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowBulkScoreDialog(true)}
+                  loading={isCalculatingBulk}
+                >
+                  Calcular Puntajes
+                </Button>
+              </AdminOnly>
               <Button variant="primary" onClick={openCreateModal}>
                 + Agregar Producto
               </Button>

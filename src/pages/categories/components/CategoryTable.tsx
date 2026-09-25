@@ -5,6 +5,7 @@
 import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Category } from '../types';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 interface CategoryTableProps {
   categories: Category[];
@@ -73,13 +74,15 @@ export function CategoryTable({
           >
             <img src="../../../../assets/icons/brownPencil.png" alt="Editar" className="icon-img" />
           </button>
-          <button
-            className="action-btn delete-btn"
-            onClick={() => onDelete(category)}
-            title="Eliminar categoría"
-          >
-            <img src="../../../../assets/icons/trashcan.png" alt="Eliminar" className="icon-img" />
-          </button>
+          <AdminOnly>
+            <button
+              className="action-btn delete-btn"
+              onClick={() => onDelete(category)}
+              title="Eliminar categoría"
+            >
+              <img src="../../../../assets/icons/trashcan.png" alt="Eliminar" className="icon-img" />
+            </button>
+          </AdminOnly>
         </>
       )}
     />

@@ -9,6 +9,7 @@ import { IoSparkles } from 'react-icons/io5';
 import { GiWineBottle } from 'react-icons/gi';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 function getScoreColor(score: number | null): string {
   if (score === null) return '#9E9E9E';
@@ -208,13 +209,15 @@ export function ProductTable({
         >
           <img src={editIcon} alt="Editar" className="icon-img" />
         </button>
-        <button
-          className="action-btn delete-btn"
-          onClick={() => onDelete(product.id)}
-          title="Eliminar producto"
-        >
-          <img src={deleteIcon} alt="Eliminar" className="icon-img" />
-        </button>
+        <AdminOnly>
+          <button
+            className="action-btn delete-btn"
+            onClick={() => onDelete(product.id)}
+            title="Eliminar producto"
+          >
+            <img src={deleteIcon} alt="Eliminar" className="icon-img" />
+          </button>
+        </AdminOnly>
       </>
     ),
     [onCalculateScore, onShowPrices, onEdit, onDelete],

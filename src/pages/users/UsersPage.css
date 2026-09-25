@@ -43,6 +43,95 @@
   font-style: italic;
 }
 
+/* Buscador para dar acceso a un usuario */
+.grant-role-modal {
+  padding: 16px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grant-role-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-grey-600);
+  line-height: 1.45;
+}
+
+/* Alto fijo: el modal no cambia de tamaño mientras se escribe la búsqueda. */
+.grant-role-results {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 176px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.grant-role-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 10px;
+  background: var(--color-white);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.grant-role-result:hover {
+  border-color: var(--color-primary);
+  background: var(--color-grey-50);
+}
+
+.grant-role-result-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.grant-role-result-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.grant-role-result-email {
+  font-size: 12px;
+  color: var(--color-grey-500);
+  word-break: break-all;
+}
+
+.grant-role-result-roles {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--color-grey-500);
+  white-space: nowrap;
+}
+
+/* Mensaje de "escribí para buscar" / "sin resultados": centrado en el área de resultados. */
+.grant-role-empty {
+  margin: auto;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--color-grey-400);
+  text-align: center;
+}
+
+.grant-role-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+
 /* Roles */
 .user-role-badges {
   display: flex;

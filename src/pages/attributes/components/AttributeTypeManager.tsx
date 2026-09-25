@@ -8,6 +8,7 @@ import type { AttributeType, AttributeTypeFormData } from '../types';
 import { getAttributeTypeLabel } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 interface AttributeTypeManagerProps {
   attributeTypes: AttributeType[];
@@ -191,13 +192,15 @@ export function AttributeTypeManager({
                     >
                       <img src={editIcon} alt="Editar" className="icon-img" />
                     </button>
-                    <button
-                      className="action-btn delete-btn"
-                      onClick={() => confirmDelete(at.id)}
-                      title="Eliminar"
-                    >
-                      <img src={deleteIcon} alt="Eliminar" className="icon-img" />
-                    </button>
+                    <AdminOnly>
+                      <button
+                        className="action-btn delete-btn"
+                        onClick={() => confirmDelete(at.id)}
+                        title="Eliminar"
+                      >
+                        <img src={deleteIcon} alt="Eliminar" className="icon-img" />
+                      </button>
+                    </AdminOnly>
                   </div>
                 </div>
               ))

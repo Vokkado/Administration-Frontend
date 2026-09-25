@@ -6,6 +6,7 @@ import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 const BENEFIT_LABELS: Record<Nutrition_Fact['benefit'], string> = {
   BENEFICIAL: 'Beneficioso',
@@ -107,13 +108,15 @@ export function NutritionFactTable({
           >
             <img src={editIcon} alt="Editar" className="icon-img" />
           </button>
-          <button
-            className="action-btn delete-btn"
-            onClick={() => onDelete(nf.id)}
-            title="Eliminar"
-          >
-            <img src={deleteIcon} alt="Eliminar" className="icon-img" />
-          </button>
+          <AdminOnly>
+            <button
+              className="action-btn delete-btn"
+              onClick={() => onDelete(nf.id)}
+              title="Eliminar"
+            >
+              <img src={deleteIcon} alt="Eliminar" className="icon-img" />
+            </button>
+          </AdminOnly>
         </div>
       )}
     />

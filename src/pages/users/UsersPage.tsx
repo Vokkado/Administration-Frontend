@@ -1,13 +1,17 @@
 /**
- * Página de Gestión de Usuarios
+ * Accesos y roles
+ *
+ * Lista solo a quienes tienen algún rol (admin, editor de catálogo, nutricionista). Para darle un
+ * rol a alguien más se busca en todo el padrón desde "Dar acceso a un usuario".
  */
 import { useState } from 'react';
-import { Pagination, PageHeader, NotificationBanner } from '../../components/ui';
+import { Button, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { UserFilters } from './components/UserFilters';
 import { UserTable } from './components/UserTable';
 import { UserRolesModal } from './components/UserRolesModal';
+import { GrantRoleModal } from './components/GrantRoleModal';
 import { useUsers } from './hooks/useUsers';
 import type { User } from './types';
 import './UsersPage.css';
@@ -24,18 +28,35 @@ export function UsersPage() {
     handleFiltersChange,
     handlePageChange,
     updateUserRoles,
+    refresh,
   } = useUsers();
   const { user: currentUser } = useAuthContext();
   const [rolesUser, setRolesUser] = useState<User | null>(null);
+  const [granting, setGranting] = useState(false);
+  /** El usuario elegido en el buscador todavía no está en la tabla: al cerrar, se relee. */
+  const [pickedFromSearch, setPickedFromSearch] = useState(false);
+
+  const closeRolesModal = () => {
+    setRolesUser(null);
+    if (pickedFromSearch) {
+      setPickedFromSearch(false);
+      refresh();
+    }
+  };
 
   return (
-    <AdminLayout title="Gestión de Usuarios">
+    <AdminLayout title="Accesos y roles">
         <PageHeader
-          title="Usuarios Registrados"
-          description="Consulta y administra los usuarios registrados en la plataforma. Los usuarios se consideran activos cuando tienen la aplicación abierta. El estado se actualiza automáticamente (con margen de 90 segundos para detección). Desde “Roles” podés dar o quitar acceso a las webs."
+          title="Accesos y roles"
+          description="Quiénes pueden entrar a las webs de Vokkado y con qué rol. Los usuarios sin rol no aparecen acá: usan la app y se buscan desde “Dar acceso”."
           count={total}
           countLabel="usuarios"
           countLabelSingular="usuario"
+          actions={
+            <Button variant="primary" onClick={() => setGranting(true)}>
+              Dar acceso
+            </Button>
+          }
         />
 
         {error && <NotificationBanner type="error" message={error} />}
@@ -51,13 +72,18 @@ export function UsersPage() {
               'Cargando...'
             ) : (
               <>
-                Mostrando {users.length} de {total} usuario{total !== 1 ? 's' : ''}
+                Mostrando {users.length} de {total} usuario{total !== 1 ? 's' : ''} con rol
               </>
             )}
           </p>
         </div>
 
-        <UserTable users={users} loading={loading} onManageRoles={setRolesUser} />
+        <UserTable
+          users={users}
+          loading={loading}
+          onManageRoles={setRolesUser}
+          emptyMessage="Todavía no hay usuarios con rol"
+        />
 
         <Pagination
           currentPage={currentPage}
@@ -65,10 +91,19 @@ export function UsersPage() {
           onPageChange={handlePageChange}
         />
 
+        {granting && <GrantRoleModal
+          onClose={() => setGranting(false)}
+          onPick={(user) => {
+            setGranting(false);
+            setPickedFromSearch(true);
+            setRolesUser(user);
+          }}
+        />}
+
         <UserRolesModal
           user={rolesUser}
           currentUserId={currentUser?.id}
-          onClose={() => setRolesUser(null)}
+          onClose={closeRolesModal}
           onRolesChanged={updateUserRoles}
         />
     </AdminLayout>

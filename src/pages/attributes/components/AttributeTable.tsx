@@ -8,6 +8,7 @@ import type { Attribute, AttributeType } from '../types';
 import { getScoreColor } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
+import { AdminOnly } from '../../../components/routing/AdminOnly';
 
 interface AttributeTableProps {
   attributes: Attribute[];
@@ -155,13 +156,15 @@ export function AttributeTable({
         >
           <img src={editIcon} alt="Editar" className="icon-img" />
         </button>
-        <button
-          className="action-btn delete-btn"
-          onClick={() => onDelete(attribute.id)}
-          title="Eliminar"
-        >
-          <img src={deleteIcon} alt="Eliminar" className="icon-img" />
-        </button>
+        <AdminOnly>
+          <button
+            className="action-btn delete-btn"
+            onClick={() => onDelete(attribute.id)}
+            title="Eliminar"
+          >
+            <img src={deleteIcon} alt="Eliminar" className="icon-img" />
+          </button>
+        </AdminOnly>
       </>
     ),
     [onEdit, onDelete]

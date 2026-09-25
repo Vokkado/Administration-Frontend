@@ -28,6 +28,9 @@ export function useUsers() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        // Esta pantalla es de accesos: solo quienes ya tienen un rol. El resto del padrón se
+        // busca desde el modal para otorgar un rol.
+        withRole: 'true',
       });
 
       if (currentFilters.search && currentFilters.search.trim() !== '') {
@@ -105,5 +108,7 @@ export function useUsers() {
     handleFiltersChange,
     handlePageChange,
     updateUserRoles,
+    /** Relee la página actual (después de otorgar un rol desde el buscador). */
+    refresh: () => fetchUsers(currentPage, filters),
   };
 }

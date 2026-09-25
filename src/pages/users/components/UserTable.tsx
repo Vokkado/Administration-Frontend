@@ -10,6 +10,7 @@ interface UserTableProps {
   users: User[];
   loading: boolean;
   onManageRoles: (user: User) => void;
+  emptyMessage?: string;
 }
 
 const formatDate = (dateString: string | null) => {
@@ -84,7 +85,7 @@ const columns: DataTableColumn<User>[] = [
   },
 ];
 
-export function UserTable({ users, loading, onManageRoles }: UserTableProps) {
+export function UserTable({ users, loading, onManageRoles, emptyMessage = 'No se encontraron usuarios' }: UserTableProps) {
   return (
     <DataTable<User>
       columns={columns}
@@ -92,7 +93,7 @@ export function UserTable({ users, loading, onManageRoles }: UserTableProps) {
       loading={loading}
       loadingMessage="Cargando usuarios..."
       emptyIcon="👤"
-      emptyMessage="No se encontraron usuarios"
+      emptyMessage={emptyMessage}
       keyExtractor={(user) => user.id}
       renderActions={(user) => (
         <Button size="small" variant="outline" onClick={() => onManageRoles(user)}>

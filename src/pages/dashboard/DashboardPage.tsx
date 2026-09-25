@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, DashboardCard } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
+import { useRoles } from '../../hooks/useRoles';
+import { ADMIN_ONLY_ROLES, CATALOG_ROLES } from '../../modules/auth/types';
 import './DashboardPage.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -18,6 +20,8 @@ interface DashboardCardConfig {
 
 interface DashboardGroupConfig {
   name: string;
+  /** Roles que ven el grupo (alcanza con uno). */
+  roles: string[];
   /** Color inicio del gradiente */
   color: string;
   /** Color fin del gradiente */
@@ -28,6 +32,7 @@ interface DashboardGroupConfig {
 const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   {
     name: 'Validación',
+    roles: CATALOG_ROLES,
     color: 'var(--color-warning, #f59e0b)',
     colorEnd: 'var(--color-primary-light)',
     cards: [
@@ -36,6 +41,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   },
   {
     name: 'Catálogo',
+    roles: CATALOG_ROLES,
     color: 'var(--color-primary)',
     colorEnd: 'var(--color-primary-light)',
     cards: [
@@ -47,6 +53,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   },
   {
     name: 'Composición',
+    roles: CATALOG_ROLES,
     color: 'var(--color-secondary)',
     colorEnd: 'var(--color-primary-light)',
     cards: [
@@ -58,10 +65,11 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   },
   {
     name: 'Administración',
+    roles: ADMIN_ONLY_ROLES,
     color: 'var(--color-grey)',
     colorEnd: 'var(--color-border)',
     cards: [
-      { title: 'Usuarios', description: 'Administra a los usuarios y sus roles', path: '/users', buttonLabel: 'Ver Usuarios' },
+      { title: 'Accesos y roles', description: 'Administra las cuentas y qué rol tiene cada una', path: '/users', buttonLabel: 'Ver Accesos' },
       { title: 'Solicitudes de acceso', description: 'Aprobá o rechazá los pedidos de acceso al panel', path: '/access-requests', buttonLabel: 'Ver Solicitudes' },
       { title: 'Verificaciones profesionales', description: 'Verificá el registro de los nutricionistas que piden acceso a su web', path: '/professional-verifications', buttonLabel: 'Ver Verificaciones' },
       { title: 'Reportes', description: 'Gestiona reportes de BUG y productos faltantes', path: '/reports', buttonLabel: 'Ver Reportes' },
@@ -72,6 +80,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
   },
   {
     name: 'Estadísticas',
+    roles: ADMIN_ONLY_ROLES,
     color: 'var(--color-primary)',
     colorEnd: 'var(--color-primary-light)',
     cards: [
@@ -86,11 +95,14 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { roles } = useRoles();
+  // El editor de catálogo no ve Administración ni Estadísticas: el backend igual las bloquea.
+  const groups = DASHBOARD_GROUPS.filter((group) => group.roles.some((role) => roles.includes(role)));
 
   return (
     <AdminLayout title="Administración de Vokkado">
       <div className="dashboard-groups">
-        {DASHBOARD_GROUPS.map((group) => (
+        {groups.map((group) => (
           <section key={group.name} className="dashboard-group">
             <h3 className="dashboard-group-title">
               {group.name}

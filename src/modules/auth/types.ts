@@ -17,8 +17,17 @@ export const ROLE_LABELS: Record<string, string> = {
   admin_nutritionist: 'Editor de catálogo',
 };
 
-/** Roles que habilitan este panel. */
-export const PANEL_ROLES: string[] = [ROLES.ADMIN];
+/** Roles que habilitan este panel (cada ruta después exige los suyos). */
+export const PANEL_ROLES: string[] = [ROLES.ADMIN, ROLES.ADMIN_NUTRITIONIST];
+
+/**
+ * Ver y editar el catálogo: productos, ingredientes, variantes, alérgenos, categorías, empresas,
+ * atributos, valores nutricionales, restricciones y la cola de validación.
+ */
+export const CATALOG_ROLES: string[] = [ROLES.ADMIN, ROLES.ADMIN_NUTRITIONIST];
+
+/** Administración de la plataforma: usuarios y roles, reportes, FAQs, legales, estadísticas. */
+export const ADMIN_ONLY_ROLES: string[] = [ROLES.ADMIN];
 
 /** Web que se pide en access_requests.app desde este panel. */
 export const PANEL_APP = 'admin' as const;

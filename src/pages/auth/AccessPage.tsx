@@ -9,7 +9,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button, LoadingSpinner } from '../../components/ui';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { AccessService } from '../../modules/auth/services/access.service';
-import { ROLE_LABELS, ROLES, type AccessRequest } from '../../modules/auth/types';
+import { type AccessRequest } from '../../modules/auth/types';
 import { AuthLayout, AuthMessage } from './AuthLayout';
 import { getApiMessage, getApiStatus } from '../../services/apiError';
 
@@ -141,8 +141,6 @@ export function AccessPage() {
   const isPending = request?.status === 'pending';
   const wasRejected = request?.status === 'rejected';
   // Tiene un rol del panel que todavía no habilita ninguna sección (p.ej. Editor de catálogo).
-  const pendingPanelRole = user?.roles.find((role) => role === ROLES.ADMIN_NUTRITIONIST);
-
   return (
     <AuthLayout subtitle="Acceso al panel" footer={accountFooter} wide>
       <div className="auth-status-card">
@@ -150,17 +148,6 @@ export function AccessPage() {
 
         {loadingRequest ? (
           <LoadingSpinner message="Cargando tu solicitud..." />
-        ) : pendingPanelRole ? (
-          <>
-            <h2 className="auth-status-title">Acceso aprobado</h2>
-            <AuthMessage type="info">
-              <p>
-                Tu cuenta tiene el rol <strong>{ROLE_LABELS[pendingPanelRole] || pendingPanelRole}</strong>. Las
-                secciones del panel para ese rol todavía no están habilitadas.
-              </p>
-              <p>Si necesitás otro tipo de acceso, pedíselo a un administrador.</p>
-            </AuthMessage>
-          </>
         ) : isPending ? (
           <>
             <h2 className="auth-status-title">Solicitud pendiente</h2>
