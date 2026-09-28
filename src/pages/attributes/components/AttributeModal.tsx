@@ -11,7 +11,8 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, getAttributeTypeLabel } from '../types';
+import { RESTRICTION_TYPE_LABELS, SIGNAL_LABELS, getAttributeTypeLabel } from '../types';
+import type { SignalCode } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
 
@@ -265,6 +266,24 @@ export function AttributeModal({
                 </select>
                 <small className="form-hint">
                   1 (peor) a 10 (mejor). Selecciona "No corresponde" si no aplica.
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Señal para metas</label>
+                <select
+                  className="select"
+                  value={formData.signalCode}
+                  onChange={(e) => onChange({ signalCode: e.target.value as AttributeFormData['signalCode'] })}
+                >
+                  <option value="">Ninguna</option>
+                  {(Object.keys(SIGNAL_LABELS) as SignalCode[]).map((code) => (
+                    <option key={code} value={code}>{SIGNAL_LABELS[code]}</option>
+                  ))}
+                </select>
+                <small className="form-hint">
+                  Los ingredientes con este atributo cuentan como fuente de ese nutriente. Las metas
+                  (ej. "Reducir el sodio") lo usan cuando el producto no lo declara en la tabla.
                 </small>
               </div>
 

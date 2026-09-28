@@ -56,6 +56,7 @@ export function AttributesPage() {
     typeId: '',
     isInspected: false,
     restrictionIds: [],
+    signalCode: '',
   });
 
   const openCreateModal = () => {
@@ -68,6 +69,7 @@ export function AttributesPage() {
       typeId: '',
       isInspected: false,
       restrictionIds: [],
+      signalCode: '',
     });
     setShowModal(true);
   };
@@ -82,6 +84,7 @@ export function AttributesPage() {
       typeId: attribute.typeId,
       isInspected: attribute.isInspected,
       restrictionIds: attribute.restrictionIds || [],
+      signalCode: attribute.signalCode || '',
     });
     setShowModal(true);
   };
@@ -105,6 +108,7 @@ export function AttributesPage() {
         score: parsedScore,
         reason: formData.reason || undefined,
         restrictionIds: formData.restrictionIds || [],
+        signalCode: formData.signalCode || null,
         ...(editingAttribute ? {} : { isInspected: true }),
       };
 

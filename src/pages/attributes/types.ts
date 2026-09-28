@@ -10,6 +10,8 @@ export interface Attribute {
   typeId: string;
   isInspected: boolean;
   restrictionIds?: string[];
+  /** Señal nutricional que usan las metas (SUGARS / SODIUM / SATURATED_FAT) o null. */
+  signalCode?: SignalCode | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +31,8 @@ export interface AttributeFormData {
   typeId: string;
   isInspected: boolean;
   restrictionIds: string[];
+  /** '' = sin señal */
+  signalCode: SignalCode | '';
 }
 
 export interface CreateAttributeData {
@@ -38,6 +42,7 @@ export interface CreateAttributeData {
   typeId: string;
   isInspected?: boolean;
   restrictionIds?: string[];
+  signalCode?: SignalCode | null;
 }
 
 export interface UpdateAttributeData {
@@ -47,7 +52,22 @@ export interface UpdateAttributeData {
   typeId?: string;
   isInspected?: boolean;
   restrictionIds?: string[];
+  signalCode?: SignalCode | null;
 }
+
+/**
+ * Señales nutricionales de ingredientes (lista cerrada, espejo de
+ * Backend/src/shared/domain/ingredientSignals.ts). Un atributo con señal marca a los ingredientes
+ * que lo tienen como fuente de ese nutriente: las metas de la app ("Reducir el sodio", etc.) lo
+ * usan cuando el producto no declara ese valor en la tabla nutricional.
+ */
+export type SignalCode = 'SUGARS' | 'SODIUM' | 'SATURATED_FAT';
+
+export const SIGNAL_LABELS: Record<SignalCode, string> = {
+  SUGARS: 'Azúcares',
+  SODIUM: 'Sodio',
+  SATURATED_FAT: 'Grasas saturadas',
+};
 
 export interface AttributeTypeFormData {
   type: string;

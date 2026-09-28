@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Attribute, AttributeType } from '../types';
-import { getScoreColor } from '../types';
+import { getScoreColor, SIGNAL_LABELS } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { AdminOnly } from '../../../components/routing/AdminOnly';
@@ -47,6 +47,37 @@ export function AttributeTable({
             {getTypeName(attribute.typeId)}
           </span>
         ),
+      },
+      {
+        key: 'signal',
+        header: 'Señal',
+        hideOnMobile: true,
+        render: (attribute) =>
+          attribute.signalCode ? (
+            <span
+              className="score-badge"
+              title="Los ingredientes con este atributo cuentan como fuente de este nutriente para las metas"
+              style={{
+                backgroundColor: '#FFF3E0',
+                color: '#E65100',
+                borderColor: '#E65100',
+                cursor: 'help',
+              }}
+            >
+              {SIGNAL_LABELS[attribute.signalCode]}
+            </span>
+          ) : (
+            <span
+              className="score-badge"
+              style={{
+                backgroundColor: '#F5F5F5',
+                color: '#9E9E9E',
+                borderColor: '#BDBDBD',
+              }}
+            >
+              —
+            </span>
+          ),
       },
       {
         key: 'score',
