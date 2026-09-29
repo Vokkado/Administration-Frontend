@@ -96,7 +96,7 @@ export function ValidationListPage() {
   ];
 
   return (
-    <AdminLayout title="Validar productos">
+    <AdminLayout>
       <PageHeader
         title="Validar productos"
         description="Productos cargados por IA pendientes de validación."

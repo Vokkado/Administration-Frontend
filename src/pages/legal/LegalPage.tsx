@@ -78,7 +78,7 @@ export function LegalPage() {
   };
 
   return (
-    <AdminLayout title="Términos y Privacidad">
+    <AdminLayout>
       <div className="legal-page-tabs">
         {TABS.map((tab) => (
           <button

@@ -156,7 +156,7 @@ export function ProfessionalVerificationsPage() {
   const closeReject = () => { setToReject(null); setRejectNote(''); setActionError(''); };
 
   return (
-    <AdminLayout title="Verificaciones Profesionales">
+    <AdminLayout>
       <PageHeader
         title="Verificaciones Profesionales"
         description="Nutricionistas que pidieron acceso a la web de nutricionistas. Verificá el registro o la matrícula antes de aprobar: al aprobar recibe el rol Nutricionista y se crea su organización."

@@ -453,7 +453,7 @@ export function IngredientsPage() {
   );
 
   return (
-    <AdminLayout title="Gestión de Ingredientes" wide>
+    <AdminLayout>
         {/* Success Message */}
         <NotificationBanner type="success" message={crud.successMessage} />
 

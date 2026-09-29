@@ -9,11 +9,7 @@ import { ROLE_LABELS } from '../../modules/auth/types';
 import vokkadoIcon from '../../../assets/images/icon.png';
 import './Navbar.css';
 
-interface NavbarProps {
-  title?: string;
-}
-
-export function Navbar({ title = '' }: NavbarProps) {
+export function Navbar() {
   const { user, signOut } = useAuthContext();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,7 +32,7 @@ export function Navbar({ title = '' }: NavbarProps) {
       <div className="navbar-content">
         <div className="navbar-brand" onClick={handleBrandClick}>
           <img src={vokkadoIcon} alt="Vokkado" className="navbar-logo" />
-          <h1>{title}</h1>
+          <h1>Vokkado</h1>
         </div>
 
         {/* Hamburger button — mobile only */}

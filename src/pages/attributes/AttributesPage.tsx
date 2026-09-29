@@ -179,7 +179,7 @@ export function AttributesPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Atributos">
+    <AdminLayout>
         <PageHeader
           title="Atributos"
           description="Gestión de atributos y tipos de atributo del sistema"
