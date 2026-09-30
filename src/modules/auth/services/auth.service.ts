@@ -19,6 +19,7 @@ import {
   fetchAuthSession,
 } from 'aws-amplify/auth';
 import { getErrorName } from '../../../services/apiError';
+import { setSessionId } from './sessionStore';
 
 const isDev = import.meta.env.DEV;
 
@@ -104,6 +105,8 @@ export class AuthService {
   }
 
   static async signOut(): Promise<void> {
+    // Olvidar la sesión de este navegador: el próximo login registra una nueva.
+    setSessionId(null);
     try {
       await signOut();
     } catch (error) {

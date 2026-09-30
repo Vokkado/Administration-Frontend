@@ -1,0 +1,79 @@
+.sessions-intro {
+  color: var(--color-text-secondary);
+  margin: 0 0 20px;
+}
+
+.sessions-empty {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 24px 0;
+}
+
+.sessions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.sessions-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 12px;
+}
+
+.sessions-icon {
+  font-size: 24px;
+  width: 40px;
+  text-align: center;
+}
+
+.sessions-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sessions-meta {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sessions-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sessions-status::before {
+  content: '●';
+  margin-right: 6px;
+}
+
+.sessions-status--current {
+  color: var(--color-primary);
+}
+
+.sessions-status--active {
+  color: #2e9e5b;
+}
+
+.sessions-status--idle {
+  color: var(--color-text-secondary);
+}
+
+.sessions-close-all {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--color-text-secondary);
+}

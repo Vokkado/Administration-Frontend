@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AuthService, type AuthResult } from '../modules/auth/services/auth.service';
 import { AccessService } from '../modules/auth/services/access.service';
+import { SessionsService } from '../modules/auth/services/sessions.service';
 import { PANEL_ROLES, type AuthStatus, type CurrentUser } from '../modules/auth/types';
 import { getApiErrorName, getApiMessage, getApiStatus } from '../services/apiError';
 
@@ -45,6 +46,8 @@ export function useAuth() {
       const next: AuthStatus = current.roles.some((role) => PANEL_ROLES.includes(role))
         ? 'authorized'
         : 'no-access';
+      // Registrar este navegador en "Sesiones y dispositivos" (una vez por login, best-effort).
+      if (next === 'authorized') SessionsService.ensureDeviceSession();
       setStatus(next);
       return next;
     } catch (err) {
@@ -81,6 +84,8 @@ export function useAuth() {
   );
 
   const signOut = useCallback(async () => {
+    // Marcar la sesión de este navegador como cerrada antes de borrar los tokens.
+    await SessionsService.logoutCurrent();
     await AuthService.signOut();
     setUser(null);
     setStatusError('');

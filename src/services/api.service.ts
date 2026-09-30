@@ -7,6 +7,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '../config/api.config';
 import { AuthService } from '../modules/auth/services/auth.service';
+import { getSessionId, setSessionId } from '../modules/auth/services/sessionStore';
 
 const isDev = import.meta.env.DEV;
 
@@ -59,6 +60,10 @@ class ApiService {
           const token = await AuthService.getAuthToken();
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            // Sesión de este navegador ("Sesiones y dispositivos"): si se cierra desde otro lado,
+            // el backend corta el acceso aunque el token no haya vencido.
+            const sessionId = getSessionId();
+            if (sessionId) config.headers['X-Session-Id'] = sessionId;
           }
         } catch (error) {
           if (isDev) console.error('❌ Error obteniendo token:', error);
@@ -75,6 +80,15 @@ class ApiService {
       (response) => response,
       async (error) => {
         const original = error.config as AuthRetryConfig | undefined;
+
+        // La sesión de este navegador se cerró desde "Sesiones y dispositivos" (o "cerrar en
+        // todos"): renovar el token no sirve.
+        if (error.response?.status === 401 && error.response.data?.error === 'SessionRevokedError') {
+          setSessionId(null);
+          await endSession();
+          return Promise.reject(error);
+        }
+
         if (error.response?.status === 401 && original && !original.skipAuth) {
           // Solo cerrar sesión si es un endpoint protegido (no GET /restrictions)
           const isPublicEndpoint = original.url?.includes('/restrictions') && original.method === 'get';
