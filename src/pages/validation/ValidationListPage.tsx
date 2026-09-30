@@ -5,16 +5,28 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, DataTable, Pagination, SearchInput, PageHeader } from '../../components/ui';
+import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
 import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
-import { ValidationService, type ValidationQueueItem } from '../../services/validation.service';
+import { ValidationService, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
+import { COLORS } from './composition';
 
-function CountBadge({ n, color }: { n: number; color: string }) {
+/** Qué cuenta cada color en la cola (la consulta solo cuenta vínculos de ingredientes). */
+const COUNT_HINTS: Record<LinkColor, (n: number) => string> = {
+  green: (n) => `${n} ${n === 1 ? 'ingrediente ya existía' : 'ingredientes ya existían'} y no hace falta revisarlos.`,
+  yellow: (n) => `${n} ${n === 1 ? 'ingrediente se vinculó' : 'ingredientes se vincularon'} por aproximación o sinónimo: conviene revisarlos.`,
+  red: (n) => `${n} ${n === 1 ? 'ingrediente lo creó' : 'ingredientes los creó'} la IA: hay que validarlos.`,
+};
+
+function CountBadge({ n, color }: { n: number; color: LinkColor }) {
   if (!n) return null;
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginRight: 8, fontSize: 13 }}>
-    <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, display: 'inline-block' }} /> {n}
-  </span>;
+  return (
+    <Tooltip content={COUNT_HINTS[color](n)}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginRight: 8, fontSize: 13, cursor: 'help' }}>
+        <span style={{ width: 9, height: 9, borderRadius: '50%', background: COLORS[color].dot, display: 'inline-block' }} /> {n}
+      </span>
+    </Tooltip>
+  );
 }
 
 /** dd/mm/aaaa; el detalle con hora queda en el tooltip. */
@@ -86,9 +98,9 @@ export function ValidationListPage() {
     {
       key: 'counts', header: 'Vínculos', width: '140px', render: (p) => (
         <span>
-          <CountBadge n={p.counts.green} color="#10b981" />
-          <CountBadge n={p.counts.yellow} color="#f59e0b" />
-          <CountBadge n={p.counts.red} color="#ef4444" />
+          <CountBadge n={p.counts.green} color="green" />
+          <CountBadge n={p.counts.yellow} color="yellow" />
+          <CountBadge n={p.counts.red} color="red" />
           {!p.counts.green && !p.counts.yellow && !p.counts.red && <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>}
         </span>
       ),
