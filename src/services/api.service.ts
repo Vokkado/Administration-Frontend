@@ -4,7 +4,7 @@
  * Cliente HTTP configurado con autenticación
  */
 
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '../config/api.config';
 import { AuthService } from '../modules/auth/services/auth.service';
 
@@ -18,6 +18,25 @@ declare module 'axios' {
      */
     skipAuth?: boolean;
   }
+}
+
+type AuthRetryConfig = InternalAxiosRequestConfig & { _authRetried?: boolean };
+
+// Un solo refresh a la vez: si varios requests fallan juntos con 401 (ej. al volver a la pestaña
+// después de un rato), se renueva el token UNA vez y todos reintentan con el nuevo.
+let refreshInFlight: ReturnType<typeof AuthService.refreshAuthToken> | null = null;
+function refreshAuthTokenOnce() {
+  if (!refreshInFlight) {
+    refreshInFlight = AuthService.refreshAuthToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function endSession() {
+  await AuthService.signOut();
+  window.location.href = '/login';
 }
 
 class ApiService {
@@ -55,13 +74,28 @@ class ApiService {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401 && !error.config?.skipAuth) {
+        const original = error.config as AuthRetryConfig | undefined;
+        if (error.response?.status === 401 && original && !original.skipAuth) {
           // Solo cerrar sesión si es un endpoint protegido (no GET /restrictions)
-          const isPublicEndpoint = error.config?.url?.includes('/restrictions') && error.config?.method === 'get';
+          const isPublicEndpoint = original.url?.includes('/restrictions') && original.method === 'get';
 
           if (!isPublicEndpoint) {
-            await AuthService.signOut();
-            window.location.href = '/login';
+            // Antes cerrábamos sesión ante cualquier 401. Pero también llega cuando el token
+            // venció y todavía no se renovó, o el request salió sin token porque no había red para
+            // renovarlo. Renovar y reintentar UNA vez; cerrar sesión solo si la sesión venció.
+            if (!original._authRetried) {
+              original._authRetried = true;
+              const outcome = await refreshAuthTokenOnce();
+              if (outcome.status === 'ok') {
+                original.headers.Authorization = `Bearer ${outcome.token}`;
+                return this.client(original);
+              }
+              if (outcome.status === 'expired') await endSession();
+              // network: transitorio, no cerrar sesión.
+            } else {
+              // Rechazado incluso con un token recién renovado.
+              await endSession();
+            }
           }
         }
         return Promise.reject(error);

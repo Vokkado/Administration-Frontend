@@ -199,6 +199,30 @@ export class AuthService {
   }
 
   /**
+   * Renueva el token después de un 401 del backend:
+   *   - ok:      token nuevo (refrescado con el refresh token) → reintentar el request.
+   *   - expired: Cognito ya no renueva la sesión (refresh token vencido/revocado) → cerrar sesión.
+   *   - network: no se pudo contactar a Cognito (sin red, notebook recién despertada…) → NO cerrar
+   *              sesión: es transitorio.
+   */
+  static async refreshAuthToken(): Promise<
+    { status: 'ok'; token: string } | { status: 'expired' } | { status: 'network' }
+  > {
+    try {
+      const session = await fetchAuthSession({ forceRefresh: true });
+      const token = session.tokens?.accessToken?.toString() || session.tokens?.idToken?.toString();
+      return token ? { status: 'ok', token } : { status: 'expired' };
+    } catch (error) {
+      const name = getErrorName(error) ?? '';
+      if (name === 'NotAuthorizedException' || name === 'UserNotFoundException' || name === 'UserUnAuthenticatedException') {
+        return { status: 'expired' };
+      }
+      if (isDev) console.warn('[Admin] No se pudo renovar la sesión (transitorio):', name || error);
+      return { status: 'network' };
+    }
+  }
+
+  /**
    * ID token: lo necesita el alta de la fila en `users` (POST /users), porque el backend
    * compara el email del body con el claim `email`, que el access token no trae.
    */
