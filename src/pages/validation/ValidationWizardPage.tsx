@@ -174,13 +174,6 @@ export function ValidationWizardPage() {
 
   if (loading || !detail || !meta) return <AdminLayout><LoadingSpinner /></AdminLayout>;
 
-  // De dónde sacó cada dato el enriquecimiento IA: va debajo del contenido en los pasos
-  // donde esos datos se revisan (básico y composición).
-  const aiSourcesCard = detail.product.enrichmentSources?.length ? (
-    <div className="vw-card">
-      <AiSourcesInfo sources={detail.product.enrichmentSources} />
-    </div>
-  ) : null;
 
   return (
     <AdminLayout>
@@ -232,22 +225,18 @@ export function ValidationWizardPage() {
                     </div>
                   </div>
                 </div>
-                {aiSourcesCard}
               </>
             )}
-    
+
             {/* PASO 2 — Composición */}
             {step === 1 && (
-              <>
-                {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
-                <div className="vw-card">
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
-                  <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
-                </div>
-                {aiSourcesCard}
-              </>
+              // La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos.
+              <div className="vw-card">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
+                <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+              </div>
             )}
-    
+
             {/* PASO 3 — Más info */}
             {step === 2 && (
               <div className="vw-card">
@@ -279,7 +268,7 @@ export function ValidationWizardPage() {
                     <Input label="Razón social / nombre legal" value={meta.legalName} onChange={(e) => set('legalName', e.target.value)} fullWidth />
                   </div>
                 </div>
-    
+
                 <div className="form-group" style={{ marginTop: 4 }}>
                   <label className="form-label">Empresas (opcional)</label>
                   <ProductCompaniesSection
@@ -289,7 +278,7 @@ export function ValidationWizardPage() {
                     onCompanySelect={onCompanySelect}
                   />
                 </div>
-    
+
                 <div className="vw-form-grid" style={{ marginTop: 16 }}>
                   <div className="form-group">
                     <label className="form-label">Origen del dato</label>
@@ -307,7 +296,7 @@ export function ValidationWizardPage() {
                     <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
                   </div>
                 </div>
-    
+
                 <div className="form-group" style={{ marginTop: 8 }}>
                   <label className="form-label">Octógonos / alertas</label>
                   <div className="vw-checks">
@@ -320,7 +309,7 @@ export function ValidationWizardPage() {
                 </div>
               </div>
             )}
-    
+
             {/* PASO 4 — Finalizar */}
             {step === 3 && (
               <div className="vw-card">
@@ -338,7 +327,15 @@ export function ValidationWizardPage() {
             )}
           </div>
           <div className="vw-split-aside">
-            <SourceImagesPanel productId={id} initialKey={STEP_PHOTO[step]} />
+            {/* Fotos arriba (se estiran) y, debajo, de dónde sacó cada dato el enriquecimiento IA. */}
+            <div className="vw-split-aside-stack">
+              <SourceImagesPanel productId={id} initialKey={STEP_PHOTO[step]} />
+              {detail.product.enrichmentSources?.length ? (
+                <div className="vw-photo-panel vw-ai-panel">
+                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 

@@ -36,14 +36,27 @@
   min-height: max(520px, calc(100vh - 320px));
 }
 
-/* El panel llena la columna y la foto se estira para ocupar lo que dejan título,
-   miniaturas y aviso. Abajo deja el mismo margen que las cards de la izquierda, para que
-   los dos bordes inferiores queden alineados. */
-.vw-split-aside .vw-photo-panel--fill {
+/* Fotos + información de la IA apiladas, llenando la columna. Abajo deja el mismo margen
+   que las cards de la izquierda, para que los dos bordes inferiores queden alineados. */
+.vw-split-aside-stack {
   position: absolute;
   inset: 0 0 14px 0;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+/* El panel de fotos se lleva todo lo que no usa la información de la IA, y adentro la foto
+   se estira para ocupar lo que dejan título, miniaturas y aviso. */
+.vw-split-aside .vw-photo-panel--fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-ai-panel {
+  flex-shrink: 0;
 }
 
 .vw-split-aside .vw-photo-panel--fill .vw-photo-main-wrap {
@@ -285,7 +298,7 @@
 @media (max-width: 1100px) {
   .vw-split { grid-template-columns: 1fr; }
   .vw-split-aside { min-height: 0; }
-  .vw-split-aside .vw-photo-panel--fill { position: static; }
+  .vw-split-aside-stack { position: static; }
   .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
 }
 
