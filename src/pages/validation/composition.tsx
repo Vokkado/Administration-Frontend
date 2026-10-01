@@ -458,9 +458,19 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
   );
 }
 
+/**
+ * El backend manda el valor como viene de la columna NUMERIC ("0.8000"): pasarlo por Number
+ * saca los ceros de relleno (0.8, 10, 1.25). Vacío si no hay valor.
+ */
+function formatNutritionValue(value: number | string | null): string {
+  if (value == null || value === '') return '';
+  const n = Number(value);
+  return Number.isFinite(n) ? String(n) : String(value);
+}
+
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState<string>(n.value != null ? String(n.value) : '');
+  const [value, setValue] = useState<string>(formatNutritionValue(n.value));
   const [unit, setUnit] = useState<string>(n.unit ?? '');
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
@@ -474,7 +484,7 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
         </span>
       ) : (
         <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <strong>{n.value ?? '—'} {n.unit ?? ''}</strong>
+          <strong>{formatNutritionValue(n.value) || '—'} {n.unit ?? ''}</strong>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
           <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
         </span>
