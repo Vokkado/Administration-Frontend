@@ -227,18 +227,21 @@ export function ValidationWizardPage() {
             el admin contrasta cada ingrediente contra la etiqueta sin perderla al scrollear. */}
         {step === 1 && (
           <div className="vw-split">
-            {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
-            <div className="vw-card">
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
-              <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+            <div>
+              {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
+              <div className="vw-card">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
+                <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+              </div>
+              {/* A la izquierda y no bajo las fotos: la columna de fotos ocupa todo el alto de pantalla. */}
+              {detail.product.enrichmentSources?.length ? (
+                <div className="vw-card">
+                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
+                </div>
+              ) : null}
             </div>
             <div className="vw-split-aside">
               <SourceImagesPanel productId={id} />
-              {detail.product.enrichmentSources && (
-                <div className="vw-photo-panel" style={{ marginTop: 12 }}>
-                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
-                </div>
-              )}
             </div>
           </div>
         )}

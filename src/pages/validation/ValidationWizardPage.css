@@ -5,23 +5,53 @@
   margin: 0 auto;
 }
 
-/* El paso de composición muestra ingredientes + fotos lado a lado y necesita más ancho. */
+/* El paso de composición muestra ingredientes + fotos lado a lado: usa todo el ancho de la
+   página para que la etiqueta se pueda leer sin abrir el lightbox. */
 .vw-container.is-wide {
-  max-width: 1340px;
+  max-width: none;
 }
 
-/* ── Paso 2: composición (izquierda) + fotos siempre visibles (derecha) ── */
+/* ── Paso 2: composición (izquierda) + fotos del mismo alto (derecha) ── */
 .vw-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  /* Las fotos se llevan casi la mitad; la lista conserva lo justo para nombre + acciones. */
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 46%);
   gap: 16px;
-  align-items: start;
+  /* Las dos columnas miden lo mismo: las fotos se estiran hasta el alto de la composición. */
+  align-items: stretch;
 }
 
-/* Sticky: la etiqueta queda a la vista aunque la lista de ingredientes sea larga. */
+/* El alto lo pone solo la columna izquierda: el panel va absoluto para que el tamaño
+   propio de la foto no estire la fila. El mínimo evita una foto diminuta con listas cortas. */
 .vw-split-aside {
-  position: sticky;
-  top: 16px;
+  position: relative;
+  min-height: 420px;
+}
+
+/* El panel llena la columna y la foto se estira para ocupar lo que dejan título,
+   miniaturas y aviso. Abajo deja el mismo margen que las cards de la izquierda, para que
+   los dos bordes inferiores queden alineados. */
+.vw-split-aside .vw-photo-panel--fill {
+  position: absolute;
+  inset: 0 0 14px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-split-aside .vw-photo-panel--fill .vw-photo-main-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.vw-split-aside .vw-photo-panel--fill .vw-photo-main {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.vw-split-aside .vw-photo-panel--fill .vw-photo-thumbs,
+.vw-split-aside .vw-photo-panel--fill .vw-photo-panel-hint {
+  flex-shrink: 0;
 }
 
 .vw-photo-panel {
@@ -31,10 +61,18 @@
   padding: 16px;
 }
 
+.vw-split-aside .vw-photo-panel {
+  padding: 10px;
+}
+
 .vw-photo-panel-title {
   font-size: 15px;
   margin: 0 0 12px;
   color: var(--color-primary-dark);
+}
+
+.vw-split-aside .vw-photo-panel-title {
+  margin-bottom: 8px;
 }
 
 /* ── Información de la IA (de dónde salió cada dato del enriquecimiento) ── */
@@ -86,18 +124,63 @@
   text-align: center;
 }
 
+/* El recuadro recorta la foto ampliada; la foto se escala adentro (ver ZoomableImage). */
 .vw-photo-main-wrap {
   position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-grey-100);
+  cursor: zoom-in;
+}
+
+/* Ampliada se arrastra; `touch-action` deja arrastrar con el dedo sin scrollear la página. */
+.vw-photo-main-wrap.is-zoomed {
+  cursor: grab;
+  touch-action: none;
+}
+
+.vw-photo-main-wrap.is-dragging {
+  cursor: grabbing;
+}
+
+/* Mientras se arrastra la foto va pegada al mouse: con la transición se sentiría con retraso. */
+.vw-photo-main-wrap.is-dragging .vw-photo-main {
+  transition: none;
 }
 
 .vw-photo-main {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 360px;
   object-fit: contain;
   background: var(--color-grey-100);
   border-radius: 10px;
-  cursor: zoom-in;
+  user-select: none;
+  transition: transform 0.2s ease-out;
+}
+
+.vw-photo-expand {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: rgba(17, 24, 39, 0.65);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.vw-photo-expand:hover,
+.vw-photo-expand:focus-visible {
+  background: rgba(17, 24, 39, 0.85);
 }
 
 /* Loader sobre la foto activa hasta que termina de bajar. */
@@ -191,8 +274,9 @@
 /* En pantallas angostas las fotos pasan abajo y dejan de ser sticky. */
 @media (max-width: 1100px) {
   .vw-split { grid-template-columns: 1fr; }
-  .vw-split-aside { position: static; }
-  .vw-photo-main { height: 260px; }
+  .vw-split-aside { min-height: 0; }
+  .vw-split-aside .vw-photo-panel--fill { position: static; }
+  .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
 }
 
 .vw-back {
