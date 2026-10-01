@@ -1,5 +1,5 @@
 import { apiService } from '../../../services/api.service';
-import { getSessionId, setSessionId } from './sessionStore';
+import { getSessionGeneration, getSessionId, setSessionId } from './sessionStore';
 
 /** Sesión de un dispositivo, tal como la devuelve GET /api/sessions. */
 export interface DeviceSession {
@@ -52,12 +52,14 @@ export class SessionsService {
       registering = (async () => {
         try {
           const { deviceName, platform } = describeBrowser();
+          const generation = getSessionGeneration();
           const response = await apiService.post<{ data: { id: string } }>('/sessions', {
             client: 'ADMIN',
             deviceName,
             platform,
           });
-          if (response?.data?.id) setSessionId(response.data.id);
+          // Si mientras tanto se cerró sesión (o empezó otro login), este id ya no corresponde.
+          if (response?.data?.id && getSessionGeneration() === generation) setSessionId(response.data.id);
         } catch (error) {
           if (isDev) console.warn('[Admin] No se pudo registrar la sesión del navegador:', error);
         } finally {

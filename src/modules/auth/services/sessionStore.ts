@@ -4,6 +4,13 @@
  * Sin dependencias del cliente HTTP para no generar un import circular.
  */
 const KEY = 'vokkado_admin_session_id';
+/** Sube cada vez que se borra el id (logout / login nuevo). */
+let generation = 0;
+
+/** Para descartar un registro que terminó después de un logout (ver ensureDeviceSession). */
+export function getSessionGeneration(): number {
+  return generation;
+}
 
 export function getSessionId(): string | null {
   try {
@@ -14,6 +21,7 @@ export function getSessionId(): string | null {
 }
 
 export function setSessionId(id: string | null): void {
+  if (!id) generation++;
   try {
     if (id) localStorage.setItem(KEY, id);
     else localStorage.removeItem(KEY);

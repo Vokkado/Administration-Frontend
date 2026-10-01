@@ -265,7 +265,8 @@ function App() {
             <Route
               path="/sessions"
               element={
-                <ProtectedRoute>
+                // Sus propias sesiones: cualquier usuario del panel (no solo admin).
+                <ProtectedRoute roles={PANEL_ROLES}>
                   <SessionsPage />
                 </ProtectedRoute>
               }
