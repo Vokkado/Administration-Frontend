@@ -96,7 +96,7 @@ export function SessionsPage() {
   };
 
   return (
-    <AdminLayout title="Sesiones y dispositivos">
+    <AdminLayout>
       <p className="sessions-intro">
         Estos son los dispositivos donde tu cuenta está abierta. Si no reconocés alguno, cerrá esa
         sesión o cerrá todas.
