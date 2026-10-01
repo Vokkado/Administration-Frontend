@@ -722,12 +722,16 @@ const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
-  return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 };
+  return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px' };
 }
 function chip(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
+/**
+ * Contenedor de una lista (ingredientes, alérgenos, nutrición, tags): el encabezado lleva el
+ * título y sus botones de alta, así queda claro a qué lista agrega cada "+ Agregar".
+ */
 function Section({ title, help, adder, children }: {
   title: string;
   /** Control extra al lado del título (por ejemplo, el botón de ayuda). */
@@ -736,16 +740,16 @@ function Section({ title, help, adder, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, margin: 0, color: '#374151' }}>
+    <section className="vp-section">
+      <div className="vp-section-head">
+        <h3 className="vp-section-title">
           {title}
           {help}
         </h3>
         {adder}
       </div>
-      {children}
-    </div>
+      <div className="vp-section-body">{children}</div>
+    </section>
   );
 }
 function Muted({ children }: { children: React.ReactNode }) { return <div style={{ color: '#9ca3af', fontSize: 14 }}>{children}</div>; }

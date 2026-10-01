@@ -192,6 +192,48 @@
   padding: 20px 24px 24px;
 }
 
+/* ── Sección (ingredientes / alérgenos / nutrición / tags) ───────────────
+   Cada lista es un contenedor propio: el encabezado agrupa el título con sus botones. */
+.vp-section {
+  border: 1px solid var(--color-grey-200);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* `~` y no `+`: entre sección y sección pueden quedar modales abiertos (editar variante, etc.). */
+.vp-section ~ .vp-section {
+  margin-top: 16px;
+}
+
+.vp-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--color-grey-50);
+  border-bottom: 1px solid var(--color-grey-200);
+}
+
+.vp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  color: #374151;
+}
+
+/* Las filas no llevan margen propio: el espacio entre ellas lo pone el gap. */
+.vp-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
 /* Altas del encabezado de una sección: vincular una existente o crear a mano. */
 .vp-section-actions {
   display: flex;
