@@ -230,7 +230,9 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
         src={src}
         alt={alt}
         className="vw-photo-main"
-        style={zoom ? { transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`, transformOrigin: '0 0' } : undefined}
+        // Siempre con el mismo origen y la misma forma de transform, también sin zoom: si el
+        // origen volviera al centro de golpe, al salir del zoom la foto saltaría antes de animarse.
+        style={{ transform: `translate(${zoom?.x ?? 0}px, ${zoom?.y ?? 0}px) scale(${zoom?.scale ?? 1})`, transformOrigin: '0 0' }}
         onLoad={onLoad}
         onError={onError}
         draggable={false}
