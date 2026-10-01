@@ -1,23 +1,27 @@
 /**
- * Panel de fotos del usuario para el paso de composición: una foto grande, del mismo alto
- * que la composición, más una tira de miniaturas para cambiar entre portada / ingredientes /
- * nutricional.
- * Click en la foto hace zoom ahí mismo (para leer la etiqueta sin tapar la lista de la
+ * Panel de fotos del usuario, a la derecha de todos los pasos del wizard: una foto grande,
+ * del mismo alto que el contenido del paso, más una tira de miniaturas para cambiar entre
+ * portada / ingredientes / nutricional, y quién cargó el producto.
+ * Click en la foto hace zoom ahí mismo (para leer la etiqueta sin tapar lo de la
  * izquierda); el botón ⤢ la abre en el lightbox, sin perder la selección.
  */
 import { useEffect, useRef, useState } from 'react';
 import { ImageLightbox } from '../../components/ui';
-import { useSourceImages } from '../../hooks/useSourceImages';
+import { useSourceImages, type SourcePhotoKey } from '../../hooks/useSourceImages';
+import { UploaderReveal } from '../products/components/product-modal';
 import './ValidationWizardPage.css';
 
 interface SourceImagesPanelProps {
   productId: string;
-  /** Foto que conviene mostrar primero según el paso (ej. la etiqueta de ingredientes). */
-  initialKey?: 'cover' | 'ingredients' | 'nutritionFacts';
+  /**
+   * Foto que conviene mostrar según el paso (ej. la etiqueta de ingredientes). Manda hasta
+   * que el admin elige otra miniatura; desde ahí se respeta su elección en todos los pasos.
+   */
+  initialKey?: SourcePhotoKey;
 }
 
 export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: SourceImagesPanelProps) {
-  const { photos, loading, markFailed } = useSourceImages(productId);
+  const { photos, uploader, loading, markFailed } = useSourceImages(productId);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   // URL que ya terminó de bajar: mientras no coincida con la activa, se muestra el loader.
@@ -43,6 +47,11 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
       <div className="vw-photo-panel">
         <h3 className="vw-photo-panel-title">Fotos del usuario</h3>
         <p className="vw-photo-panel-empty">Este producto no tiene fotos cargadas.</p>
+        {uploader && (
+          <div className="vw-photo-uploader">
+            <UploaderReveal productId={productId} uploader={uploader} />
+          </div>
+        )}
       </div>
     );
   }
@@ -90,6 +99,12 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
       )}
 
       <p className="vw-photo-panel-hint">Click para hacer zoom · arrastrá para moverte · rueda para más aumento · ⤢ para verla en grande</p>
+
+      {uploader && (
+        <div className="vw-photo-uploader">
+          <UploaderReveal productId={productId} uploader={uploader} />
+        </div>
+      )}
 
       <ImageLightbox
         images={photos.map((p) => ({ src: p.url, alt: p.label }))}

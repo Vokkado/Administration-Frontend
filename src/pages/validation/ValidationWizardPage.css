@@ -1,31 +1,39 @@
 /* Estilos del wizard de validación — unificados con el resto del admin. */
 
+/* Todos los pasos muestran contenido + fotos lado a lado: usa todo el ancho de la página
+   para que la etiqueta se pueda leer sin abrir el lightbox. */
 .vw-container {
-  max-width: 900px;
   margin: 0 auto;
 }
 
-/* El paso de composición muestra ingredientes + fotos lado a lado: usa todo el ancho de la
-   página para que la etiqueta se pueda leer sin abrir el lightbox. */
-.vw-container.is-wide {
-  max-width: none;
-}
-
-/* ── Paso 2: composición (izquierda) + fotos del mismo alto (derecha) ── */
+/* ── Contenido del paso (izquierda) + fotos del mismo alto (derecha) ── */
 .vw-split {
   display: grid;
   /* Las fotos se llevan casi la mitad; la lista conserva lo justo para nombre + acciones. */
   grid-template-columns: minmax(0, 1fr) minmax(380px, 46%);
   gap: 16px;
-  /* Las dos columnas miden lo mismo: las fotos se estiran hasta el alto de la composición. */
+  /* Las dos columnas miden lo mismo: las fotos se estiran hasta el alto del contenido. */
   align-items: stretch;
 }
 
-/* El alto lo pone solo la columna izquierda: el panel va absoluto para que el tamaño
-   propio de la foto no estire la fila. El mínimo evita una foto diminuta con listas cortas. */
+/* Si el contenido es corto (Básico, Finalizar), la última card se estira hasta el alto de
+   las fotos para que los dos bordes de abajo sigan alineados. */
+.vw-split-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-split-main > .vw-card:last-child {
+  flex: 1;
+}
+
+/* El alto lo pone la columna izquierda: el panel va absoluto para que el tamaño propio de
+   la foto no estire la fila. El mínimo es lo que queda visible de pantalla debajo del
+   stepper y arriba de Atrás/Siguiente (~320px entre navbar, encabezado y botones), así la
+   foto se lee bien aunque el paso tenga poco contenido. */
 .vw-split-aside {
   position: relative;
-  min-height: 420px;
+  min-height: max(520px, calc(100vh - 320px));
 }
 
 /* El panel llena la columna y la foto se estira para ocupar lo que dejan título,
@@ -50,8 +58,16 @@
 }
 
 .vw-split-aside .vw-photo-panel--fill .vw-photo-thumbs,
-.vw-split-aside .vw-photo-panel--fill .vw-photo-panel-hint {
+.vw-split-aside .vw-photo-panel--fill .vw-photo-panel-hint,
+.vw-split-aside .vw-photo-panel--fill .vw-photo-uploader {
   flex-shrink: 0;
+}
+
+/* Quién cargó el producto, al pie del panel. */
+.vw-photo-uploader {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-grey-200);
 }
 
 .vw-photo-panel {
@@ -76,12 +92,6 @@
 }
 
 /* ── Información de la IA (de dónde salió cada dato del enriquecimiento) ── */
-.vw-ai-sources--bordered {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-grey-200);
-}
-
 .vw-ai-sources-title {
   font-size: 13px;
   margin: 0 0 6px;

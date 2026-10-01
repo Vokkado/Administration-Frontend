@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
-import { ProductSourceImagesSection, ProductCompaniesSection } from '../products/components/product-modal';
+import { ProductCompaniesSection } from '../products/components/product-modal';
+import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
 import { CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
@@ -17,6 +18,12 @@ import { AiSourcesInfo } from './AiSourcesInfo';
 import './ValidationWizardPage.css';
 
 const STEPS = ['Básico', 'Composición', 'Más info', 'Finalizar'];
+/**
+ * Foto del usuario que conviene tener a la vista en cada paso: la portada para nombre, marca
+ * y cierre; la etiqueta de ingredientes para la composición y para "Más info", porque el
+ * registro y la razón social suelen estar impresos al lado de los ingredientes.
+ */
+const STEP_PHOTO: SourcePhotoKey[] = ['cover', 'ingredients', 'ingredients', 'cover'];
 const SOURCES = ['', 'pos', 'eldorado', 'disco', 'tiendainglesa', 'manual'];
 
 type Meta = {
@@ -167,10 +174,17 @@ export function ValidationWizardPage() {
 
   if (loading || !detail || !meta) return <AdminLayout><LoadingSpinner /></AdminLayout>;
 
+  // De dónde sacó cada dato el enriquecimiento IA: va debajo del contenido en los pasos
+  // donde esos datos se revisan (básico y composición).
+  const aiSourcesCard = detail.product.enrichmentSources?.length ? (
+    <div className="vw-card">
+      <AiSourcesInfo sources={detail.product.enrichmentSources} />
+    </div>
+  ) : null;
+
   return (
     <AdminLayout>
-      {/* El paso de composición usa dos columnas: necesita más ancho que el resto del wizard. */}
-      <div className={`vw-container ${step === 1 ? 'is-wide' : ''}`}>
+      <div className="vw-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
           {/* Siempre disponible: rechazar/eliminar el producto en cualquier paso. No otorga puntos. */}
@@ -181,159 +195,152 @@ export function ValidationWizardPage() {
 
         <Stepper step={step} onStep={(s) => setStep(s)} />
 
-        {/* PASO 1 — Básico */}
-        {step === 0 && (
-          <>
-            <div className="vw-card">
-              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                <label className="vw-photo-label">
-                  {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
-                    : <div className="vw-photo-empty">Sin foto</div>}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
-                  <div className="vw-photo-change">📷 Cambiar</div>
-                </label>
-                <div style={{ flex: 1 }} className="vw-form-grid">
-                  <div className="form-group form-group-full">
-                    <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group">
-                    <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group">
-                    <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group form-group-full">
-                    <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
-                    {meta.image && !/^https:\/\/.+/.test(meta.image) && (
-                      <small className="form-hint" style={{ color: 'var(--color-error)' }}>
-                        La URL debe comenzar con https:// (no se permite http:// por seguridad)
-                      </small>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Fotos originales que sacó el usuario (etiqueta frontal / ingredientes / tabla
-                nutricional). Acá abajo para que el admin pueda evaluar de una y rechazar si es basura. */}
-            <div className="vw-card">
-              <h3 style={{ fontSize: 15, margin: '0 0 10px', color: 'var(--color-primary-dark)' }}>Fotos cargadas por el usuario</h3>
-              <ProductSourceImagesSection productId={id} />
-              <AiSourcesInfo sources={detail.product.enrichmentSources} bordered />
-            </div>
-          </>
-        )}
-
-        {/* PASO 2 — Composición a la izquierda, fotos del usuario fijas a la derecha:
-            el admin contrasta cada ingrediente contra la etiqueta sin perderla al scrollear. */}
-        {step === 1 && (
-          <div className="vw-split">
-            <div>
-              {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
-              <div className="vw-card">
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
-                <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
-              </div>
-              {/* A la izquierda y no bajo las fotos: la columna de fotos ocupa todo el alto de pantalla. */}
-              {detail.product.enrichmentSources?.length ? (
+        {/* Todos los pasos: el contenido a la izquierda y las fotos del usuario a la derecha,
+            para contrastar cada dato contra la etiqueta sin abrirla. El panel de fotos se
+            monta una sola vez, así no se vuelven a pedir ni se pierde la foto elegida. */}
+        <div className="vw-split">
+          <div className="vw-split-main">
+            {/* PASO 1 — Básico */}
+            {step === 0 && (
+              <>
                 <div className="vw-card">
-                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
+                  <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                    <label className="vw-photo-label">
+                      {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
+                        : <div className="vw-photo-empty">Sin foto</div>}
+                      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} style={{ display: 'none' }} />
+                      <div className="vw-photo-change">📷 Cambiar</div>
+                    </label>
+                    <div style={{ flex: 1 }} className="vw-form-grid">
+                      <div className="form-group form-group-full">
+                        <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
+                      </div>
+                      <div className="form-group">
+                        <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
+                      </div>
+                      <div className="form-group">
+                        <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
+                      </div>
+                      <div className="form-group form-group-full">
+                        <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
+                        {meta.image && !/^https:\/\/.+/.test(meta.image) && (
+                          <small className="form-hint" style={{ color: 'var(--color-error)' }}>
+                            La URL debe comenzar con https:// (no se permite http:// por seguridad)
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : null}
-            </div>
-            <div className="vw-split-aside">
-              <SourceImagesPanel productId={id} />
-            </div>
+                {aiSourcesCard}
+              </>
+            )}
+    
+            {/* PASO 2 — Composición */}
+            {step === 1 && (
+              <>
+                {/* La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos. */}
+                <div className="vw-card">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
+                  <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+                </div>
+                {aiSourcesCard}
+              </>
+            )}
+    
+            {/* PASO 3 — Más info */}
+            {step === 2 && (
+              <div className="vw-card">
+                <div className="vw-form-grid">
+                  <div className="form-group form-group-full">
+                    <label className="form-label">Categoría</label>
+                    <select className="form-select" value={meta.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
+                      <option value="">— Sin categoría —</option>
+                      {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group form-group-full">
+                    <TagsSection
+                      productId={id}
+                      categoryId={meta.categoryId}
+                      tags={detail?.tags ?? []}
+                      busy={busy}
+                      setBusy={setBusy}
+                      onChanged={loadDetail}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Nombre de registro" value={meta.registrationName} onChange={(e) => set('registrationName', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Código de registro (RNPA/RNE)" value={meta.registrationCode} onChange={(e) => set('registrationCode', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group form-group-full">
+                    <Input label="Razón social / nombre legal" value={meta.legalName} onChange={(e) => set('legalName', e.target.value)} fullWidth />
+                  </div>
+                </div>
+    
+                <div className="form-group" style={{ marginTop: 4 }}>
+                  <label className="form-label">Empresas (opcional)</label>
+                  <ProductCompaniesSection
+                    companies={companies as any}
+                    loadingCompanies={false}
+                    selectedCompanyIds={selectedCompanyIds}
+                    onCompanySelect={onCompanySelect}
+                  />
+                </div>
+    
+                <div className="vw-form-grid" style={{ marginTop: 16 }}>
+                  <div className="form-group">
+                    <label className="form-label">Origen del dato</label>
+                    <select className="form-select" value={meta.source} onChange={(e) => set('source', e.target.value)}>
+                      {SOURCES.map((s) => <option key={s} value={s}>{s || '—'}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Porción (cantidad)" type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} fullWidth />
+                  </div>
+                  <div className="form-group">
+                    <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
+                  </div>
+                </div>
+    
+                <div className="form-group" style={{ marginTop: 8 }}>
+                  <label className="form-label">Octógonos / alertas</label>
+                  <div className="vw-checks">
+                    <Check label="Ultraprocesado" v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
+                    <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
+                    <Check label="Exceso grasas sat." v={meta.isSaturatedFatAlert} on={(v) => set('isSaturatedFatAlert', v)} />
+                    <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
+                    <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
+                  </div>
+                </div>
+              </div>
+            )}
+    
+            {/* PASO 4 — Finalizar */}
+            {step === 3 && (
+              <div className="vw-card">
+                <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
+                <p style={{ color: 'var(--color-grey-600)' }}>
+                  <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
+                  <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
+                  <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
+                </p>
+                <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+                  <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
+                  <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* PASO 3 — Más info */}
-        {step === 2 && (
-          <div className="vw-card">
-            <div className="vw-form-grid">
-              <div className="form-group form-group-full">
-                <label className="form-label">Categoría</label>
-                <select className="form-select" value={meta.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
-                  <option value="">— Sin categoría —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group form-group-full">
-                <TagsSection
-                  productId={id}
-                  categoryId={meta.categoryId}
-                  tags={detail?.tags ?? []}
-                  busy={busy}
-                  setBusy={setBusy}
-                  onChanged={loadDetail}
-                />
-              </div>
-              <div className="form-group">
-                <Input label="Nombre de registro" value={meta.registrationName} onChange={(e) => set('registrationName', e.target.value)} fullWidth />
-              </div>
-              <div className="form-group">
-                <Input label="Código de registro (RNPA/RNE)" value={meta.registrationCode} onChange={(e) => set('registrationCode', e.target.value)} fullWidth />
-              </div>
-              <div className="form-group form-group-full">
-                <Input label="Razón social / nombre legal" value={meta.legalName} onChange={(e) => set('legalName', e.target.value)} fullWidth />
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginTop: 4 }}>
-              <label className="form-label">Empresas (opcional)</label>
-              <ProductCompaniesSection
-                companies={companies as any}
-                loadingCompanies={false}
-                selectedCompanyIds={selectedCompanyIds}
-                onCompanySelect={onCompanySelect}
-              />
-            </div>
-
-            <div className="vw-form-grid" style={{ marginTop: 16 }}>
-              <div className="form-group">
-                <label className="form-label">Origen del dato</label>
-                <select className="form-select" value={meta.source} onChange={(e) => set('source', e.target.value)}>
-                  {SOURCES.map((s) => <option key={s} value={s}>{s || '—'}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
-              </div>
-              <div className="form-group">
-                <Input label="Porción (cantidad)" type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} fullWidth />
-              </div>
-              <div className="form-group">
-                <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginTop: 8 }}>
-              <label className="form-label">Octógonos / alertas</label>
-              <div className="vw-checks">
-                <Check label="Ultraprocesado" v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
-                <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
-                <Check label="Exceso grasas sat." v={meta.isSaturatedFatAlert} on={(v) => set('isSaturatedFatAlert', v)} />
-                <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
-                <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
-              </div>
-            </div>
+          <div className="vw-split-aside">
+            <SourceImagesPanel productId={id} initialKey={STEP_PHOTO[step]} />
           </div>
-        )}
-
-        {/* PASO 4 — Finalizar */}
-        {step === 3 && (
-          <div className="vw-card">
-            <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
-            <p style={{ color: 'var(--color-grey-600)' }}>
-              <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
-              <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
-              <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
-            </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
-              <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Navegación entre pasos */}
         {step < 3 && (

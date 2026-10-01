@@ -1,5 +1,5 @@
 export { ProductBasicInfoSection } from './ProductBasicInfoSection';
-export { ProductSourceImagesSection } from './ProductSourceImagesSection';
+export { ProductSourceImagesSection, UploaderReveal } from './ProductSourceImagesSection';
 export { ProductAllergensSection } from './ProductAllergensSection';
 export { ProductRegistrationSection } from './ProductRegistrationSection';
 export { ProductCompaniesSection } from './ProductCompaniesSection';
