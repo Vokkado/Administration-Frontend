@@ -260,13 +260,20 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
     <Modal show title="Cómo leer esta lista" onClose={onClose} maxWidth="620px">
       <div className="vp-help">
       <p className="vp-help-row">
-        <strong>nombre en negrita</strong>
+        <strong>variante de ingrediente</strong>
         <span> → </span>
-        <span className="vp-help-muted">nombre en gris</span>
+        <span className="vp-help-muted">ingrediente</span>
         <span className="vp-help-note">
-          El primero es la <strong>variante</strong>: el alias concreto con el que se vinculó
-          el producto. El segundo es el <strong>ingrediente</strong> canónico al que esa
-          variante pertenece. Clickeá cualquiera de los dos para editarlo.
+          Un mismo ingrediente aparece escrito de muchas formas en las etiquetas. Cada una de
+          esas formas es una <strong>variante de ingrediente</strong>: el nombre tal como figura
+          en el envase, y es lo que queda vinculado al producto. El <strong>ingrediente</strong> es
+          la ficha única que agrupa a todas sus variantes y guarda el puntaje, la toxicidad y
+          las restricciones.
+        </span>
+        <span className="vp-help-note">
+          Por ejemplo, <strong>cuajo (origen animal)</strong> → <span className="vp-help-muted">enzimas
+          coagulantes</span>: la etiqueta dice “cuajo (origen animal)” y eso es una variante del
+          ingrediente “enzimas coagulantes”. Clickeá cualquiera de los dos para editarlo.
         </span>
       </p>
 
