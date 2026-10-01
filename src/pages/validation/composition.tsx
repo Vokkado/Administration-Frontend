@@ -3,8 +3,8 @@
  * el paso 2 del wizard. Cada item viene con su color (🟢🟡🔴) y acciones: confirmar /
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
-import { useEffect, useRef, useState } from 'react';
-import { Button, Modal } from '../../components/ui';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { Button, Modal, Tooltip } from '../../components/ui';
 import {
   ValidationService,
   type ValidationDetail,
@@ -21,11 +21,42 @@ import { VariantEditorModal } from '../products/components/product-modal/Variant
 import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
 import './composition.css';
 
-export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string }> = {
-  green: { bg: '#ecfdf5', border: '#a7f3d0', dot: '#10b981', label: 'Ya existía' },
-  yellow: { bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b', label: 'Revisar' },
-  red: { bg: '#fef2f2', border: '#fecaca', dot: '#ef4444', label: 'Creado por IA' },
+/** `hint` sigue la regla de color de `ProductValidationService` (backend). */
+export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string; label: string; hint: string }> = {
+  green: {
+    bg: '#ecfdf5', border: '#a7f3d0', dot: '#10b981', label: 'Ya existía',
+    hint: 'Ya existía en la base y el vínculo es confiable: coincidió exacto o ya lo confirmó un admin. No hace falta tocarlo.',
+  },
+  yellow: {
+    bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b', label: 'Revisar',
+    hint: 'Se vinculó con algo que ya existía, pero por aproximación o sinónimo: puede estar mal. Revisá que corresponda.',
+  },
+  red: {
+    bg: '#fef2f2', border: '#fecaca', dot: '#ef4444', label: 'Creado por IA',
+    hint: 'No había nada parecido en la base y la IA creó la ficha. Hay que revisarla y validarla.',
+  },
 };
+
+/**
+ * De dónde salió cada vínculo. Los valores salen de `IngredientMatcher` (backend); "AI" lo
+ * escribe el linker cuando no hubo match, y "MANUAL" el propio wizard al agregar o corregir.
+ * Lo usan tanto el tooltip de la badge como el modal de ayuda.
+ */
+const TIERS: { tier: string; hint: string }[] = [
+  { tier: 'INS', hint: 'Aditivo reconocido por su número INS (ej. E-322). Match seguro.' },
+  { tier: 'EXACT', hint: 'El texto de la etiqueta coincide exactamente con una variante que ya existía.' },
+  { tier: 'ALIAS', hint: 'Coincidió a través de un sinónimo conocido del diccionario.' },
+  { tier: 'EXACT_INGREDIENT', hint: 'Coincidió con el nombre de un ingrediente, no con una variante: se creó la variante.' },
+  { tier: 'FUZZY', hint: 'Coincidencia aproximada: el texto se parece al de una variante existente, pero no es igual. Es la que más conviene revisar.' },
+  { tier: 'FUZZY_INGREDIENT', hint: 'Coincidencia aproximada con el nombre de un ingrediente (no de una variante): se creó la variante. Conviene revisarla.' },
+  { tier: 'AI', hint: 'No coincidió con nada: la IA inventó la ficha y creó ingrediente + variante.' },
+  { tier: 'MANUAL', hint: 'Lo vinculó a mano un admin (con + Agregar o ✎ Corregir). Ya cuenta como revisado.' },
+];
+const TIER_HINTS: Record<string, string> = Object.fromEntries(TIERS.map((t) => [t.tier, t.hint]));
+const NO_TIER_HINT = 'No hay registro de cómo se hizo este vínculo (por ejemplo, se cargó antes de que se guardara este dato).';
+
+const TRAZAS_HINT = 'La etiqueta dice "puede contener": no es un ingrediente, sino un posible rastro por contaminación cruzada en la fábrica.';
+const AI_TAG_HINT = 'No había nada parecido en la base, así que la IA creó el ingrediente y estimó su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
 type Picked = { id: string; name: string };
 type PageResult = { items: Picked[]; total: number };
 /** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
@@ -42,16 +73,34 @@ const nutritionSearch: PickerSearch = (term, offset, limit) =>
   NutritionFactsService.listAdminNutritionFacts({ limit, offset, search: term || undefined })
     .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name })), total: r.total }));
 
-export function Dot({ color }: { color: LinkColor }) {
-  return <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: COLORS[color].dot, marginRight: 2 }} />;
+/** `hint` = mostrar al hover qué significa el color (en la leyenda ya lo explica el texto de al lado). */
+export function Dot({ color, hint = false }: { color: LinkColor; hint?: boolean }) {
+  const dot = <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: COLORS[color].dot, marginRight: 2 }} />;
+  if (!hint) return dot;
+  return (
+    <Tooltip content={<><strong>{COLORS[color].label}</strong>{COLORS[color].hint}</>} className="vp-dot-hint">
+      {dot}
+    </Tooltip>
+  );
 }
 export function Legend() {
   return (
     <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#6b7280' }}>
       {(['green', 'yellow', 'red'] as LinkColor[]).map((c) => (
-        <span key={c} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Dot color={c} /> {COLORS[c].label}</span>
+        <Tooltip key={c} content={COLORS[c].hint} className="vp-legend-item">
+          <Dot color={c} /> {COLORS[c].label}
+        </Tooltip>
       ))}
     </div>
+  );
+}
+
+function TierBadge({ tier }: { tier: string | null }) {
+  const hint = (tier && TIER_HINTS[tier]) || NO_TIER_HINT;
+  return (
+    <Tooltip content={<><strong>{tier ?? 'Sin origen'}</strong>{hint}</>}>
+      <span style={tierBadge} tabIndex={0}>{tier ?? '—'}</span>
+    </Tooltip>
   );
 }
 
@@ -177,7 +226,12 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {detail.allergens.map((a) => (
             <span key={a.allergenId} style={chip(a.color)}>
-              <Dot color={a.color} /> {a.allergenName}{a.presence === 'MAY_CONTAIN' ? ' (trazas)' : ''}
+              <Dot color={a.color} hint /> {a.allergenName}
+              {a.presence === 'MAY_CONTAIN' && (
+                <Tooltip content={TRAZAS_HINT}>
+                  <span className="vp-hint-text" tabIndex={0}>(trazas)</span>
+                </Tooltip>
+              )}
               <span onClick={() => !busy && run(() => ValidationService.removeAllergen(productId, a.allergenId))} style={xStyle} title="Quitar">✕</span>
             </span>
           ))}
@@ -200,11 +254,7 @@ const MAX_SCORE = 10;
 /** Un campo vacío o no numérico cae al mínimo en vez de dejar NaN. */
 const clampScore = (n: number) => (Number.isFinite(n) ? Math.min(MAX_SCORE, Math.max(MIN_SCORE, Math.round(n))) : MIN_SCORE);
 
-/**
- * Ayuda del paso: qué es cada parte de una fila y qué significa cada origen.
- * Los valores de `matchTier` salen de `IngredientMatcher` (backend); "AI" lo escribe el
- * linker cuando no hubo match y hubo que crear la ficha.
- */
+/** Ayuda del paso: qué es cada parte de una fila y qué significa cada origen (ver `TIERS`). */
 function CompositionHelp({ onClose }: { onClose: () => void }) {
   return (
     <Modal show title="Cómo leer esta lista" onClose={onClose} maxWidth="620px">
@@ -245,18 +295,12 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
 
       <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
       <dl className="vp-help-tiers">
-        <dt>INS</dt>
-        <dd>Aditivo reconocido por su número INS (ej. E-322). Match seguro.</dd>
-        <dt>EXACT</dt>
-        <dd>El texto de la etiqueta coincide exactamente con una variante que ya existía.</dd>
-        <dt>ALIAS</dt>
-        <dd>Coincidió a través de un sinónimo conocido del diccionario.</dd>
-        <dt>EXACT_INGREDIENT</dt>
-        <dd>Coincidió con el nombre de un ingrediente, no con una variante: se creó la variante.</dd>
-        <dt>FUZZY / FUZZY_INGREDIENT</dt>
-        <dd>Coincidencia aproximada por similitud. Es la que más conviene revisar.</dd>
-        <dt>AI</dt>
-        <dd>No coincidió con nada: la IA inventó la ficha y creó ingrediente + variante.</dd>
+        {TIERS.map((t) => (
+          <Fragment key={t.tier}>
+            <dt>{t.tier}</dt>
+            <dd>{t.hint}</dd>
+          </Fragment>
+        ))}
       </dl>
       </div>
     </Modal>
@@ -270,22 +314,15 @@ const TOX_OPTIONS = [
 ];
 
 /** Qué leyó la IA y con qué lo vinculó: el contexto para decidir el reemplazo. */
-const TIER_HINTS: Record<string, string> = {
-  EXACT: 'Coincidencia exacta con una variante que ya existía',
-  AI: 'Variante creada o vinculada por la IA',
-  MANUAL: 'Vinculado a mano por un admin',
-};
-
 function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
   const c = COLORS[ing.color];
-  const tier = ing.matchTier ?? '—';
   return (
     <div className="vp-detected" style={{ background: c.bg, borderColor: c.border }}>
       <span className="vp-detected-label">Detectado por la IA en la etiqueta</span>
-      <div className="vp-detected-name"><Dot color={ing.color} /> {ing.variantName}</div>
+      <div className="vp-detected-name"><Dot color={ing.color} hint /> {ing.variantName}</div>
       <div className="vp-detected-meta">
         Vinculado al ingrediente <strong>{ing.ingredientName}</strong>
-        <span style={tierBadge} title={TIER_HINTS[tier] ?? 'Origen del vínculo'}>{tier}</span>
+        <TierBadge tier={ing.matchTier} />
       </div>
       {ing.reason && <p className="vp-detected-reason">{ing.reason}</p>}
     </div>
@@ -304,7 +341,7 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
         <div className="vp-row-title">
           {/* Cada nombre abre SU ficha: la variante es lo que se vincula al producto,
               el ingrediente es la entidad canónica a la que esa variante apunta. */}
-          <div><Dot color={ing.color} />{' '}
+          <div><Dot color={ing.color} hint />{' '}
             <button
               type="button"
               className="vp-variant-link"
@@ -322,9 +359,7 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
             >
               {ing.ingredientName} <span aria-hidden>✎</span>
             </button>
-            <span style={tierBadge} title={TIER_HINTS[ing.matchTier ?? ''] ?? 'Origen del vínculo'}>
-              {ing.matchTier ?? '—'}
-            </span>
+            <TierBadge tier={ing.matchTier} />
           </div>
         </div>
         <div className="vp-row-actions">
@@ -337,7 +372,9 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
       {ing.color === 'red' && (
         <div className="vp-ai-panel">
           <div className="vp-ai-head">
-            <span className="vp-ai-tag">Creado por la IA</span>
+            <Tooltip content={AI_TAG_HINT}>
+              <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
+            </Tooltip>
             <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
           </div>
 
@@ -428,7 +465,7 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
-      <span><Dot color={n.color} /> {n.name}</span>
+      <span><Dot color={n.color} hint /> {n.name}</span>
       {editing ? (
         <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input value={value} onChange={(e) => setValue(e.target.value)} style={{ width: 70 }} />
@@ -661,7 +698,7 @@ export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChan
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {tags.map((t) => (
           <span key={t.tagId} style={chip(t.color)}>
-            <Dot color={t.color} /> {t.tagGroupName}: {t.tagName}
+            <Dot color={t.color} hint /> {t.tagGroupName}: {t.tagName}
             <span onClick={() => !busy && run(() => ValidationService.removeTag(productId, t.tagId))} style={xStyle} title="Quitar">✕</span>
           </span>
         ))}
@@ -671,7 +708,7 @@ export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChan
 }
 
 // ── helpers de estilo ────────────────────────────────────────────────────────────
-const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'pointer' };
+const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'help' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];

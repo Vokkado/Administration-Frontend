@@ -24,6 +24,7 @@ export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
 export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
+export { Tooltip } from './Tooltip';
 
 // Re-export types
 export type { DataTableColumn, DataTableSort } from './DataTable';

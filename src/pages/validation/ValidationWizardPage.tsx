@@ -165,10 +165,10 @@ export function ValidationWizardPage() {
     } finally { setBusy(false); }
   };
 
-  if (loading || !detail || !meta) return <AdminLayout title="Validar producto"><LoadingSpinner /></AdminLayout>;
+  if (loading || !detail || !meta) return <AdminLayout><LoadingSpinner /></AdminLayout>;
 
   return (
-    <AdminLayout title="Validar producto">
+    <AdminLayout>
       {/* El paso de composición usa dos columnas: necesita más ancho que el resto del wizard. */}
       <div className={`vw-container ${step === 1 ? 'is-wide' : ''}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>

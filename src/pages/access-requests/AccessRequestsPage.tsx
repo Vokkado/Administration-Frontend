@@ -154,7 +154,7 @@ export function AccessRequestsPage() {
   const closeReject = () => { setToReject(null); setRejectNote(''); setActionError(''); };
 
   return (
-    <AdminLayout title="Solicitudes de Acceso">
+    <AdminLayout>
       <PageHeader
         title="Solicitudes de Acceso"
         description="Personas que pidieron acceso a las webs de Vokkado. Al aprobar, el usuario recibe el rol y puede ingresar con su cuenta; al rechazar, puede volver a solicitarlo."

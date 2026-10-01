@@ -55,7 +55,7 @@ export function UserStatisticsPage() {
   }, [gender, ageBucket, dateRange]);
 
   return (
-    <AdminLayout title="Estadísticas de usuarios">
+    <AdminLayout>
       <PageHeader
         title="Estadísticas de usuarios"
         description="Totales de usuarios registrados y ranking de contribuidores por puntos (productos aprobados + reportes/sugerencias válidos) y actividad."

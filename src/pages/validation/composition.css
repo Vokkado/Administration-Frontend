@@ -244,6 +244,7 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   white-space: nowrap;
+  cursor: help;
 }
 
 .vp-ai-hint {
@@ -628,4 +629,21 @@
 .vp-picker-cancel:hover {
   background: var(--color-grey-100);
   color: var(--color-grey-800);
+}
+
+/* ── Badges con tooltip (ver Tooltip en components/ui) ── */
+.vp-dot-hint,
+.vp-legend-item {
+  cursor: help;
+}
+
+.vp-legend-item {
+  gap: 5px;
+}
+
+.vp-hint-text {
+  color: var(--color-grey-500);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
 }

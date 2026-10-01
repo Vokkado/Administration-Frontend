@@ -8,8 +8,10 @@
   position: relative;
 }
 
+/* Mismo ancho útil que .admin-main (que descuenta su padding lateral), para que el logo
+   y el usuario queden alineados con los bordes del contenido. */
 .navbar-content {
-  max-width: 1400px;
+  max-width: calc(var(--content-max-width) - 2 * var(--spacing-lg));
   margin: 0 auto;
   display: flex;
   justify-content: space-between;

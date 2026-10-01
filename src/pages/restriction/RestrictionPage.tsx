@@ -148,7 +148,7 @@ export function RestrictionPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Restricciones">
+    <AdminLayout>
         {/* Header */}
         <PageHeader
           title="Gestión de Restricciones"

@@ -45,7 +45,7 @@ export function UsersPage() {
   };
 
   return (
-    <AdminLayout title="Accesos y roles">
+    <AdminLayout>
         <PageHeader
           title="Accesos y roles"
           description="Quiénes pueden entrar a las webs de Vokkado y con qué rol. Los usuarios sin rol no aparecen acá: usan la app y se buscan desde “Dar acceso”."

@@ -69,7 +69,7 @@ export function ProductStatisticsPage() {
     : '—';
 
   return (
-    <AdminLayout title="Estadísticas de productos">
+    <AdminLayout>
       <PageHeader
         title="Estadísticas de productos"
         description="Totales de toda la plataforma y cantidad de escaneos por producto. Tocá “Ver detalle” para ver el desglose demográfico de un producto puntual."
