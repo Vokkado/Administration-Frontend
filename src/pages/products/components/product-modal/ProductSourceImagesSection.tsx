@@ -17,9 +17,7 @@ const hintStyle: React.CSSProperties = { fontSize: 12, color: 'var(--color-grey-
 export function ProductSourceImagesSection({ productId }: ProductSourceImagesSectionProps) {
   const { photos, uploader, loading, markFailed } = useSourceImages(productId);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [revealedFor, setRevealedFor] = useState<string | null>(null);
 
-  const uploaderRevealed = !!productId && revealedFor === productId;
   const hasAnyPhoto = photos.length > 0;
 
   if (loading) {
@@ -84,27 +82,7 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
 
       {uploader && (
         <div style={{ marginTop: 12 }}>
-          <small style={{ ...hintStyle, display: 'block', marginBottom: 4 }}>
-            Cargado por {uploaderRevealed ? '' : '(click para revelar)'}
-          </small>
-          <span
-            onClick={() => setRevealedFor(productId ?? null)}
-            title={uploaderRevealed ? '' : 'Click para revelar'}
-            style={{
-              display: 'inline-block',
-              fontFamily: 'monospace',
-              fontSize: 13,
-              padding: '4px 8px',
-              borderRadius: 4,
-              background: uploaderRevealed ? 'transparent' : '#eaeaea',
-              cursor: uploaderRevealed ? 'text' : 'pointer',
-              userSelect: uploaderRevealed ? 'auto' : 'none',
-              filter: uploaderRevealed ? 'none' : 'blur(5px)',
-              transition: 'filter 0.15s ease',
-            }}
-          >
-            {uploader.email} · {uploader.id}
-          </span>
+          <UploaderReveal productId={productId} uploader={uploader} />
         </div>
       )}
 
@@ -115,5 +93,44 @@ export function ProductSourceImagesSection({ productId }: ProductSourceImagesSec
         onClose={() => setLightboxIndex(null)}
       />
     </div>
+  );
+}
+
+/**
+ * Quién cargó el producto, borroneado hasta que el admin hace click: es un dato personal y
+ * no hace falta tenerlo a la vista para validar. También lo usa el wizard de validación.
+ */
+export function UploaderReveal({ productId, uploader }: {
+  productId?: string;
+  uploader: { id: string; email: string };
+}) {
+  // Atado al producto: al pasar a otro vuelve a quedar oculto.
+  const [revealedFor, setRevealedFor] = useState<string | null>(null);
+  const revealed = !!productId && revealedFor === productId;
+
+  return (
+    <>
+      <small style={{ ...hintStyle, display: 'block', marginBottom: 4 }}>
+        Cargado por {revealed ? '' : '(click para revelar)'}
+      </small>
+      <span
+        onClick={() => setRevealedFor(productId ?? null)}
+        title={revealed ? '' : 'Click para revelar'}
+        style={{
+          display: 'inline-block',
+          fontFamily: 'monospace',
+          fontSize: 13,
+          padding: '4px 8px',
+          borderRadius: 4,
+          background: revealed ? 'transparent' : '#eaeaea',
+          cursor: revealed ? 'text' : 'pointer',
+          userSelect: revealed ? 'auto' : 'none',
+          filter: revealed ? 'none' : 'blur(5px)',
+          transition: 'filter 0.15s ease',
+        }}
+      >
+        {uploader.email} · {uploader.id}
+      </span>
+    </>
   );
 }

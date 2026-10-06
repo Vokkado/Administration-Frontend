@@ -1,8 +1,8 @@
 /**
  * "Información de la IA": de dónde salió cada dato que completó el enriquecimiento
  * automático (súper que matcheó, si aportó portada/texto de nutrición/ingredientes,
- * o si tuvo que leer una foto de etiqueta). Se muestra debajo de las fotos del
- * usuario en los pasos "Básico" y "Composición" del wizard.
+ * o si tuvo que leer una foto de etiqueta). Se muestra en la columna derecha del
+ * wizard, debajo de las fotos del usuario, en todos los pasos.
  *
  * `null` = el producto no pasó por enriquecimiento IA (se cargó a mano, o solo tiene
  * lo que subió el usuario). No es un error: no se muestra nada.
@@ -33,15 +33,13 @@ function storeLabel(store: string): string {
 
 interface AiSourcesInfoProps {
   sources: EnrichmentSourceSummary[] | null | undefined;
-  /** true = va debajo de otro contenido en la misma card (separador arriba). */
-  bordered?: boolean;
 }
 
-export function AiSourcesInfo({ sources, bordered }: AiSourcesInfoProps) {
+export function AiSourcesInfo({ sources }: AiSourcesInfoProps) {
   if (!sources || sources.length === 0) return null;
 
   return (
-    <div className={`vw-ai-sources ${bordered ? 'vw-ai-sources--bordered' : ''}`}>
+    <div className="vw-ai-sources">
       <h4 className="vw-ai-sources-title">🤖 Información de la IA</h4>
       <p className="vw-ai-sources-hint">
         El enriquecimiento automático buscó este producto en los súper y OpenFoodFacts. Esto es lo que encontró en cada fuente:

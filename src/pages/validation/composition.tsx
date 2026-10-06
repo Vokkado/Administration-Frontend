@@ -260,13 +260,20 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
     <Modal show title="Cómo leer esta lista" onClose={onClose} maxWidth="620px">
       <div className="vp-help">
       <p className="vp-help-row">
-        <strong>nombre en negrita</strong>
+        <strong>variante de ingrediente</strong>
         <span> → </span>
-        <span className="vp-help-muted">nombre en gris</span>
+        <span className="vp-help-muted">ingrediente</span>
         <span className="vp-help-note">
-          El primero es la <strong>variante</strong>: el alias concreto con el que se vinculó
-          el producto. El segundo es el <strong>ingrediente</strong> canónico al que esa
-          variante pertenece. Clickeá cualquiera de los dos para editarlo.
+          Un mismo ingrediente aparece escrito de muchas formas en las etiquetas. Cada una de
+          esas formas es una <strong>variante de ingrediente</strong>: el nombre tal como figura
+          en el envase, y es lo que queda vinculado al producto. El <strong>ingrediente</strong> es
+          la ficha única que agrupa a todas sus variantes y guarda el puntaje, la toxicidad y
+          las restricciones.
+        </span>
+        <span className="vp-help-note">
+          Por ejemplo, <strong>cuajo (origen animal)</strong> → <span className="vp-help-muted">enzimas
+          coagulantes</span>: la etiqueta dice “cuajo (origen animal)” y eso es una variante del
+          ingrediente “enzimas coagulantes”. Clickeá cualquiera de los dos para editarlo.
         </span>
       </p>
 
@@ -458,9 +465,19 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
   );
 }
 
+/**
+ * El backend manda el valor como viene de la columna NUMERIC ("0.8000"): pasarlo por Number
+ * saca los ceros de relleno (0.8, 10, 1.25). Vacío si no hay valor.
+ */
+function formatNutritionValue(value: number | string | null): string {
+  if (value == null || value === '') return '';
+  const n = Number(value);
+  return Number.isFinite(n) ? String(n) : String(value);
+}
+
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState<string>(n.value != null ? String(n.value) : '');
+  const [value, setValue] = useState<string>(formatNutritionValue(n.value));
   const [unit, setUnit] = useState<string>(n.unit ?? '');
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
@@ -474,7 +491,7 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
         </span>
       ) : (
         <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <strong>{n.value ?? '—'} {n.unit ?? ''}</strong>
+          <strong>{formatNutritionValue(n.value) || '—'} {n.unit ?? ''}</strong>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
           <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
         </span>
@@ -712,12 +729,16 @@ const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
 function rowBox(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
-  return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 };
+  return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px' };
 }
 function chip(color: LinkColor): React.CSSProperties {
   const c = COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
+/**
+ * Contenedor de una lista (ingredientes, alérgenos, nutrición, tags): el encabezado lleva el
+ * título y sus botones de alta, así queda claro a qué lista agrega cada "+ Agregar".
+ */
 function Section({ title, help, adder, children }: {
   title: string;
   /** Control extra al lado del título (por ejemplo, el botón de ayuda). */
@@ -726,16 +747,16 @@ function Section({ title, help, adder, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, margin: 0, color: '#374151' }}>
+    <section className="vp-section">
+      <div className="vp-section-head">
+        <h3 className="vp-section-title">
           {title}
           {help}
         </h3>
         {adder}
       </div>
-      {children}
-    </div>
+      <div className="vp-section-body">{children}</div>
+    </section>
   );
 }
 function Muted({ children }: { children: React.ReactNode }) { return <div style={{ color: '#9ca3af', fontSize: 14 }}>{children}</div>; }
