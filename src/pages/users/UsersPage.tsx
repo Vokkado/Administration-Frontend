@@ -22,7 +22,7 @@ export function UsersPage() {
   } = useUsers();
 
   return (
-    <AdminLayout title="Gestión de Usuarios">
+    <AdminLayout className="page-users" title="Gestión de Usuarios">
         <PageHeader
           title="Usuarios Registrados"
           description="Consulta y administra los usuarios registrados en la plataforma. Los usuarios se consideran activos cuando tienen la aplicación abierta. El estado se actualiza automáticamente (con margen de 90 segundos para detección)."

@@ -163,10 +163,10 @@ export function ValidationWizardPage() {
     } finally { setBusy(false); }
   };
 
-  if (loading || !detail || !meta) return <AdminLayout title="Validar producto"><LoadingSpinner /></AdminLayout>;
+  if (loading || !detail || !meta) return <AdminLayout className="page-validation" title="Validar producto"><LoadingSpinner /></AdminLayout>;
 
   return (
-    <AdminLayout title="Validar producto">
+    <AdminLayout className="page-validation" title="Validar producto">
       <div className="vw-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>

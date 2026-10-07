@@ -437,7 +437,7 @@ export function ProductsPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Productos">
+    <AdminLayout className="page-products" title="Gestión de Productos">
         {/* Header */}
         <PageHeader
           title="Productos"

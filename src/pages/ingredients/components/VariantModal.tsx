@@ -208,6 +208,7 @@ export function VariantModal({
           <div className="modal-form-columns">
             {/* Left Column - Basic Info */}
             <div className="modal-form-left">
+              <h3 className="modal-column-title">Información básica</h3>
               <div className="form-group">
                 <label className="form-label">Ingrediente Base *</label>
                 <div className="autocomplete-container" ref={autocompleteRef}>
@@ -269,7 +270,7 @@ export function VariantModal({
 
             {/* Right Column - Attributes + Inherited Restrictions */}
             <div className="modal-form-right variant-modal-right">
-              {/* Restricciones heredadas de los atributos seleccionados */}
+              <h3 className="modal-column-title">Restricciones heredadas</h3>
               <div className="inherited-restrictions-section">
                 {selectedAttributes.size === 0 ? (
                   <p className="inherited-restrictions-empty">

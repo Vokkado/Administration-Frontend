@@ -63,7 +63,7 @@ export function NotificationsPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Notificaciones">
+    <AdminLayout className="page-notifications" title="Gestión de Notificaciones">
         <PageHeader
           title="Notificaciones"
           description="Envía notificaciones push a los usuarios de la app"

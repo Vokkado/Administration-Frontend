@@ -86,7 +86,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
 
   return (
-    <AdminLayout title="Administración de Vokkado">
+    <AdminLayout className="page-dashboard" title="Administración de Vokkado">
       <div className="dashboard-groups">
         {DASHBOARD_GROUPS.map((group) => (
           <section key={group.name} className="dashboard-group">

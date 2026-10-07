@@ -162,7 +162,7 @@ export function AllergensPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Alérgenos">
+    <AdminLayout className="page-allergens" title="Gestión de Alérgenos">
         {/* Header */}
         <PageHeader
           title="Alérgenos"

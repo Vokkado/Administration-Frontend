@@ -177,7 +177,7 @@ export function NutritionFactPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Valores Nutricionales">
+    <AdminLayout className="page-nutrition-facts" title="Gestión de Valores Nutricionales">
         <PageHeader
           title="Valores Nutricionales"
           description="Gestión de información nutricional del sistema"

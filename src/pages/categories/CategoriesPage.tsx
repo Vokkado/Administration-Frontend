@@ -136,7 +136,7 @@ export function CategoriesPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Categorías">
+    <AdminLayout className="page-categories" title="Gestión de Categorías">
         <PageHeader
           title="Categorías"
           description="Gestión de categorías del sistema"

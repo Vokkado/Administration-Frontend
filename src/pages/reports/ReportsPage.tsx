@@ -26,7 +26,7 @@ export function ReportsPage() {
   } = useReports();
 
   return (
-    <AdminLayout title="Reportes">
+    <AdminLayout className="page-reports" title="Reportes">
         <PageHeader
           title="Reportes"
           description="Consulta y gestiona reportes de BUG, Producto faltante, Producto desactualizado y Análisis incorrecto."

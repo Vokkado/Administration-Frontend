@@ -54,10 +54,16 @@
   padding: var(--spacing-md) var(--spacing-lg);
   color: var(--color-primary-dark);
   font-size: var(--font-size-sm);
+  vertical-align: middle;
 }
 
 /* Actions cell */
 .dt-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.dt-actions-inner {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
@@ -71,6 +77,17 @@
 
 .dt-table tbody tr.row-inactive:hover {
   opacity: 0.8;
+}
+
+@media (max-width: 1279px) {
+  .dt-table th,
+  .dt-table td {
+    padding: var(--spacing-md);
+  }
+
+  .dt-table th {
+    white-space: normal;
+  }
 }
 
 /* Responsive: hide columns marked as mobile-hidden */

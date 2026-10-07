@@ -391,7 +391,7 @@ export function IngredientsPage() {
   };
 
   return (
-    <AdminLayout title="Gestión de Ingredientes">
+    <AdminLayout className="page-ingredients" title="Gestión de Ingredientes">
         {/* Page Tabs */}
         <div className="ingredient-page-tabs">
           <button

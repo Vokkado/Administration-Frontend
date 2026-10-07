@@ -83,7 +83,9 @@ export function DataTable<T>({
                 </td>
               ))}
               {hasActions && (
-                <td className="dt-actions">{renderActions!(item)}</td>
+                <td className="dt-actions">
+                  <div className="dt-actions-inner">{renderActions!(item)}</div>
+                </td>
               )}
             </tr>
           ))}
