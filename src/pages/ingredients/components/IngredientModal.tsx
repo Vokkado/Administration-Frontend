@@ -144,12 +144,14 @@ export function IngredientModal({
       onClose={onClose}
       error={error}
       maxWidth="1100px"
+      className="page-ingredients"
     >
         <div className="modal-body">
           <form className="modal-form" onSubmit={onSubmit} id="ingredient-form">
             <div className="modal-form-columns">
               {/* Columna Izquierda - Información Básica */}
               <div className="modal-form-left">
+              <h3 className="modal-column-title">Información básica</h3>
               <Input
                 type="text"
                 label="Nombre *"
@@ -232,6 +234,7 @@ export function IngredientModal({
 
             {/* Columna Derecha - Restricciones */}
             <div className="modal-form-right">
+              <h3 className="modal-column-title">Restricciones del ingrediente</h3>
               <div className="restrictions-section">
                 {/* Buscador */}
                 <div className="restrictions-search">
@@ -360,7 +363,7 @@ export function IngredientModal({
                 </div>
 
                 {/* Paginación fuera del scroll */}
-                {!loadingRestrictions && filteredRestrictions.length > 0 && (
+                {!loadingRestrictions && totalPages > 1 && (
                   <div className="restrictions-pagination">
                     <Pagination
                       currentPage={currentPage}

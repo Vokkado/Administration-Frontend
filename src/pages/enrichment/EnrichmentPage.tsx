@@ -253,7 +253,7 @@ export function EnrichmentPage() {
   ];
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-enrichment">
       <PageHeader
         title="Enriquecer productos"
         description="Fichas de referencia sin nutrición ni ingredientes. Se buscan sus datos en los supermercados y se completan con IA; lo que sale completo pasa a la cola de validación."

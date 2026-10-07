@@ -43,7 +43,7 @@ export function BadgesPage() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-statistics">
       <PageHeader
         title="Insignias"
         description="Editá el nombre, la cantidad para desbloquearla y la foto de cada insignia."

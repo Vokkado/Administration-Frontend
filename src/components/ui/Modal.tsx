@@ -13,6 +13,7 @@ interface ModalProps {
   children: React.ReactNode;
   error?: string;
   maxWidth?: string;
+  className?: string;
 }
 
 export function Modal({
@@ -22,13 +23,14 @@ export function Modal({
   children,
   error,
   maxWidth = '500px',
+  className,
 }: ModalProps) {
   useBodyScrollLock(show);
 
   if (!show) return null;
 
   return (
-    <div className="modal-overlay">
+    <div className={className ? `modal-overlay ${className}` : 'modal-overlay'}>
       <div
         className="modal-content"
         style={{ maxWidth }}

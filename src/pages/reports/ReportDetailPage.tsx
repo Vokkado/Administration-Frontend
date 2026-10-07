@@ -68,7 +68,7 @@ export function ReportDetailPage() {
   const canRespond = report && effectiveSelectedStatus ? !isPending(effectiveSelectedStatus as ReportStatus) : false;
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-reports">
         <div className="reports-header">
           <div className="reports-title">
             <Button variant="outline" onClick={() => navigate('/reports')}>

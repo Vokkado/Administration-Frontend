@@ -60,14 +60,14 @@ export function VariantTable({
         key: 'name',
         header: 'Nombre',
         render: (variant) => (
-          <span className="td-name">{variant.name}</span>
+          <span className="td-name" title={variant.name}>{variant.name}</span>
         ),
       },
       {
         key: 'ingredient',
         header: 'Ingrediente',
         align: 'center',
-        width: '200px',
+        width: '160px',
         render: (variant) => (
           <span className="badge badge-type">
             {getIngredientName(variant.ingredientId)}
@@ -79,7 +79,7 @@ export function VariantTable({
         header: 'Atributos',
         hideOnMobile: true,
         align: 'center',
-        width: '260px',
+        width: '200px',
         render: (variant) => {
           const attrs = variant.attributeIds || [];
           return (
@@ -108,7 +108,7 @@ export function VariantTable({
         sortable: true,
         align: 'center',
         hideOnMobile: true,
-        width: '150px',
+        width: '115px',
         render: (variant) => (
           <span title={variant.createdAt ? new Date(variant.createdAt).toLocaleString('es-UY') : ''}>
             {formatDate(variant.createdAt)}
@@ -119,7 +119,7 @@ export function VariantTable({
         key: 'validated',
         header: 'Validado',
         align: 'center',
-        width: '160px',
+        width: '140px',
         headerAction: (
           <ColumnFilter
             value={filterInspected}
@@ -196,7 +196,7 @@ export function VariantTable({
       emptyMessage="No se encontraron variantes de ingrediente"
       keyExtractor={(variant) => variant.id}
       actionsAlign="center"
-      actionsWidth="170px"
+      actionsWidth="155px"
       fixedLayout
       sort={sort}
       onSortChange={onSortChange}

@@ -82,14 +82,14 @@ export function IngredientTable({
       key: 'name',
       header: 'Nombre',
       render: (ingredient) => (
-        <span className="td-name">{ingredient.name}</span>
+        <span className="td-name" title={ingredient.name}>{ingredient.name}</span>
       ),
     },
     {
       key: 'toxicityLevel',
       header: 'Nivel de Riesgo',
       align: 'center',
-      width: '190px',
+      width: '140px',
       headerAction: (
         <ColumnFilter
           value={filterRisk}
@@ -138,7 +138,7 @@ export function IngredientTable({
       header: 'Nutritivo',
       hideOnMobile: true,
       align: 'center',
-      width: '130px',
+      width: '125px',
       render: (ingredient) => (
         <span className={`badge ${ingredient.isNutritive ? 'validated-yes' : 'validated-no'}`}>
           {ingredient.isNutritive ? '✓ Sí' : '✗ No'}
@@ -150,7 +150,7 @@ export function IngredientTable({
       header: 'Justificación',
       hideOnMobile: true,
       align: 'center',
-      width: '175px',
+      width: '185px',
       headerAction: (
         <ColumnFilter
           value={filterReason}
@@ -193,7 +193,7 @@ export function IngredientTable({
       sortable: true,
       align: 'center',
       hideOnMobile: true,
-      width: '150px',
+      width: '115px',
       render: (ingredient) => (
         <span title={ingredient.createdAt ? new Date(ingredient.createdAt).toLocaleString('es-UY') : ''}>
           {formatDate(ingredient.createdAt)}
@@ -204,7 +204,7 @@ export function IngredientTable({
       key: 'isInspected',
       header: 'Validado',
       align: 'center',
-      width: '160px',
+      width: '140px',
       headerAction: (
         <ColumnFilter
           value={filterInspected}

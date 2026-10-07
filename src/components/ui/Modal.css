@@ -81,7 +81,7 @@
   color: var(--color-error-dark);
 }
 
-.form-group input,
+.form-group input:where(:not([type="checkbox"], [type="radio"])),
 .form-group select,
 .form-group textarea {
   width: 100%;
@@ -140,7 +140,7 @@
     font-size: 13px;
   }
 
-  .form-group input,
+  .form-group input:where(:not([type="checkbox"], [type="radio"])),
   .form-group select,
   .form-group textarea {
     padding: 10px 14px;

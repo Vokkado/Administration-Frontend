@@ -69,8 +69,10 @@
   table-layout: fixed;
 }
 
-/* Si el título no entra en su ancho, se recorta en vez de pisar a la columna vecina. */
+/* Un título de varias palabras pasa a dos renglones; si una sola palabra no entra en su
+   ancho, se recorta en vez de pisar a la columna vecina. */
 .dt-table.dt-fixed th {
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -78,6 +80,19 @@
 /* Un nombre largo pasa a varias líneas en vez de desbordar la celda. */
 .dt-table.dt-fixed td {
   overflow-wrap: break-word;
+}
+
+/* Con anchos fijos cada píxel de relleno se le resta al contenido: relleno lateral más
+   chico para que las columnas entren en una notebook sin scroll horizontal. */
+.dt-table.dt-fixed th,
+.dt-table.dt-fixed td,
+.dt-table.dt-fixed .dt-sort-btn {
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.dt-table.dt-fixed th.dt-sortable {
+  padding: 0;
 }
 
 /* Table base */

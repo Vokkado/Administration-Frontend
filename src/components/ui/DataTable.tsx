@@ -67,6 +67,24 @@ interface DataTableProps<T> {
 /** Filas fantasma de la primera carga (solo con anchos fijos). */
 const SKELETON_ROWS = [0, 1, 2, 3, 4];
 
+/** Ancho mínimo de una columna sin `width` cuando la tabla usa anchos fijos. */
+const FLEX_COLUMN_MIN_PX = 200;
+
+/**
+ * Con `table-layout: fixed` las columnas sin `width` se quedan con el sobrante, y en pantallas
+ * angostas ese sobrante llega a cero y el texto pisa a la columna vecina. Se fija un ancho
+ * mínimo para que la tabla haga scroll horizontal en vez de aplastar columnas.
+ */
+function fixedMinWidth(widths: Array<string | undefined>): string | undefined {
+  let total = 0;
+  for (const width of widths) {
+    if (!width) total += FLEX_COLUMN_MIN_PX;
+    else if (width.endsWith('px')) total += parseFloat(width);
+    else return undefined;
+  }
+  return `${total}px`;
+}
+
 const alignClass = (align?: DataTableAlign) => (align && align !== 'left' ? `dt-align-${align}` : '');
 const cellClass = (...parts: Array<string | false | undefined>) => parts.filter(Boolean).join(' ') || undefined;
 
@@ -106,7 +124,10 @@ export function DataTable<T>({
 
   return (
     <div className={`dt-wrapper${className ? ` ${className}` : ''}${loading ? ' is-loading' : ''}`}>
-      <table className={`dt-table${fixedLayout ? ' dt-fixed' : ''}`}>
+      <table
+        className={`dt-table${fixedLayout ? ' dt-fixed' : ''}`}
+        style={fixedLayout ? { minWidth: fixedMinWidth([...columns.map((c) => c.width), ...(hasActions ? [actionsWidth] : [])]) } : undefined}
+      >
         <thead>
           <tr>
             {columns.map((col) => {

@@ -5,6 +5,8 @@
   /* Al pie: deja las acciones a la altura de la descripción y el contador, que es la
      última línea del bloque, en vez de pegadas al breadcrumb. */
   align-items: flex-end;
+  /* Si las acciones no entran al lado del título, bajan a otro renglón en vez de salirse. */
+  flex-wrap: wrap;
   gap: 24px;
   margin-bottom: 32px;
   animation: fadeIn 0.5s ease-out;
@@ -111,6 +113,8 @@
   /* La descripción ocupa el ancho disponible: sin esto los botones se achican y el texto se
      parte en dos líneas, dejando el botón el doble de alto. */
   flex-shrink: 0;
+  max-width: 100%;
+  margin-left: auto;
 }
 
 .page-header-actions .btn {
@@ -122,6 +126,8 @@
    alineaba. Definido acá, aplica en todas. */
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
 }
@@ -129,6 +135,7 @@
 /* Buscador dentro de las acciones del header, a la izquierda de los botones. */
 .header-search {
   flex: 0 1 280px;
+  width: 280px;
   min-width: 200px;
 }
 
