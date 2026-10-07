@@ -217,13 +217,13 @@
   /* ========================= */
   /* Table Cell Styles          */
   /* ========================= */
-  /* Hay nombres que son una lista de ingredientes entera: se cortan a 3 renglones y el
-     nombre completo queda en el tooltip. */
+  /* Hay nombres que son una lista de ingredientes entera: se cortan a 2 renglones para no
+     estirar la fila, y el nombre completo queda en el tooltip y en el modal. */
   .td-name {
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
     font-weight: 600;
     color: var(--color-primary-dark);
@@ -339,7 +339,8 @@
     bottom: 0;
     z-index: 1;
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 12px 16px;
     justify-content: flex-end;
     padding: 20px 48px;
     border-top: 2px solid var(--color-border-light);
@@ -397,6 +398,15 @@
     font-family: inherit;
     resize: vertical;
     transition: all 0.2s ease;
+  }
+
+  /* Crece con el texto (como un párrafo) en vez de obligar a scrollear de costado. */
+  .form-group .textarea-autosize {
+    field-sizing: content;
+    min-height: 3.2em;
+    max-height: 12em;
+    line-height: 1.5;
+    resize: none;
   }
 
   .textarea:focus {
@@ -711,6 +721,13 @@
   .restrictions-pagination .pagination-ellipsis {
     min-width: 36px;
     font-size: 13px;
+  }
+
+  .restrictions-more {
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-secondary);
   }
 
   .restrictions-selected-count {

@@ -81,6 +81,8 @@ export function IngredientTable({
     {
       key: 'name',
       header: 'Nombre',
+      width: '23%',
+      resizable: true,
       render: (ingredient) => (
         <span className="td-name" title={ingredient.name}>{ingredient.name}</span>
       ),
@@ -252,6 +254,7 @@ export function IngredientTable({
       // 150px: con menos, el encabezado "ACCIONES" no entra y se recorta.
       actionsWidth="150px"
       fixedLayout
+      widthsStorageKey="ingredients"
       sort={sort}
       onSortChange={onSortChange}
       renderActions={(ingredient) => (

@@ -9,6 +9,7 @@ import type { DataTableSort } from '../../../components/ui/DataTable';
 import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, IngredientVariant, AttributeForVariant, AttributeTypeForVariant } from '../types';
+import { getAttributeDisplayName } from '../types';
 
 export function useIngredientVariants() {
   // Local filter state
@@ -87,7 +88,7 @@ export function useIngredientVariants() {
 
   const getAttributeName = (attributeId: string): string => {
     const attr = attributes.find(a => a.id === attributeId);
-    return attr?.name || 'Desconocido';
+    return attr ? getAttributeDisplayName(attr.name) : 'Desconocido';
   };
 
   const getAttributeTypeName = (typeId: string): string => {

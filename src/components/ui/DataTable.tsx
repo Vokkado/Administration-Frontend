@@ -2,8 +2,10 @@
  * Componente DataTable genérico
  * Tabla reutilizable con soporte responsive, loading, empty state y acciones personalizadas.
  */
+import { useRef } from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { EmptyState } from './EmptyState';
+import { useColumnWidths } from './useColumnWidths';
 import './DataTable.css';
 
 export type DataTableAlign = 'left' | 'center' | 'right';
@@ -33,6 +35,11 @@ export interface DataTableColumn<T> {
    * ordenar: anidar botones es HTML inválido y rompe el click.
    */
   headerAction?: React.ReactNode;
+  /**
+   * Permite ajustar el ancho arrastrando el borde derecho del encabezado (doble clic lo
+   * restablece). Solo con `fixedLayout`; se recuerda por tabla si hay `widthsStorageKey`.
+   */
+  resizable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -62,12 +69,14 @@ interface DataTableProps<T> {
   sort?: DataTableSort;
   /** Se llama al clickear un encabezado sortable. Sin esto, ninguna columna ordena. */
   onSortChange?: (sort: DataTableSort) => void;
+  /** Clave para recordar los anchos ajustados por el usuario (columnas `resizable`). */
+  widthsStorageKey?: string;
 }
 
 /** Filas fantasma de la primera carga (solo con anchos fijos). */
 const SKELETON_ROWS = [0, 1, 2, 3, 4];
 
-/** Ancho mínimo de una columna sin `width` cuando la tabla usa anchos fijos. */
+/** Ancho mínimo de una columna sin `width` (o con `width` en %) cuando la tabla usa anchos fijos. */
 const FLEX_COLUMN_MIN_PX = 200;
 
 /**
@@ -78,11 +87,97 @@ const FLEX_COLUMN_MIN_PX = 200;
 function fixedMinWidth(widths: Array<string | undefined>): string | undefined {
   let total = 0;
   for (const width of widths) {
-    if (!width) total += FLEX_COLUMN_MIN_PX;
+    if (!width || width.endsWith('%')) total += FLEX_COLUMN_MIN_PX;
     else if (width.endsWith('px')) total += parseFloat(width);
     else return undefined;
   }
   return `${total}px`;
+}
+
+/** En celular las columnas `hideOnMobile` no se dibujan: no tienen que sumar al mínimo. */
+function fixedMinWidthVars<T>(columns: DataTableColumn<T>[], actionsWidth: string | undefined | null) {
+  const actions = actionsWidth === null ? [] : [actionsWidth];
+  return {
+    '--dt-min-width': fixedMinWidth([...columns.map((c) => c.width), ...actions]),
+    '--dt-min-width-mobile': fixedMinWidth([...columns.filter((c) => !c.hideOnMobile).map((c) => c.width), ...actions]),
+  } as React.CSSProperties;
+}
+
+const MIN_RESIZABLE_PX = 120;
+const MAX_RESIZABLE_PX = 900;
+const RESIZE_KEYBOARD_STEP_PX = 16;
+
+const pxOf = (width?: string) => (width?.endsWith('px') ? parseFloat(width) : null);
+
+/**
+ * La tabla siempre ocupa todo el ancho: lo que sobra se reparte entre las columnas en
+ * proporción a su ancho declarado. Para que el borde quede donde se soltó, se calcula el
+ * ancho declarado que, después de ese reparto, da `target` píxeles en pantalla.
+ */
+function declaredWidthFor(target: number, othersPx: number, tablePx: number): number {
+  if (target + othersPx >= tablePx) return target;
+  return (target * othersPx) / (tablePx - target);
+}
+
+interface ResizeHandleProps {
+  label: string;
+  onResize: (renderedPx: number) => void;
+  onCommit: () => void;
+  onReset: () => void;
+}
+
+function ResizeHandle({ label, onResize, onCommit, onReset }: ResizeHandleProps) {
+  const currentWidth = (el: HTMLElement) => el.parentElement!.getBoundingClientRect().width;
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLSpanElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const handle = e.currentTarget;
+    const startX = e.clientX;
+    const startWidth = currentWidth(handle);
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      // Sin captura el arrastre igual funciona mientras el puntero siga sobre el borde.
+    }
+    document.body.classList.add('dt-resizing');
+
+    const move = (ev: PointerEvent) => onResize(startWidth + ev.clientX - startX);
+    const end = (ev: PointerEvent) => {
+      if (ev.clientX !== startX) move(ev);
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', end);
+      handle.removeEventListener('pointercancel', end);
+      document.body.classList.remove('dt-resizing');
+      onCommit();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLSpanElement>) => {
+    const step = e.key === 'ArrowRight' ? RESIZE_KEYBOARD_STEP_PX : e.key === 'ArrowLeft' ? -RESIZE_KEYBOARD_STEP_PX : 0;
+    if (!step) return;
+    e.preventDefault();
+    onResize(currentWidth(e.currentTarget) + step);
+    onCommit();
+  };
+
+  return (
+    <span
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Ajustar el ancho de la columna ${label}`}
+      tabIndex={0}
+      className="dt-resize-handle"
+      title="Arrastrá para ajustar el ancho. Doble clic para restablecerlo."
+      onPointerDown={handlePointerDown}
+      onKeyDown={handleKeyDown}
+      onDoubleClick={onReset}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
 }
 
 const alignClass = (align?: DataTableAlign) => (align && align !== 'left' ? `dt-align-${align}` : '');
@@ -105,7 +200,11 @@ export function DataTable<T>({
   sort,
   onSortChange,
   fixedLayout = false,
+  widthsStorageKey,
 }: DataTableProps<T>) {
+  const { widths: customWidths, resize, reset, persist } = useColumnWidths(widthsStorageKey);
+  const tableRef = useRef<HTMLTableElement>(null);
+
   // Primera carga sin anchos fijos: los anchos los define el contenido, así que dibujar
   // encabezados con filas fantasma haría que las columnas se corran al llegar los datos.
   // Con `fixedLayout` eso no pasa y se muestran esqueletos.
@@ -120,13 +219,33 @@ export function DataTable<T>({
 
   const hasActions = !!renderActions;
   const columnCount = columns.length + (hasActions ? 1 : 0);
+  const canResize = (col: DataTableColumn<T>) => fixedLayout && !!col.resizable;
+  const widthOf = (col: DataTableColumn<T>) =>
+    canResize(col) && customWidths[col.key] ? `${customWidths[col.key]}px` : col.width;
+  const sizedColumns = columns.map((col) => ({ ...col, width: widthOf(col) }));
+
+  const resizeColumn = (col: DataTableColumn<T>, renderedPx: number) => {
+    const table = tableRef.current;
+    if (!table) return;
+    const headers = Array.from(table.tHead!.rows[0].cells);
+    const tablePx = table.parentElement!.clientWidth;
+    let othersPx = 0;
+    headers.forEach((th, i) => {
+      if (i === columns.indexOf(col) || th.offsetWidth === 0) return;
+      const declared = i < columns.length ? pxOf(sizedColumns[i].width) : pxOf(actionsWidth);
+      othersPx += declared ?? th.offsetWidth;
+    });
+    const target = Math.min(Math.max(renderedPx, MIN_RESIZABLE_PX), MAX_RESIZABLE_PX);
+    resize(col.key, declaredWidthFor(target, othersPx, tablePx));
+  };
   const showSkeleton = loading && data.length === 0;
 
   return (
     <div className={`dt-wrapper${className ? ` ${className}` : ''}${loading ? ' is-loading' : ''}`}>
       <table
+        ref={tableRef}
         className={`dt-table${fixedLayout ? ' dt-fixed' : ''}`}
-        style={fixedLayout ? { minWidth: fixedMinWidth([...columns.map((c) => c.width), ...(hasActions ? [actionsWidth] : [])]) } : undefined}
+        style={fixedLayout ? fixedMinWidthVars(sizedColumns, hasActions ? actionsWidth : null) : undefined}
       >
         <thead>
           <tr>
@@ -140,8 +259,9 @@ export function DataTable<T>({
                     col.hideOnMobile && 'dt-hide-mobile',
                     alignClass(col.align),
                     isSortable && 'dt-sortable',
+                    canResize(col) && 'dt-resizable',
                   )}
-                  style={col.width ? { width: col.width } : undefined}
+                  style={widthOf(col) ? { width: widthOf(col) } : undefined}
                   aria-sort={active ? (sort!.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                 >
                   <span className="dt-th-content">
@@ -167,6 +287,14 @@ export function DataTable<T>({
                     )}
                     {col.headerAction}
                   </span>
+                  {canResize(col) && (
+                    <ResizeHandle
+                      label={col.header}
+                      onResize={(px) => resizeColumn(col, px)}
+                      onCommit={persist}
+                      onReset={() => reset(col.key)}
+                    />
+                  )}
                 </th>
               );
             })}

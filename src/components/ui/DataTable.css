@@ -67,6 +67,13 @@
    paginar ni al cargar. Las columnas sin `width` se reparten el sobrante. */
 .dt-table.dt-fixed {
   table-layout: fixed;
+  min-width: var(--dt-min-width, 0);
+}
+
+@media (max-width: 767px) {
+  .dt-table.dt-fixed {
+    min-width: var(--dt-min-width-mobile, 0);
+  }
 }
 
 /* Un título de varias palabras pasa a dos renglones; si una sola palabra no entra en su
@@ -191,6 +198,51 @@
 
 .dt-table th.dt-align-right,
 .dt-table td.dt-align-right { text-align: right; }
+
+/* ── Columnas con ancho ajustable (opt-in con `resizable`) ──────────────── */
+.dt-table th.dt-resizable {
+  position: relative;
+}
+
+/* Zona de agarre sobre el borde derecho del encabezado; la línea aparece al pasar el mouse. */
+.dt-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+
+.dt-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  right: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background-color var(--transition-fast);
+}
+
+.dt-resize-handle:hover::after,
+.dt-resize-handle:focus-visible::after,
+.dt-resizing .dt-resize-handle::after {
+  background: var(--color-white);
+}
+
+.dt-resize-handle:focus-visible {
+  outline: none;
+}
+
+/* Mientras se arrastra: el cursor no cambia al pasar por otros elementos ni se selecciona texto. */
+body.dt-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
 
 /* Actions cell: el <td> sigue siendo table-cell para centrarse vertical con la fila; el flex
    con los botones vive en el div interno. */

@@ -59,6 +59,8 @@ export function VariantTable({
       {
         key: 'name',
         header: 'Nombre',
+        width: '23%',
+        resizable: true,
         render: (variant) => (
           <span className="td-name" title={variant.name}>{variant.name}</span>
         ),
@@ -198,6 +200,7 @@ export function VariantTable({
       actionsAlign="center"
       actionsWidth="155px"
       fixedLayout
+      widthsStorageKey="ingredient-variants"
       sort={sort}
       onSortChange={onSortChange}
       renderActions={renderActions}

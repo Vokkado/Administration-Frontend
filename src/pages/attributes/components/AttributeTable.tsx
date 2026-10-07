@@ -6,6 +6,7 @@ import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Attribute, AttributeType } from '../types';
 import { getScoreColor } from '../types';
+import { getAttributeDisplayName } from '../../ingredients/types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { AdminOnly } from '../../../components/routing/AdminOnly';
@@ -36,7 +37,7 @@ export function AttributeTable({
         key: 'name',
         header: 'Nombre',
         render: (attribute) => (
-          <span className="td-name">{attribute.name}</span>
+          <span className="td-name">{getAttributeDisplayName(attribute.name)}</span>
         ),
       },
       {

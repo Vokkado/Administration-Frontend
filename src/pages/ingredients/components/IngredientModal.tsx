@@ -1,8 +1,8 @@
 /**
  * Modal para Crear/Editar Ingredientes
  */
-import { useState, useEffect } from 'react';
-import { Modal, Button, Input, Pagination } from '../../../components/ui';
+import { useState, useEffect, useRef } from 'react';
+import { Modal, Button, Input } from '../../../components/ui';
 import type { 
   Ingredient, 
   IngredientFormData, 
@@ -33,6 +33,8 @@ type RestrictionFilterType = 'ALL' | RestrictionType;
 type StatusFilterType = 'ALL' | 'ACTIVE' | 'INACTIVE';
 type AbsoluteFilterType = 'ALL' | 'ABSOLUTE' | 'NOT_ABSOLUTE';
 
+const RESTRICTIONS_BATCH = 20;
+
 export function IngredientModal({
   show,
   editingIngredient,
@@ -51,8 +53,10 @@ export function IngredientModal({
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('ACTIVE');
   const [absoluteFilter, setAbsoluteFilter] = useState<AbsoluteFilterType>('ABSOLUTE');
   const [selectedRestrictions, setSelectedRestrictions] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  // Scroll infinito: se muestran de a tandas y se suma otra al acercarse al final de la lista.
+  const [visibleCount, setVisibleCount] = useState(RESTRICTIONS_BATCH);
+  const listRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Cargar restricciones cuando se abre el modal
   useEffect(() => {
@@ -64,8 +68,8 @@ export function IngredientModal({
       } else {
         setSelectedRestrictions(new Set());
       }
-      // Resetear página al abrir modal
-      setCurrentPage(1);
+      // Volver al principio de la lista al abrir el modal
+      setVisibleCount(RESTRICTIONS_BATCH);
       setSearchTerm('');
       setSelectedFilter('ALL');
       setStatusFilter('ACTIVE');
@@ -96,9 +100,10 @@ export function IngredientModal({
     return matchesAbsolute && matchesName && matchesFilter && matchesStatus;
   });
 
-  // Resetear a página 1 cuando cambien los filtros o búsqueda
+  // Volver al principio de la lista cuando cambien los filtros o la búsqueda
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(RESTRICTIONS_BATCH);
+    listRef.current?.scrollTo({ top: 0 });
   }, [searchTerm, selectedFilter, statusFilter, absoluteFilter]);
 
   // Ordenar: seleccionados primero
@@ -108,11 +113,23 @@ export function IngredientModal({
     return aSelected - bSelected;
   });
 
-  // Calcular paginación
-  const totalPages = Math.ceil(sortedRestrictions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedRestrictions = sortedRestrictions.slice(startIndex, endIndex);
+  const visibleRestrictions = sortedRestrictions.slice(0, visibleCount);
+  const hasMoreRestrictions = visibleCount < sortedRestrictions.length;
+
+  // Cuando el final de la lista entra en vista (dentro de su propio scroll), se suma otra tanda.
+  // Se vuelve a observar después de cada tanda: si la lista todavía no llena el alto, sigue cargando.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMoreRestrictions) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisibleCount((count) => count + RESTRICTIONS_BATCH);
+      },
+      { root: listRef.current, rootMargin: '0px 0px 120px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreRestrictions, visibleCount]);
 
   const handleRestrictionToggle = (restrictionId: string) => {
     const newSelected = new Set(selectedRestrictions);
@@ -322,7 +339,7 @@ export function IngredientModal({
                 </div>
 
                 {/* Lista de restricciones con scroll */}
-                <div className="restrictions-list-container">
+                <div className="restrictions-list-container" ref={listRef}>
                   {loadingRestrictions ? (
                     <div className="restrictions-loading">
                       Cargando restricciones...
@@ -335,7 +352,7 @@ export function IngredientModal({
                     </div>
                   ) : (
                     <div className="restrictions-list">
-                      {paginatedRestrictions.map((restriction) => (
+                      {visibleRestrictions.map((restriction) => (
                         <div
                           key={restriction.id}
                           className={`restriction-item ${selectedRestrictions.has(restriction.id) ? 'selected' : ''} ${!restriction.active ? 'inactive' : ''}`}
@@ -358,20 +375,14 @@ export function IngredientModal({
                           </div>
                         </div>
                       ))}
+                      {hasMoreRestrictions && (
+                        <div ref={sentinelRef} className="restrictions-more">
+                          Cargando más…
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {/* Paginación fuera del scroll */}
-                {!loadingRestrictions && totalPages > 1 && (
-                  <div className="restrictions-pagination">
-                    <Pagination
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                    />
-                  </div>
-                )}
 
                 {/* Contador de seleccionadas */}
                 <div className="restrictions-selected-count">
