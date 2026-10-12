@@ -12,7 +12,7 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS } from '../types';
+import { RESTRICTION_TYPE_LABELS, getAttributeDisplayName } from '../types';
 import { matchesSearch } from '../../../utils/search';
 import { apiService } from '../../../services/api.service';
 
@@ -161,7 +161,7 @@ export function VariantModal({
 
   // Filter attributes
   const filteredAttributes = attributes.filter(attr => {
-    const matchesName = matchesSearch(attr.name, searchTerm);
+    const matchesName = matchesSearch(attr.name, searchTerm) || matchesSearch(getAttributeDisplayName(attr.name), searchTerm);
     const matchesType = filterType === 'ALL' || attr.typeId === filterType;
     return matchesName && matchesType;
   });
@@ -175,7 +175,8 @@ export function VariantModal({
   const sortedAttributes = [...filteredAttributes].sort((a, b) => {
     const aSelected = selectedAttributes.has(a.id) ? 0 : 1;
     const bSelected = selectedAttributes.has(b.id) ? 0 : 1;
-    return aSelected - bSelected;
+    return aSelected - bSelected
+      || getAttributeDisplayName(a.name).localeCompare(getAttributeDisplayName(b.name), 'es');
   });
 
   // Pagination
@@ -224,12 +225,14 @@ export function VariantModal({
       onClose={onClose}
       error={error}
       maxWidth="1100px"
+      className="page-ingredients"
     >
       <div className="modal-body">
         <form className="modal-form" onSubmit={onSubmit} id="variant-form">
           <div className="modal-form-columns">
             {/* Left Column - Basic Info */}
             <div className="modal-form-left">
+              <h3 className="modal-column-title">Información básica</h3>
               <div className="form-group">
                 <label className="form-label">Ingrediente Base *</label>
                 <div className="autocomplete-container" ref={autocompleteRef}>
@@ -288,17 +291,27 @@ export function VariantModal({
                 )}
               </div>
 
-              <Input
-                type="text"
-                label="Nombre de la Variante *"
-                placeholder="Ej: Azúcar blanca"
-                value={formData.name}
-                onChange={(e) => onChange({ name: e.target.value })}
-                maxLength={255}
-                title="El nombre no puede exceder 255 caracteres"
-                required
-                fullWidth
-              />
+              <div className="form-group">
+                <label htmlFor="variant-name">Nombre de la Variante *</label>
+                <textarea
+                  id="variant-name"
+                  className="textarea textarea-autosize"
+                  placeholder="Ej: Azúcar blanca"
+                  value={formData.name}
+                  onChange={(e) => onChange({ name: e.target.value.replace(/\s*\n\s*/g, ' ') })}
+                  onKeyDown={(e) => {
+                    // Es un nombre, no un texto libre: Enter guarda como en un input, no agrega renglones.
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.currentTarget.form?.requestSubmit();
+                    }
+                  }}
+                  rows={2}
+                  maxLength={255}
+                  title="El nombre no puede exceder 255 caracteres"
+                  required
+                />
+              </div>
               <small className="form-hint">
                 {formData.name.length}/255 caracteres
               </small>
@@ -306,7 +319,7 @@ export function VariantModal({
 
             {/* Right Column - Attributes + Inherited Restrictions */}
             <div className="modal-form-right variant-modal-right">
-              {/* Restricciones heredadas de los atributos seleccionados */}
+              <h3 className="modal-column-title">Restricciones heredadas</h3>
               <div className="inherited-restrictions-section">
                 {selectedAttributes.size === 0 ? (
                   <p className="inherited-restrictions-empty">
@@ -399,7 +412,7 @@ export function VariantModal({
                             onClick={(e) => e.stopPropagation()}
                           />
                           <div className="restriction-info">
-                            <div className="restriction-name">{attr.name}</div>
+                            <div className="restriction-name">{getAttributeDisplayName(attr.name)}</div>
                             <div className="restriction-meta">
                               <span className="restriction-badge voluntary">
                                 {getTypeName(attr.typeId)}

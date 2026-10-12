@@ -78,7 +78,7 @@ export function LegalPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-legal">
       <div className="legal-page-tabs">
         {TABS.map((tab) => (
           <button

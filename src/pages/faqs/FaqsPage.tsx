@@ -112,7 +112,7 @@ export function FaqsPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-faqs">
         <PageHeader
           title="Preguntas frecuentes"
           description="Administra las FAQs visibles en la app"

@@ -121,7 +121,9 @@ export type TechnologicalFunction =
   | 'COLOR_STABILIZER'
   | 'FIRMING_AGENT'
   | 'FOAMING_AGENT'
-  | 'ANTIFOAMING_AGENT';
+  | 'ANTIFOAMING_AGENT'
+  | 'COATING_AGENT'
+  | 'COAGULANT';
 
 // Grupo alimentario (solo para NATURAL_FOOD)
 export type FoodGroup =
@@ -311,8 +313,17 @@ export const TECHNOLOGICAL_FUNCTION_LABELS: Record<TechnologicalFunction, string
   'COLOR_STABILIZER': 'Estabilizante de color',
   'FIRMING_AGENT': 'Agente de firmeza',
   'FOAMING_AGENT': 'Espumante',
-  'ANTIFOAMING_AGENT': 'Antiespumante'
+  'ANTIFOAMING_AGENT': 'Antiespumante',
+  'COATING_AGENT': 'Agente de recubrimiento',
+  'COAGULANT': 'Coagulante'
 };
+
+/**
+ * Los atributos de función tecnológica están guardados con su código en inglés
+ * (EMULSIFIER, THICKENER…). Solo se traducen al mostrarlos: el dato no cambia.
+ */
+export const getAttributeDisplayName = (name: string): string =>
+  TECHNOLOGICAL_FUNCTION_LABELS[name as TechnologicalFunction] ?? name;
 
 // Grupo alimentario (para alimentos naturales)
 export const FOOD_GROUP_LABELS: Record<FoodGroup, string> = {

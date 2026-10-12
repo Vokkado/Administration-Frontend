@@ -148,7 +148,7 @@ export function CompaniesPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-companies">
         <PageHeader
           title="Empresas"
           description="Gestión de empresas del sistema"

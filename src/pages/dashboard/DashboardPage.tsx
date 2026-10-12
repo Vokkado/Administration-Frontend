@@ -104,7 +104,7 @@ export function DashboardPage() {
   const groups = DASHBOARD_GROUPS.filter((group) => group.roles.some((role) => roles.includes(role)));
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-dashboard">
       <div className="dashboard-groups">
         {groups.map((group) => (
           <section key={group.name} className="dashboard-group">

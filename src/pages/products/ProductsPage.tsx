@@ -468,7 +468,7 @@ export function ProductsPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-products">
         {/* Sin descripción: el título y todo lo demás comparten una sola línea. */}
         <PageHeader
           title="Productos"

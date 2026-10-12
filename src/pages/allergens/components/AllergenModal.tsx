@@ -127,6 +127,7 @@ export function AllergenModal({
       onClose={onClose}
       error={error}
       maxWidth="1100px"
+      className="page-allergens"
     >
       <div className="modal-body">
         <form className="modal-form" onSubmit={onSubmit} id="allergen-form">

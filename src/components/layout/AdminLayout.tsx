@@ -6,12 +6,13 @@ import { Navbar } from './Navbar';
 import './AdminLayout.css';
 
 interface AdminLayoutProps {
+  className?: string;
   children: React.ReactNode;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ className, children }: AdminLayoutProps) {
   return (
-    <div className="admin-layout">
+    <div className={className ? `admin-layout ${className}` : 'admin-layout'}>
       <Navbar />
       <main className="admin-main">{children}</main>
     </div>

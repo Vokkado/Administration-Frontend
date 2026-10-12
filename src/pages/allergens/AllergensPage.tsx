@@ -165,7 +165,7 @@ export function AllergensPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout className="page-allergens">
         {/* Sin descripción: el título y todo lo demás comparten una sola línea. */}
         <PageHeader
           title="Alérgenos"
