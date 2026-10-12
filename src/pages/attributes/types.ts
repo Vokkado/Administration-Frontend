@@ -10,8 +10,12 @@ export interface Attribute {
   typeId: string;
   isInspected: boolean;
   restrictionIds?: string[];
-  /** Señal nutricional que usan las metas (SUGARS / SODIUM / SATURATED_FAT) o null. */
-  signalCode?: SignalCode | null;
+  /**
+   * Señal nutricional que usan las metas (SUGARS / SODIUM / SATURATED_FAT) o null. Es string
+   * porque la DB puede tener códigos que el admin no conoce (ej. CAFFEINE/ALCOHOL de la
+   * migración 254): se muestran, pero no se pueden elegir.
+   */
+  signalCode?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,8 +35,8 @@ export interface AttributeFormData {
   typeId: string;
   isInspected: boolean;
   restrictionIds: string[];
-  /** '' = sin señal */
-  signalCode: SignalCode | '';
+  /** '' = sin señal. Puede traer un código desconocido si así está en la DB. */
+  signalCode: string;
 }
 
 export interface CreateAttributeData {
@@ -68,6 +72,15 @@ export const SIGNAL_LABELS: Record<SignalCode, string> = {
   SODIUM: 'Sodio',
   SATURATED_FAT: 'Grasas saturadas',
 };
+
+export function isKnownSignalCode(code: string): code is SignalCode {
+  return Object.prototype.hasOwnProperty.call(SIGNAL_LABELS, code);
+}
+
+/** Nombre visible de una señal; si el admin no la conoce, el código tal cual. */
+export function getSignalLabel(code: string): string {
+  return isKnownSignalCode(code) ? SIGNAL_LABELS[code] : code;
+}
 
 export interface AttributeTypeFormData {
   type: string;

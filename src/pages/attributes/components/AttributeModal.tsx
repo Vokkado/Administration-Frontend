@@ -11,7 +11,7 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, SIGNAL_LABELS, getAttributeTypeLabel } from '../types';
+import { RESTRICTION_TYPE_LABELS, SIGNAL_LABELS, getAttributeTypeLabel, isKnownSignalCode } from '../types';
 import type { SignalCode } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
@@ -274,12 +274,19 @@ export function AttributeModal({
                 <select
                   className="select"
                   value={formData.signalCode}
-                  onChange={(e) => onChange({ signalCode: e.target.value as AttributeFormData['signalCode'] })}
+                  onChange={(e) => onChange({ signalCode: e.target.value })}
                 >
                   <option value="">Ninguna</option>
                   {(Object.keys(SIGNAL_LABELS) as SignalCode[]).map((code) => (
                     <option key={code} value={code}>{SIGNAL_LABELS[code]}</option>
                   ))}
+                  {/* Código que está en la DB pero el admin no conoce: se muestra (si no, el select
+                      diría "Ninguna" y mentiría) y se puede quitar, pero no volver a elegir. */}
+                  {formData.signalCode && !isKnownSignalCode(formData.signalCode) && (
+                    <option value={formData.signalCode} disabled>
+                      {formData.signalCode} (no la usan las metas)
+                    </option>
+                  )}
                 </select>
                 <small className="form-hint">
                   Los ingredientes con este atributo cuentan como fuente de ese nutriente. Las metas

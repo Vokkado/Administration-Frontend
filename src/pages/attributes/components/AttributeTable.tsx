@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { DataTable } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Attribute, AttributeType } from '../types';
-import { getScoreColor, SIGNAL_LABELS } from '../types';
+import { getScoreColor, getSignalLabel } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { AdminOnly } from '../../../components/routing/AdminOnly';
@@ -64,7 +64,7 @@ export function AttributeTable({
                 cursor: 'help',
               }}
             >
-              {SIGNAL_LABELS[attribute.signalCode]}
+              {getSignalLabel(attribute.signalCode)}
             </span>
           ) : (
             <span

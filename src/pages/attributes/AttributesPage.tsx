@@ -10,7 +10,8 @@ import { AttributeModal } from './components/AttributeModal';
 import { AttributeTypeManager } from './components/AttributeTypeManager';
 import { useAttributes } from './hooks/useAttributes';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
-import type { Attribute, AttributeFormData } from './types';
+import type { Attribute, AttributeFormData, SignalCode } from './types';
+import { isKnownSignalCode } from './types';
 import './AttributesPage.css';
 
 export function AttributesPage() {
@@ -102,13 +103,23 @@ export function AttributesPage() {
     try {
       const parsedScore = formData.score === '' ? null : parseInt(formData.score, 10);
 
+      // La señal se manda solo si cambió: así editar otro campo de un atributo con un código que
+      // el backend no acepta (ej. CAFFEINE de la migración 254) no falla, y no se invalidan los
+      // snapshots de sus productos sin motivo.
+      const nextSignal = formData.signalCode || null;
+      const signalChanged = nextSignal !== (editingAttribute?.signalCode ?? null);
+      if (signalChanged && nextSignal !== null && !isKnownSignalCode(nextSignal)) {
+        setError(`La señal "${nextSignal}" no se puede asignar desde el admin.`);
+        return;
+      }
+
       const payload = {
         name: formData.name,
         typeId: formData.typeId,
         score: parsedScore,
         reason: formData.reason || undefined,
         restrictionIds: formData.restrictionIds || [],
-        signalCode: formData.signalCode || null,
+        ...(signalChanged ? { signalCode: nextSignal as SignalCode | null } : {}),
         ...(editingAttribute ? {} : { isInspected: true }),
       };
 
