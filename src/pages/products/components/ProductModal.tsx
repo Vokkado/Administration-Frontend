@@ -299,7 +299,11 @@ export function ProductModal({
                 key={tab.id}
                 type="button"
                 className={`product-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={(e) => {
+                  setActiveTab(tab.id);
+                  // En celular la tira de pestañas se desplaza: la elegida queda a la vista.
+                  e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+                }}
               >
                 {tab.label}
               </button>

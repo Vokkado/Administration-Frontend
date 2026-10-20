@@ -48,6 +48,29 @@
     gap: 8px;
   }
 
+  /* En celular el buscador y el selector de vista van uno debajo del otro (si no, el buscador
+     quedaba aplastado en ~60px). */
+  @media (max-width: 600px) {
+    .page-controls,
+    .page-filters {
+      padding: 16px;
+    }
+
+    .page-controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .search-box {
+      max-width: none;
+    }
+
+    .view-toggle .btn {
+      flex: 1;
+    }
+  }
+
   /* ========================= */
   /* Filters                    */
   /* ========================= */
@@ -223,24 +246,68 @@
     align-items: center;
     gap: 12px;
     flex: 1;
+    min-width: 0;
   }
 
   .tree-node-icon {
     font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* Nombre + "Solo agrupa": si no entran juntos, el badge baja debajo del nombre. */
+  .tree-node-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
   }
 
   .tree-node-name {
     font-weight: 600;
     color: var(--color-primary-dark);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  .tree-node-badge {
+    font-size: 11px;
+    flex-shrink: 0;
   }
 
   .tree-node-actions {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
   }
 
+  /* Sangría fija por nivel: cada hijo queda 24px más adentro que su padre. */
   .tree-node-children {
     margin-top: 8px;
+    margin-left: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .tree-container {
+      padding: 12px;
+    }
+
+    .tree-node-content {
+      padding: 10px 12px;
+      gap: 8px;
+    }
+
+    .tree-node-info {
+      gap: 8px;
+    }
+
+    .tree-node-actions {
+      gap: 0;
+    }
+
+    .tree-node-children {
+      margin-left: 14px;
+    }
   }
 
   /* ========================= */

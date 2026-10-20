@@ -4,11 +4,13 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { Button, Modal, Tooltip } from '../../components/ui';
+import { Button, Modal, AttributeBadge, Tooltip } from '../../components/ui';
+import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
 import {
   ValidationService,
   type ValidationDetail,
   type ValidationIngredient,
+  type ValidationAutoAttribute,
   type ValidationTag,
   type LinkColor,
 } from '../../services/validation.service';
@@ -336,6 +338,46 @@ function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
   );
 }
 
+/**
+ * Atributos de metas y embarazo de la variante (Metas > Sodio, Embarazo > Carne cruda o curada…): las
+ * metas los usan cuando el producto no tiene tabla y el embarazo avisa por ellos. Los sin validar
+ * (los puso la IA o el clasificador) se marcan; aprobar el producto los valida. Para corregirlos: el ✎
+ * de la variante.
+ */
+function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: ValidationAutoAttribute[]; onEdit: () => void }) {
+  const { describeAttribute } = useGoalsAdminView();
+  if (!attributes || attributes.length === 0) return null;
+  const pending = attributes.some((a) => !a.inspected);
+  return (
+    <div className="vp-signals">
+      <span className="vp-signals-label">Metas / embarazo:</span>
+      <span className="attr-badge-row">
+        {attributes.map((a) => (
+          <AttributeBadge
+            key={a.attributeId}
+            label={a.attributeName}
+            size="small"
+            tone={a.inspected ? 'default' : 'pending'}
+            note={a.inspected ? undefined : 'sin validar'}
+            hint={
+              <>
+                {describeAttribute(a.attributeId)}
+                <br />
+                {a.inspected ? 'Validado.' : 'Lo puso la IA o el clasificador: al aprobar el producto queda validado.'}
+              </>
+            }
+          />
+        ))}
+      </span>
+      {pending && (
+        <button type="button" className="vp-signals-edit" onClick={onEdit} title="Corregir los atributos de la variante">
+          Corregir
+        </button>
+      )}
+    </div>
+  );
+}
+
 function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditVariant: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
@@ -368,6 +410,7 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
             </button>
             <TierBadge tier={ing.matchTier} />
           </div>
+          <IngredientAutoAttributes attributes={ing.autoAttributes} onEdit={onEditVariant} />
         </div>
         <div className="vp-row-actions">
           {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}

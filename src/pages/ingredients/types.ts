@@ -39,6 +39,9 @@ export interface AttributeForVariant {
   typeId: string;
   isInspected: boolean;
   restrictionIds?: string[];
+  /** Asignación automática (Metas, Embarazo…): si tiene criterio o palabras clave, se asigna solo. */
+  aiCriterion?: string | null;
+  keywords?: string[];
 }
 
 export interface AttributeTypeForVariant {

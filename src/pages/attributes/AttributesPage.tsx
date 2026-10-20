@@ -10,8 +10,8 @@ import { AttributeModal } from './components/AttributeModal';
 import { AttributeTypeManager } from './components/AttributeTypeManager';
 import { useAttributes } from './hooks/useAttributes';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
-import type { Attribute, AttributeFormData, SignalCode } from './types';
-import { isKnownSignalCode } from './types';
+import type { Attribute, AttributeFormData } from './types';
+import { parseKeywords } from './types';
 import './AttributesPage.css';
 
 export function AttributesPage() {
@@ -57,7 +57,9 @@ export function AttributesPage() {
     typeId: '',
     isInspected: false,
     restrictionIds: [],
-    signalCode: '',
+    aiCriterion: '',
+    keywords: '',
+    excludeKeywords: '',
   });
 
   const openCreateModal = () => {
@@ -70,7 +72,9 @@ export function AttributesPage() {
       typeId: '',
       isInspected: false,
       restrictionIds: [],
-      signalCode: '',
+      aiCriterion: '',
+      keywords: '',
+      excludeKeywords: '',
     });
     setShowModal(true);
   };
@@ -85,7 +89,9 @@ export function AttributesPage() {
       typeId: attribute.typeId,
       isInspected: attribute.isInspected,
       restrictionIds: attribute.restrictionIds || [],
-      signalCode: attribute.signalCode || '',
+      aiCriterion: attribute.aiCriterion ?? '',
+      keywords: (attribute.keywords ?? []).join(', '),
+      excludeKeywords: (attribute.excludeKeywords ?? []).join(', '),
     });
     setShowModal(true);
   };
@@ -103,23 +109,16 @@ export function AttributesPage() {
     try {
       const parsedScore = formData.score === '' ? null : parseInt(formData.score, 10);
 
-      // La señal se manda solo si cambió: así editar otro campo de un atributo con un código que
-      // el backend no acepta (ej. CAFFEINE de la migración 254) no falla, y no se invalidan los
-      // snapshots de sus productos sin motivo.
-      const nextSignal = formData.signalCode || null;
-      const signalChanged = nextSignal !== (editingAttribute?.signalCode ?? null);
-      if (signalChanged && nextSignal !== null && !isKnownSignalCode(nextSignal)) {
-        setError(`La señal "${nextSignal}" no se puede asignar desde el admin.`);
-        return;
-      }
-
       const payload = {
         name: formData.name,
         typeId: formData.typeId,
         score: parsedScore,
         reason: formData.reason || undefined,
         restrictionIds: formData.restrictionIds || [],
-        ...(signalChanged ? { signalCode: nextSignal as SignalCode | null } : {}),
+        // Asignación automática: no toca productos (solo cómo se asigna a variantes nuevas).
+        aiCriterion: formData.aiCriterion.trim() || null,
+        keywords: parseKeywords(formData.keywords),
+        excludeKeywords: parseKeywords(formData.excludeKeywords),
         ...(editingAttribute ? {} : { isInspected: true }),
       };
 

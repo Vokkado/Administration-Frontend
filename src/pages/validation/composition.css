@@ -260,6 +260,37 @@
   flex-shrink: 0;
 }
 
+/* Señales del ingrediente (azúcar, sodio…), debajo del nombre */
+.vp-signals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.vp-signals-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.vp-signals-edit {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.vp-signals-edit:hover {
+  color: var(--color-primary-dark);
+}
+
 /* ── Panel de revisión de un ingrediente creado por la IA (filas rojas) ── */
 .vp-ai-panel {
   margin-top: 12px;
@@ -688,4 +719,38 @@
   text-decoration: underline dotted;
   text-underline-offset: 3px;
   cursor: help;
+}
+
+/* ── Celular: las filas apilan nombre y botones; nada se sale del ancho ───────────────── */
+@media (max-width: 720px) {
+  .vp-row-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .vp-row-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Comparten el renglón; si no entran (filas rojas: 3 botones), el que sobra baja. */
+  .vp-row-actions .btn {
+    flex: 1 1 auto;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .vp-section-body {
+    padding: 10px;
+  }
+
+  .vp-section-actions {
+    justify-content: flex-start;
+  }
+
+  .vp-ai-fields .btn {
+    margin-left: 0;
+    width: 100%;
+  }
 }

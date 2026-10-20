@@ -29,13 +29,12 @@ export function RestrictionTable({
     {
       key: 'name',
       header: 'Nombre',
-      width: '21%',
+      // Sin ancho: Nombre y Descripción se reparten el sobrante.
       render: (restriction) => <span className="td-name">{restriction.name}</span>,
     },
     {
       key: 'description',
       header: 'Descripción',
-      width: '22%',
       hideOnMobile: true,
       render: (restriction) => (
         <span className="td-description">{restriction.description || '-'}</span>
@@ -44,7 +43,7 @@ export function RestrictionTable({
     {
       key: 'type',
       header: 'Tipo',
-      width: '11%',
+      width: '110px',
       render: (restriction) => (
         <span className={`badge badge-${restriction.type.toLowerCase()}`}>
           {RESTRICTION_TYPE_LABELS[restriction.type]}
@@ -54,7 +53,7 @@ export function RestrictionTable({
     {
       key: 'mode',
       header: 'Modo',
-      width: '10%',
+      width: '100px',
       render: (restriction) => (
         <span className={`badge badge-mode-${restriction.mode.toLowerCase()}`}>
           {MODE_LABELS[restriction.mode]}
@@ -64,7 +63,7 @@ export function RestrictionTable({
     {
       key: 'category',
       header: 'Categoría',
-      width: '13%',
+      width: '130px',
       hideOnMobile: true,
       render: (restriction) =>
         restriction.category
@@ -74,7 +73,7 @@ export function RestrictionTable({
     {
       key: 'isAbsolute',
       header: 'Absoluta',
-      width: '8%',
+      width: '96px',
       hideOnMobile: true,
       render: (restriction) =>
         restriction.isAbsolute ? (
@@ -86,7 +85,7 @@ export function RestrictionTable({
     {
       key: 'active',
       header: 'Estado',
-      width: '7%',
+      width: '80px',
       render: (restriction) => (
         <label className="toggle-switch">
           <input
@@ -110,6 +109,8 @@ export function RestrictionTable({
       emptyMessage="No se encontraron restricciones"
       keyExtractor={(restriction) => restriction.id}
       rowClassName={(restriction) => (!restriction.active ? 'row-inactive' : '')}
+      fixedLayout
+      actionsWidth="90px"
       renderActions={(restriction) => (
         <>
           <button

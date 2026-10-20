@@ -31,6 +31,18 @@ export interface ValidationIngredient {
   reason: string | null;
   isNutritive: boolean;
   color: LinkColor;
+  /**
+   * Atributos automáticos de la variante (Metas, Embarazo…). `inspected` false = los puso la IA o
+   * el clasificador y nadie los validó: aprobar el producto los valida.
+   */
+  autoAttributes?: ValidationAutoAttribute[];
+}
+
+export interface ValidationAutoAttribute {
+  attributeId: string;
+  attributeName: string;
+  typeName: string;
+  inspected: boolean;
 }
 
 export interface ValidationAllergen {

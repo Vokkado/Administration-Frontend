@@ -56,6 +56,8 @@ interface DataTableProps<T> {
   actionsAlign?: DataTableAlign;
   /** Ancho de la columna de acciones (necesario con `fixedLayout`). */
   actionsWidth?: string;
+  /** Oculta la columna de acciones en celular (cuando la pantalla ofrece otra forma de hacerlas). */
+  hideActionsOnMobile?: boolean;
   rowClassName?: (item: T) => string;
   className?: string;
   /**
@@ -95,11 +97,16 @@ function fixedMinWidth(widths: Array<string | undefined>): string | undefined {
 }
 
 /** En celular las columnas `hideOnMobile` no se dibujan: no tienen que sumar al mínimo. */
-function fixedMinWidthVars<T>(columns: DataTableColumn<T>[], actionsWidth: string | undefined | null) {
+function fixedMinWidthVars<T>(
+  columns: DataTableColumn<T>[],
+  actionsWidth: string | undefined | null,
+  hideActionsOnMobile = false,
+) {
   const actions = actionsWidth === null ? [] : [actionsWidth];
+  const mobileActions = hideActionsOnMobile ? [] : actions;
   return {
     '--dt-min-width': fixedMinWidth([...columns.map((c) => c.width), ...actions]),
-    '--dt-min-width-mobile': fixedMinWidth([...columns.filter((c) => !c.hideOnMobile).map((c) => c.width), ...actions]),
+    '--dt-min-width-mobile': fixedMinWidth([...columns.filter((c) => !c.hideOnMobile).map((c) => c.width), ...mobileActions]),
   } as React.CSSProperties;
 }
 
@@ -195,6 +202,7 @@ export function DataTable<T>({
   actionsHeader = 'Acciones',
   actionsAlign,
   actionsWidth,
+  hideActionsOnMobile = false,
   rowClassName,
   className,
   sort,
@@ -245,7 +253,7 @@ export function DataTable<T>({
       <table
         ref={tableRef}
         className={`dt-table${fixedLayout ? ' dt-fixed' : ''}`}
-        style={fixedLayout ? fixedMinWidthVars(sizedColumns, hasActions ? actionsWidth : null) : undefined}
+        style={fixedLayout ? fixedMinWidthVars(sizedColumns, hasActions ? actionsWidth : null, hideActionsOnMobile) : undefined}
       >
         <thead>
           <tr>
@@ -300,7 +308,7 @@ export function DataTable<T>({
             })}
             {hasActions && (
               <th
-                className={cellClass(alignClass(actionsAlign))}
+                className={cellClass(hideActionsOnMobile && 'dt-hide-mobile', alignClass(actionsAlign))}
                 style={actionsWidth ? { width: actionsWidth } : undefined}
               >
                 {actionsHeader}
@@ -332,7 +340,7 @@ export function DataTable<T>({
               {hasActions && (
                 // La celda queda como table-cell (centrada vertical); el flex va en el div interno:
                 // un <td> con display:flex se sale del layout de tabla y los botones suben al tope.
-                <td className={cellClass('dt-actions-cell', alignClass(actionsAlign))}>
+                <td className={cellClass('dt-actions-cell', hideActionsOnMobile && 'dt-hide-mobile', alignClass(actionsAlign))}>
                   <div className="dt-actions">{renderActions!(item)}</div>
                 </td>
               )}

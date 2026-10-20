@@ -88,6 +88,12 @@
     color: var(--color-grey-500);
   }
 
+  /* Copia del resultado para celular, donde la columna Resultado se oculta. */
+  .enrich-result-inline {
+    display: none;
+    margin-top: 4px;
+  }
+
   /* El botón de la fila no se encoge: con table-layout fixed, sin esto el texto se recorta
      contra el borde de la celda en vez de que la columna respete su ancho. */
   .enrich-table .dt-actions .btn {
@@ -107,6 +113,18 @@
     margin-bottom: 4px;
     font-size: 13px;
     color: var(--color-grey-600);
+  }
+
+  /* El nombre del producto en curso puede ser largo: se corta él, no el contador. */
+  .enrich-progress-head > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .enrich-progress-head > span:last-child {
+    flex-shrink: 0;
   }
 
   .enrich-progress-track {
@@ -151,5 +169,15 @@
   @media (max-width: 720px) {
     .enrich-toolbar { align-items: stretch; }
     .enrich-actions { justify-content: flex-start; }
+    /* En celular cada acción ocupa su renglón: "Enriquecer los próximos pendientes" no entra
+       al lado del selector y se salía de la pantalla. */
+    .enrich-actions > .btn { width: 100%; }
+    .enrich-batch { width: 100%; }
+    .enrich-batch .btn { flex: 1; min-width: 0; white-space: normal; }
+  }
+
+  /* Mismo corte que DataTable (dt-hide-mobile). */
+  @media (max-width: 767px) {
+    .enrich-result-inline { display: block; }
   }
 }

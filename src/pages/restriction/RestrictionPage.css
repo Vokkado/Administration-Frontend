@@ -82,11 +82,6 @@
     animation: slideUp 0.5s ease-out 0.2s both;
   }
 
-  .restriction-table-container .dt-table {
-    table-layout: fixed;
-    width: 100%;
-  }
-
   .restriction-table-container .dt-table th,
   .restriction-table-container .dt-table td {
     min-width: 0;
@@ -101,7 +96,6 @@
 
   .restriction-table-container .dt-table th:last-child,
   .restriction-table-container .dt-table td:last-child {
-    width: 76px;
     padding-left: 8px;
     padding-right: 8px;
   }

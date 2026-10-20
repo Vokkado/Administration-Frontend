@@ -741,6 +741,41 @@
   }
 
   /* Responsive */
+  /* Anchos intermedios: la izquierda fija de 450px aplastaba la lista de restricciones. Mismo
+     criterio que Ingredientes: columnas proporcionales y, desde 900px, una sola columna. */
+  @media (max-width: 1100px) {
+    .modal-body {
+      padding: 24px 32px;
+    }
+
+    .modal-form-columns {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      gap: 32px;
+    }
+
+    .modal-form-right {
+      padding-left: 32px;
+    }
+
+    .modal-footer {
+      padding: 16px 32px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .modal-form-columns {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .modal-form-right {
+      border-left: none;
+      border-top: 3px solid var(--color-border-light);
+      padding-left: 0;
+      padding-top: 24px;
+    }
+  }
+
   @media (max-width: 768px) {
     .modal-form-columns {
       grid-template-columns: 1fr;

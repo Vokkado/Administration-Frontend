@@ -83,4 +83,17 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+
+  /* Con 24px de padding las dos pestañas no entran en 375px y la segunda quedaba cortada. */
+  @media (max-width: 600px) {
+    .legal-page-tabs {
+      gap: 0;
+    }
+
+    .legal-page-tab {
+      flex: 1;
+      padding: 12px 8px;
+      white-space: normal;
+    }
+  }
 }

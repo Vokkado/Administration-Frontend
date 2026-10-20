@@ -65,6 +65,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Alérgenos', description: 'Gestiona los alérgenos del sistema', path: '/allergens', buttonLabel: 'Ver Alérgenos' },
       { title: 'Atributos', description: 'Gestiona atributos y tipos de atributo', path: '/attributes', buttonLabel: 'Ver Atributos' },
       { title: 'Valores Nutricionales', description: 'Gestiona los valores nutricionales', path: '/nutrition-facts', buttonLabel: 'Ver Valores Nutricionales' },
+      { title: 'Metas y Embarazo', description: 'Textos y umbrales de las metas que eligen los usuarios, qué se le avisa a una embarazada y qué señales de ingredientes usan', path: '/goals', buttonLabel: 'Ver Metas y Embarazo' },
     ],
   },
   {

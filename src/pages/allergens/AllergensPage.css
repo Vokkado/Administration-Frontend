@@ -415,6 +415,41 @@
   }
 
   /* Responsive Design */
+  /* Anchos intermedios: mismo criterio que Ingredientes y Atributos (columnas proporcionales y,
+     desde 900px, una sola columna) para que la lista de restricciones no quede aplastada. */
+  @media (max-width: 1100px) {
+    .modal-body {
+      padding: 24px 32px;
+    }
+
+    .modal-form-columns {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      gap: 32px;
+    }
+
+    .modal-form-right {
+      padding-left: 32px;
+    }
+
+    .modal-footer {
+      padding: 16px 32px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .modal-form-columns {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .modal-form-right {
+      border-left: none;
+      padding-left: 0;
+      border-top: 3px solid var(--color-border-light);
+      padding-top: 24px;
+    }
+  }
+
   @media (max-width: 768px) {
     .allergen-table-container {
       overflow-x: auto;

@@ -178,7 +178,7 @@ export function ValidationWizardPage() {
   return (
     <AdminLayout className="page-validation">
       <div className="vw-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div className="vw-topbar">
           <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
           {/* Siempre disponible: rechazar/eliminar el producto en cualquier paso. No otorga puntos. */}
           <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Rechazar producto</Button>
@@ -197,7 +197,7 @@ export function ValidationWizardPage() {
             {step === 0 && (
               <>
                 <div className="vw-card">
-                  <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                  <div className="vw-basics-row">
                     <label className="vw-photo-label">
                       {meta.image ? <img src={meta.image} alt="" className="vw-photo-img" />
                         : <div className="vw-photo-empty">Sin foto</div>}
@@ -316,10 +316,10 @@ export function ValidationWizardPage() {
                 <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
                 <p style={{ color: 'var(--color-grey-600)' }}>
                   <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
-                  <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Le otorga puntos a quien lo cargó.<br />
+                  <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). También da por validadas las señales de sus ingredientes (azúcar, sodio…). Le otorga puntos a quien lo cargó.<br />
                   <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
                 </p>
-                <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+                <div className="vw-finish-actions">
                   <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
                   <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
                 </div>
@@ -341,7 +341,7 @@ export function ValidationWizardPage() {
 
         {/* Navegación entre pasos */}
         {step < 3 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+          <div className="vw-step-nav">
             <Button variant="outline" onClick={goBack} disabled={busy || step === 0}>← Atrás</Button>
             <Button variant="primary" onClick={goNext} disabled={busy}>Siguiente →</Button>
           </div>
@@ -374,7 +374,7 @@ function Stepper({ step, onStep }: { step: number; onStep: (s: number) => void }
             onClick={() => onStep(i)}
           >
             <span className="vw-step-dot">{i < step ? '✓' : i + 1}</span>
-            {label}
+            <span className="vw-step-label">{label}</span>
           </button>
           {i < STEPS.length - 1 && <div className={`vw-step-line ${i < step ? 'is-done' : ''}`} />}
         </div>

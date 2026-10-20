@@ -11,11 +11,13 @@ export interface Attribute {
   isInspected: boolean;
   restrictionIds?: string[];
   /**
-   * Señal nutricional que usan las metas (SUGARS / SODIUM / SATURATED_FAT) o null. Es string
-   * porque la DB puede tener códigos que el admin no conoce (ej. CAFFEINE/ALCOHOL de la
-   * migración 254): se muestran, pero no se pueden elegir.
+   * Asignación automática (atributos de Metas, Embarazo…): criterio que usa la IA para decidir si una
+   * variante lo lleva y palabras clave sin IA ("frase" = palabra completa; "=frase" = nombre exacto).
+   * Sin criterio ni palabras clave, el atributo se asigna solo a mano.
    */
-  signalCode?: string | null;
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -35,8 +37,10 @@ export interface AttributeFormData {
   typeId: string;
   isInspected: boolean;
   restrictionIds: string[];
-  /** '' = sin señal. Puede traer un código desconocido si así está en la DB. */
-  signalCode: string;
+  /** Asignación automática. Las palabras clave se editan separadas por coma. */
+  aiCriterion: string;
+  keywords: string;
+  excludeKeywords: string;
 }
 
 export interface CreateAttributeData {
@@ -46,7 +50,9 @@ export interface CreateAttributeData {
   typeId: string;
   isInspected?: boolean;
   restrictionIds?: string[];
-  signalCode?: SignalCode | null;
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
 }
 
 export interface UpdateAttributeData {
@@ -56,31 +62,16 @@ export interface UpdateAttributeData {
   typeId?: string;
   isInspected?: boolean;
   restrictionIds?: string[];
-  signalCode?: SignalCode | null;
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
 }
 
-/**
- * Señales nutricionales de ingredientes (lista cerrada, espejo de
- * Backend/src/shared/domain/ingredientSignals.ts). Un atributo con señal marca a los ingredientes
- * que lo tienen como fuente de ese nutriente: las metas de la app ("Reducir el sodio", etc.) lo
- * usan cuando el producto no declara ese valor en la tabla nutricional.
- */
-export type SignalCode = 'SUGARS' | 'SODIUM' | 'SATURATED_FAT';
-
-export const SIGNAL_LABELS: Record<SignalCode, string> = {
-  SUGARS: 'Azúcares',
-  SODIUM: 'Sodio',
-  SATURATED_FAT: 'Grasas saturadas',
-};
-
-export function isKnownSignalCode(code: string): code is SignalCode {
-  return Object.prototype.hasOwnProperty.call(SIGNAL_LABELS, code);
+/** "jamon crudo, salame" → ['jamon crudo', 'salame'] (sin vacías ni repetidas). */
+export function parseKeywords(text: string): string[] {
+  return [...new Set(text.split(',').map((k) => k.trim()).filter(Boolean))];
 }
 
-/** Nombre visible de una señal; si el admin no la conoce, el código tal cual. */
-export function getSignalLabel(code: string): string {
-  return isKnownSignalCode(code) ? SIGNAL_LABELS[code] : code;
-}
 
 export interface AttributeTypeFormData {
   type: string;

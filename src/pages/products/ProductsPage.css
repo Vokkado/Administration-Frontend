@@ -1212,5 +1212,35 @@
     .bulk-score-actions .bulk-score-btn {
       min-height: 48px;
     }
+
+    /* Desglose de puntaje: el encabezado de escritorio (círculo de 100px + nombre a 20px)
+       se come media pantalla del teléfono. */
+    .score-header {
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+    }
+
+    .score-circle-filled {
+      width: 64px;
+      height: 64px;
+    }
+
+    .score-circle-number {
+      font-size: 24px;
+    }
+
+    .score-product-name {
+      font-size: 16px;
+    }
+
+    .score-breakdown-table th,
+    .score-breakdown-table td {
+      padding: 8px;
+    }
+
+    .score-logs {
+      padding: 14px;
+    }
   }
 }

@@ -38,12 +38,11 @@ export interface Restriction {
   description?: string;
 }
 
-export type RestrictionType = 'ALLERGY' | 'ILLNESS' | 'VOLUNTARY' | 'INVOLUNTARY' | 'GOAL';
+export type RestrictionType = 'ALLERGY' | 'ILLNESS' | 'VOLUNTARY' | 'INVOLUNTARY';
 
 export const RESTRICTION_TYPE_LABELS: Record<RestrictionType, string> = {
   ALLERGY: 'Alergia',
   ILLNESS: 'Enfermedad',
   VOLUNTARY: 'Voluntaria',
   INVOLUNTARY: 'Involuntaria',
-  GOAL: 'Meta',
 };

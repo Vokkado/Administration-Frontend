@@ -136,7 +136,11 @@
     width: 36px;
     height: 36px;
   }
+}
 
+/* Hasta 1023px el email, el rol y los dos botones no entran al lado del logo (en tablet se
+   salían de la pantalla): van en el menú desplegable. */
+@media (max-width: 1023px) {
   /* Show hamburger */
   .navbar-hamburger {
     display: flex;

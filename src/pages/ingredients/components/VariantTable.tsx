@@ -3,18 +3,21 @@
  * Usa el componente genérico DataTable para renderizar la tabla.
  */
 import { useMemo } from 'react';
-import { DataTable, ColumnFilter } from '../../../components/ui';
+import { DataTable, ColumnFilter, AttributeBadge } from '../../../components/ui';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { AdminOnly } from '../../../components/routing/AdminOnly';
+import { useGoalsAdminView } from '../../../hooks/useGoalsAdminView';
 
 interface VariantTableProps {
   variants: IngredientVariant[];
   loading: boolean;
   getIngredientName: (id: string) => string;
   getAttributeName: (id: string) => string;
+  /** ¿El atributo se asigna solo (Metas, Embarazo…)? Esos se muestran resaltados. */
+  isAutoAttribute: (id: string) => boolean;
   onEdit: (variant: IngredientVariant) => void;
   onDelete: (id: string) => void;
   onValidationChange: (id: string, currentState: boolean) => void;
@@ -22,6 +25,8 @@ interface VariantTableProps {
   validatingId: string | null;
   filterInspected: string;
   onFilterInspectedChange: (value: string) => void;
+  filterAuto: string;
+  onFilterAutoChange: (value: string) => void;
   sort: DataTableSort;
   onSortChange: (sort: DataTableSort) => void;
 }
@@ -32,6 +37,12 @@ const formatDate = (value?: string): string => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-UY');
 };
+
+const AUTO_OPTIONS: ColumnFilterOption[] = [
+  { value: 'ALL', label: 'Todas' },
+  { value: 'WITH', label: 'Con atributos de metas / embarazo' },
+  { value: 'WITHOUT', label: 'Sin atributos de metas / embarazo' },
+];
 
 const INSPECTED_OPTIONS: ColumnFilterOption[] = [
   { value: 'ALL', label: 'Todos' },
@@ -44,6 +55,7 @@ export function VariantTable({
   loading,
   getIngredientName,
   getAttributeName,
+  isAutoAttribute,
   onEdit,
   onDelete,
   onValidationChange,
@@ -51,9 +63,12 @@ export function VariantTable({
   validatingId,
   filterInspected,
   onFilterInspectedChange,
+  filterAuto,
+  onFilterAutoChange,
   sort,
   onSortChange,
 }: VariantTableProps) {
+  const { describeAttribute } = useGoalsAdminView();
   const columns = useMemo<DataTableColumn<IngredientVariant>[]>(
     () => [
       {
@@ -82,22 +97,37 @@ export function VariantTable({
         hideOnMobile: true,
         align: 'center',
         width: '200px',
+        headerAction: (
+          <ColumnFilter
+            value={filterAuto}
+            options={AUTO_OPTIONS}
+            onChange={onFilterAutoChange}
+            title="Filtrar por atributos de metas / embarazo"
+          />
+        ),
         render: (variant) => {
           const attrs = variant.attributeIds || [];
+          // Los de Metas / Embarazo van resaltados; el resto, en la lista común (hasta 3).
+          const auto = attrs.filter((id) => isAutoAttribute(id));
+          const others = attrs.filter((id) => !isAutoAttribute(id));
           return (
             <div className="variant-attributes">
-              {attrs.length === 0 ? (
-                <span className="no-attributes">Sin atributos</span>
-              ) : (
-                attrs.slice(0, 3).map((attrId) => (
-                  <span key={attrId} className="badge badge-attribute">
-                    {getAttributeName(attrId)}
-                  </span>
-                ))
+              {auto.length > 0 && (
+                <span className="attr-badge-row">
+                  {auto.map((id) => (
+                    <AttributeBadge key={id} label={getAttributeName(id)} size="small" hint={describeAttribute(id)} />
+                  ))}
+                </span>
               )}
-              {attrs.length > 3 && (
+              {attrs.length === 0 && <span className="no-attributes">Sin atributos</span>}
+              {others.slice(0, 3).map((attrId) => (
+                <span key={attrId} className="badge badge-attribute">
+                  {getAttributeName(attrId)}
+                </span>
+              ))}
+              {others.length > 3 && (
                 <span className="badge badge-more">
-                  +{attrs.length - 3} más
+                  +{others.length - 3} más
                 </span>
               )}
             </div>
@@ -155,7 +185,18 @@ export function VariantTable({
         },
       },
     ],
-    [getIngredientName, getAttributeName, onValidationChange, validatingId, filterInspected, onFilterInspectedChange],
+    [
+      getIngredientName,
+      getAttributeName,
+      isAutoAttribute,
+      describeAttribute,
+      onValidationChange,
+      validatingId,
+      filterInspected,
+      onFilterInspectedChange,
+      filterAuto,
+      onFilterAutoChange,
+    ],
   );
 
   const renderActions = useMemo(

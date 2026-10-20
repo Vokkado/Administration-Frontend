@@ -14,6 +14,9 @@ import { getAttributeDisplayName } from '../types';
 export function useIngredientVariants() {
   // Local filter state
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
+  /** ALL | WITH | WITHOUT: variantes con o sin algún atributo automático (Metas, Embarazo…). */
+  const [filterAuto, setFilterAuto] = useState<string>('ALL');
+  const autoAttributes = filterAuto === 'WITH' ? 'with' : filterAuto === 'WITHOUT' ? 'without' : undefined;
 
   // Lookup data
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -35,10 +38,11 @@ export function useIngredientVariants() {
       IngredientVariantsService.listAdminVariants({
         ...params,
         inspected,
+        autoAttributes,
         sortBy: sort.key as VariantSortBy,
         sortDir: sort.direction,
       }),
-    [inspected, sort],
+    [inspected, autoAttributes, sort],
   );
 
   const {
@@ -89,6 +93,12 @@ export function useIngredientVariants() {
   const getAttributeName = (attributeId: string): string => {
     const attr = attributes.find(a => a.id === attributeId);
     return attr ? getAttributeDisplayName(attr.name) : 'Desconocido';
+  };
+
+  /** ¿El atributo se asigna solo (criterio para la IA o palabras clave)? Metas, Embarazo… */
+  const isAutoAttribute = (attributeId: string): boolean => {
+    const attr = attributes.find(a => a.id === attributeId);
+    return !!attr && (!!attr.aiCriterion || (attr.keywords?.length ?? 0) > 0);
   };
 
   const getAttributeTypeName = (typeId: string): string => {
@@ -149,16 +159,19 @@ export function useIngredientVariants() {
     error,
     searchTerm,
     filterInspected,
+    filterAuto,
     sort,
     currentPage,
     totalPages,
     setSearchTerm,
     setFilterInspected,
+    setFilterAuto,
     setSort,
     setCurrentPage,
     setError,
     getIngredientName,
     getAttributeName,
+    isAutoAttribute,
     getAttributeTypeName,
     fetchAllVariants,
     createVariant,

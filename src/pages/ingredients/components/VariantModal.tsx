@@ -2,7 +2,10 @@
  * Modal para Crear/Editar Variantes de Ingrediente
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Modal, Button, Input, Pagination } from '../../../components/ui';
+import { Modal, Button, Input, Pagination, AttributeBadge } from '../../../components/ui';
+import { IngredientVariantsService } from '../../../services/ingredient-variants.service';
+import type { AttributeSuggestion } from '../../../services/ingredient-variants.service';
+import { useGoalsAdminView } from '../../../hooks/useGoalsAdminView';
 import type {
   Ingredient,
   IngredientVariant,
@@ -68,6 +71,21 @@ export function VariantModal({
   const autocompleteRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 15;
 
+  // ── Atributos de metas y embarazo (los que se asignan solos) ───────────────
+  // Por el NOMBRE de la variante, el backend sugiere atributos automáticos (palabras clave + IA) y
+  // cuenta cuáles tienen sus hermanas (solo como dato: "jamón cocido" no tiene por qué llevar lo de
+  // "jamón crudo"). Al CREAR, los de palabras clave / IA se premarcan; si la persona destilda uno,
+  // no se vuelve a marcar solo. Al editar no se premarca nada: se ofrecen para agregar.
+  const { describeAttribute } = useGoalsAdminView();
+  const [suggestions, setSuggestions] = useState<AttributeSuggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const autoAddedRef = useRef<Set<string>>(new Set());
+  const userRemovedRef = useRef<Set<string>>(new Set());
+  const selectedRef = useRef(selectedAttributes);
+  selectedRef.current = selectedAttributes;
+  const shouldSuggest = show && !!formData.ingredientId && formData.name.trim().length > 1;
+  const autoPremark = !editingVariant;
+
   // Close autocomplete dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -96,6 +114,9 @@ export function VariantModal({
       } else {
         setSelectedAttributes(new Set());
       }
+      setSuggestions([]);
+      autoAddedRef.current = new Set();
+      userRemovedRef.current = new Set();
       setCurrentPage(1);
       setSearchTerm('');
       setFilterType('ALL');
@@ -118,6 +139,84 @@ export function VariantModal({
     const ing = ingredients.find(i => i.id === formData.ingredientId);
     if (ing) setIngredientSearch(prev => prev || ing.name);
   }, [show, ingredients, formData.ingredientId]);
+
+  // Pedir sugerencias (con espera: el nombre se va tipeando).
+  useEffect(() => {
+    if (!shouldSuggest) {
+      setSuggestions([]);
+      setSuggesting(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setSuggesting(true);
+      try {
+        const list = await IngredientVariantsService.suggestAttributes({
+          ingredientId: formData.ingredientId,
+          name: formData.name,
+          variantId: editingVariant?.id,
+        });
+        if (!cancelled) setSuggestions(list);
+      } catch {
+        // Sin sugerencias no se pierde nada: se pueden marcar a mano.
+        if (!cancelled) setSuggestions([]);
+      } finally {
+        if (!cancelled) setSuggesting(false);
+      }
+    }, 700);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [shouldSuggest, formData.ingredientId, formData.name, editingVariant?.id]);
+
+  // Aplicar sugerencias (solo al crear y solo las de palabras clave / IA): marcar las nuevas (salvo las
+  // que la persona destildó) y desmarcar las que se marcaron solas y ya no se sugieren (cambió el nombre).
+  useEffect(() => {
+    if (!autoPremark) return;
+    const suggested = new Set(suggestions.filter((s) => s.source !== 'SIBLING').map((s) => s.attributeId));
+    const next = new Set(selectedRef.current);
+    let changed = false;
+    for (const id of [...autoAddedRef.current]) {
+      if (!suggested.has(id)) {
+        autoAddedRef.current.delete(id);
+        if (next.delete(id)) changed = true;
+      }
+    }
+    for (const id of suggested) {
+      if (!next.has(id) && !userRemovedRef.current.has(id)) {
+        next.add(id);
+        autoAddedRef.current.add(id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      setSelectedAttributes(next);
+      onChange({ attributeIds: Array.from(next) });
+    }
+    // onChange cambia en cada render del padre: solo importa cuando llegan sugerencias nuevas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestions]);
+
+  const isAuto = (attr?: AttributeForVariant) => !!attr && (!!attr.aiCriterion || (attr.keywords?.length ?? 0) > 0);
+
+  /** Atributos de metas / embarazo marcados (con la sugerencia, si se marcaron solos). */
+  const selectedAuto = useMemo(() => {
+    const out: { attr: AttributeForVariant; suggestion?: AttributeSuggestion }[] = [];
+    for (const attrId of selectedAttributes) {
+      const attr = attributes.find((a) => a.id === attrId);
+      if (!attr || !isAuto(attr)) continue;
+      const suggestion = autoAddedRef.current.has(attrId) ? suggestions.find((s) => s.attributeId === attrId) : undefined;
+      out.push({ attr, suggestion });
+    }
+    return out;
+  }, [selectedAttributes, attributes, suggestions]);
+
+  /** Sugerencias que no están marcadas (para agregar con un clic). */
+  const pendingSuggestions = useMemo(
+    () => suggestions.filter((s) => !selectedAttributes.has(s.attributeId)),
+    [suggestions, selectedAttributes],
+  );
 
   // Compute inherited restrictions from selected attributes
   const inheritedRestrictions = useMemo(() => {
@@ -154,6 +253,7 @@ export function VariantModal({
       'SUBTYPE': 'Subtipo',
       'TECHNOLOGICAL_FUNCTION': 'Función Tecnológica',
       'COOKING_METHOD': 'Método de Cocción',
+      'Contiene': 'Contiene',
     };
     
     return typeNameMap[t.type] || t.type;
@@ -188,8 +288,12 @@ export function VariantModal({
     const newSelected = new Set(selectedAttributes);
     if (newSelected.has(attributeId)) {
       newSelected.delete(attributeId);
+      // Una sugerencia destildada a mano no se vuelve a marcar sola.
+      userRemovedRef.current.add(attributeId);
+      autoAddedRef.current.delete(attributeId);
     } else {
       newSelected.add(attributeId);
+      userRemovedRef.current.delete(attributeId);
     }
     setSelectedAttributes(newSelected);
     onChange({ attributeIds: Array.from(newSelected) });
@@ -343,6 +447,52 @@ export function VariantModal({
                 )}
               </div>
 
+              <h3 className="modal-column-title">Metas y embarazo</h3>
+              <div className="inherited-restrictions-section variant-signals-section">
+                {selectedAuto.length === 0 && pendingSuggestions.length === 0 ? (
+                  <p className="inherited-restrictions-empty">
+                    {suggesting ? 'Buscando atributos sugeridos…' : 'No tiene atributos de metas ni de embarazo.'}
+                  </p>
+                ) : (
+                  <>
+                    {selectedAuto.length > 0 && (
+                      <div className="variant-signals-list">
+                        {selectedAuto.map(({ attr, suggestion }) => (
+                          <AttributeBadge
+                            key={attr.id}
+                            label={getAttributeDisplayName(attr.name)}
+                            tone={suggestion ? 'suggested' : 'default'}
+                            note={suggestion ? `sugerido, ${suggestion.detail}` : undefined}
+                            hint={describeAttribute(attr.id)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {pendingSuggestions.length > 0 && (
+                      <div className="variant-suggestions">
+                        <span className="variant-suggestions-label">Sugeridos:</span>
+                        {pendingSuggestions.map((sug) => (
+                          <button
+                            key={sug.attributeId}
+                            type="button"
+                            className="variant-suggestion-add"
+                            onClick={() => handleAttributeToggle(sug.attributeId)}
+                            title={describeAttribute(sug.attributeId)}
+                          >
+                            + {getAttributeDisplayName(sug.attributeName)} <span className="variant-suggestion-detail">({sug.detail})</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+                {selectedAuto.some((s) => s.suggestion) && (
+                  <p className="variant-signals-hint">
+                    Los sugeridos ya quedaron marcados abajo: destildalos si no corresponden.
+                  </p>
+                )}
+              </div>
+
               <div className="restrictions-section">
                 <h3 className="section-title">Atributos de la Variante</h3>
                 
@@ -428,6 +578,11 @@ export function VariantModal({
                                   fontWeight: 600,
                                 }}>
                                   {attr.score}/10
+                                </span>
+                              )}
+                              {isAuto(attr) && (
+                                <span className="attr-auto-tag" title={describeAttribute(attr.id)}>
+                                  {autoAddedRef.current.has(attr.id) && selectedAttributes.has(attr.id) ? 'Auto · sugerido' : 'Auto'}
                                 </span>
                               )}
                             </div>

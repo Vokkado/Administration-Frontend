@@ -11,10 +11,10 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, SIGNAL_LABELS, getAttributeTypeLabel, isKnownSignalCode } from '../types';
-import type { SignalCode } from '../types';
+import { RESTRICTION_TYPE_LABELS, getAttributeTypeLabel } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
+import { useGoalsAdminView } from '../../../hooks/useGoalsAdminView';
 
 interface AttributeModalProps {
   show: boolean;
@@ -47,6 +47,10 @@ export function AttributeModal({
   onTypeCreated,
   onValidate,
 }: AttributeModalProps) {
+  // Quién usa el atributo (metas por rol y Embarazo), para "Lo usan: …".
+  const { attributeUsedBy } = useGoalsAdminView();
+  const usedBy = editingAttribute ? attributeUsedBy(editingAttribute.id) : [];
+
   // Restrictions state
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
   const [loadingRestrictions, setLoadingRestrictions] = useState(false);
@@ -138,7 +142,6 @@ export function AttributeModal({
       'ILLNESS': 'illness',
       'VOLUNTARY': 'voluntary',
       'INVOLUNTARY': 'involuntary',
-      'GOAL': 'voluntary',
     };
     return typeMap[type] || 'voluntary';
   };
@@ -269,28 +272,41 @@ export function AttributeModal({
                 </small>
               </div>
 
-              <div className="form-group">
-                <label>Señal para metas</label>
-                <select
-                  className="select"
-                  value={formData.signalCode}
-                  onChange={(e) => onChange({ signalCode: e.target.value })}
-                >
-                  <option value="">Ninguna</option>
-                  {(Object.keys(SIGNAL_LABELS) as SignalCode[]).map((code) => (
-                    <option key={code} value={code}>{SIGNAL_LABELS[code]}</option>
-                  ))}
-                  {/* Código que está en la DB pero el admin no conoce: se muestra (si no, el select
-                      diría "Ninguna" y mentiría) y se puede quitar, pero no volver a elegir. */}
-                  {formData.signalCode && !isKnownSignalCode(formData.signalCode) && (
-                    <option value={formData.signalCode} disabled>
-                      {formData.signalCode} (no la usan las metas)
-                    </option>
-                  )}
-                </select>
+              <div className="form-group attr-auto-section">
+                <label htmlFor="attribute-ai-criterion">Asignación automática</label>
+                {usedBy.length > 0 && (
+                  <p className="attr-used-by">
+                    <strong>Lo usan:</strong> {usedBy.join(', ')}
+                  </p>
+                )}
+                <textarea
+                  id="attribute-ai-criterion"
+                  className="textarea"
+                  placeholder='Ej: Es carne, fiambre o embutido que se come crudo o curado (jamón crudo, salame…). NO: fiambres cocidos.'
+                  value={formData.aiCriterion}
+                  onChange={(e) => onChange({ aiCriterion: e.target.value })}
+                  rows={3}
+                  maxLength={1000}
+                />
                 <small className="form-hint">
-                  Los ingredientes con este atributo cuentan como fuente de ese nutriente. Las metas
-                  (ej. "Reducir el sodio") lo usan cuando el producto no lo declara en la tabla.
+                  Criterio para la IA: cuándo una variante de ingrediente lleva este atributo. Con criterio, la IA lo
+                  asigna sola al cargar productos (queda para revisar en la validación). Vacío = solo a mano.
+                </small>
+                <Input
+                  label="Palabras clave"
+                  placeholder="jamon crudo, salame, carpaccio"
+                  value={formData.keywords}
+                  onChange={(e) => onChange({ keywords: e.target.value })}
+                />
+                <Input
+                  label="Excluir si dice"
+                  placeholder="cocido, sabor, aroma"
+                  value={formData.excludeKeywords}
+                  onChange={(e) => onChange({ excludeKeywords: e.target.value })}
+                />
+                <small className="form-hint">
+                  Separadas por coma, sin importar tildes ni mayúsculas. Se asignan sin IA. Cada una cuenta como
+                  palabra completa ("sal" no matchea "salsa"); con "=" adelante tiene que ser el nombre exacto ("=te").
                 </small>
               </div>
 

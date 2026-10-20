@@ -10,6 +10,7 @@ import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTab
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
 import { ValidationService, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
 import { COLORS } from './composition';
+import './ValidationWizardPage.css';
 
 /** Qué cuenta cada color en la cola (la consulta solo cuenta vínculos de ingredientes). */
 const COUNT_HINTS: Record<LinkColor, (n: number) => string> = {
@@ -60,13 +61,33 @@ export function ValidationListPage() {
   const { items, total, loading, currentPage, totalPages, setCurrentPage, searchTerm, setSearchTerm } =
     usePaginatedList<ValidationQueueItem>({ fetchFn });
 
+  const renderCounts = (p: ValidationQueueItem) => (
+    <span>
+      <CountBadge n={p.counts.green} color="green" />
+      <CountBadge n={p.counts.yellow} color="yellow" />
+      <CountBadge n={p.counts.red} color="red" />
+      {!p.counts.green && !p.counts.yellow && !p.counts.red && <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>}
+    </span>
+  );
+
   const columns: DataTableColumn<ValidationQueueItem>[] = [
     {
-      key: 'image', header: '', width: '56px', render: (p) => p.image
+      key: 'image', header: '', width: '56px', hideOnMobile: true, render: (p) => p.image
         ? <img src={p.image} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#f3f4f6' }} />
         : <div style={{ width: 40, height: 40, borderRadius: 6, background: '#f3f4f6' }} />,
     },
-    { key: 'name', header: 'Producto', render: (p) => <strong>{p.name}</strong> },
+    {
+      key: 'name', header: 'Producto', render: (p) => (
+        <>
+          <strong>{p.name}</strong>
+          {/* En celular no entran las columnas Vínculos y acciones: van debajo del nombre. */}
+          <div className="vq-mobile-extra">
+            {renderCounts(p)}
+            <Button variant="primary" size="small" onClick={() => navigate(`/validation/${p.id}`)}>Revisar →</Button>
+          </div>
+        </>
+      ),
+    },
     { key: 'brand', header: 'Marca', hideOnMobile: true, width: '160px', render: (p) => p.brand || '—' },
     { key: 'barcode', header: 'Código', hideOnMobile: true, width: '170px', render: (p) => <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{p.barcode || '—'}</span> },
     {
@@ -96,14 +117,7 @@ export function ValidationListPage() {
       ),
     },
     {
-      key: 'counts', header: 'Vínculos', width: '140px', render: (p) => (
-        <span>
-          <CountBadge n={p.counts.green} color="green" />
-          <CountBadge n={p.counts.yellow} color="yellow" />
-          <CountBadge n={p.counts.red} color="red" />
-          {!p.counts.green && !p.counts.yellow && !p.counts.red && <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>}
-        </span>
-      ),
+      key: 'counts', header: 'Vínculos', width: '140px', hideOnMobile: true, render: renderCounts,
     },
   ];
 
@@ -138,6 +152,7 @@ export function ValidationListPage() {
         emptyMessage="No hay productos pendientes de validación."
         actionsHeader=""
         actionsWidth="150px"
+        hideActionsOnMobile
         fixedLayout
         sort={sort}
         // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden

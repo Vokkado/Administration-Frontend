@@ -297,7 +297,8 @@
 
   /* En pantallas angostas las fotos pasan abajo y dejan de ser sticky. */
   @media (max-width: 1100px) {
-    .vw-split { grid-template-columns: 1fr; }
+    /* minmax(0, …): sin esto la columna toma el ancho de su contenido más largo y estira la página. */
+    .vw-split { grid-template-columns: minmax(0, 1fr); }
     .vw-split-aside { min-height: 0; }
     .vw-split-aside-stack { position: static; }
     .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
@@ -466,9 +467,74 @@
   }
   .vw-photo-change { font-size: 13px; color: var(--color-primary); margin-top: 6px; }
 
+  /* Fila de arriba (volver + rechazar), navegación entre pasos y botones de Finalizar. */
+  .vw-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .vw-step-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .vw-finish-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  /* Paso 1: foto a la izquierda y campos a la derecha. */
+  .vw-basics-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
   @media (max-width: 720px) {
     .vw-form-grid { grid-template-columns: 1fr; }
     .vw-form-grid .form-group-full { grid-column: span 1; }
     .vw-card .product-form-grid { grid-template-columns: 1fr; }
+
+    /* En celular la foto va arriba y los campos debajo, a todo el ancho. */
+    .vw-basics-row { flex-direction: column; gap: 16px; }
+    .vw-basics-row > .vw-form-grid { width: 100%; }
+
+    /* Los 4 pasos con nombre no entran: se ven los círculos y el nombre del paso actual. */
+    .vw-stepper { gap: 6px; }
+    .vw-step, .vw-step-btn { gap: 6px; }
+    .vw-step-btn { padding: 0; }
+    .vw-step-btn:not(.is-current) .vw-step-label { display: none; }
+    .vw-step-label { white-space: nowrap; }
+
+    /* Completar / Completar y validar: uno debajo del otro, a todo el ancho. */
+    .vw-finish-actions .btn { flex: 1 1 100%; }
+
+    /* Menos margen interno: en celular cada píxel de ancho cuenta para las filas de adentro. */
+    .vw-card { padding: 14px; }
+  }
+
+  /* Lista de validación: en celular los vínculos y "Revisar" van debajo del nombre (las
+     columnas se ocultan con el mismo corte que DataTable). */
+  .vq-mobile-extra {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .vq-mobile-extra {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
   }
 }

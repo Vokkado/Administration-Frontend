@@ -24,6 +24,7 @@ const EnrichmentPage = lazy(() => import('./pages/enrichment/EnrichmentPage').th
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const IngredientsPage = lazy(() => import('./pages/ingredients/IngredientsPage').then(m => ({ default: m.IngredientsPage })));
 const NutritionFactPage = lazy(() => import('./pages/nutrition_facts/NutritionFactPage').then(m => ({ default: m.NutritionFactPage })));
+const GoalsPage = lazy(() => import('./pages/goals/GoalsPage').then(m => ({ default: m.GoalsPage })));
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
@@ -132,6 +133,16 @@ function App() {
               element={
                 <ProtectedRoute roles={CATALOG_ROLES}>
                   <NutritionFactPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Metas: admin y editor de catálogo ven y ajustan; activar / desactivar es solo admin. */}
+            <Route
+              path="/goals"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <GoalsPage />
                 </ProtectedRoute>
               }
             />

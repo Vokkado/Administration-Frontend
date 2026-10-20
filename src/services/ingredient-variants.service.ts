@@ -13,9 +13,19 @@ export interface AdminVariantListQuery {
   offset: number;
   search?: string;
   inspected?: boolean;
+  /** Con o sin algún atributo automático (Metas, Embarazo…: con criterio o palabras clave). */
+  autoAttributes?: 'with' | 'without';
   /** Default en el backend: name asc. */
   sortBy?: VariantSortBy;
   sortDir?: 'asc' | 'desc';
+}
+
+/** Atributo automático sugerido para una variante (por el nombre, por IA o porque lo tiene una hermana). */
+export interface AttributeSuggestion {
+  attributeId: string;
+  attributeName: string;
+  source: 'KEYWORD' | 'AI' | 'SIBLING';
+  detail: string;
 }
 
 export interface AdminVariantListResponse {
@@ -32,6 +42,7 @@ export class IngredientVariantsService {
 
     if (query.search) params.append('search', query.search);
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
+    if (query.autoAttributes) params.append('autoAttributes', query.autoAttributes);
     if (query.sortBy) params.append('sortBy', query.sortBy);
     if (query.sortDir) params.append('sortDir', query.sortDir);
 
@@ -41,5 +52,17 @@ export class IngredientVariantsService {
       data: response.data || [],
       total: response.total || 0,
     };
+  }
+
+  /**
+   * Atributos automáticos sugeridos para una variante (por SU nombre: palabras clave + IA; lo que
+   * tienen las hermanas va como dato, nunca premarcado).
+   */
+  static async suggestAttributes(params: { ingredientId: string; name?: string; variantId?: string }): Promise<AttributeSuggestion[]> {
+    const query = new URLSearchParams({ ingredientId: params.ingredientId });
+    if (params.name && params.name.trim()) query.set('name', params.name.trim().slice(0, 200));
+    if (params.variantId) query.set('variantId', params.variantId);
+    const res = await apiService.get<{ data: AttributeSuggestion[] }>(`/ingredient-variants/suggest-attributes?${query.toString()}`);
+    return res.data ?? [];
   }
 }
