@@ -10,6 +10,7 @@ import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, IngredientVariant, AttributeForVariant, AttributeTypeForVariant } from '../types';
 import { getAttributeDisplayName } from '../types';
+import type { OriginFilterValue } from '../components/OriginFilter';
 
 export function useIngredientVariants() {
   // Local filter state
@@ -17,6 +18,9 @@ export function useIngredientVariants() {
   /** ALL | WITH | WITHOUT: variantes con o sin algún atributo automático (Metas, Embarazo…). */
   const [filterAuto, setFilterAuto] = useState<string>('ALL');
   const autoAttributes = filterAuto === 'WITH' ? 'with' : filterAuto === 'WITHOUT' ? 'without' : undefined;
+  // Por defecto, solo lo cargado o aprobado por personas: lo que creó la IA se aprueba con su producto.
+  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('HUMAN');
+  const origin = filterOrigin === 'ALL' ? undefined : filterOrigin;
 
   // Lookup data
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -39,10 +43,11 @@ export function useIngredientVariants() {
         ...params,
         inspected,
         autoAttributes,
+        origin,
         sortBy: sort.key as VariantSortBy,
         sortDir: sort.direction,
       }),
-    [inspected, autoAttributes, sort],
+    [inspected, autoAttributes, origin, sort],
   );
 
   const {
@@ -160,6 +165,8 @@ export function useIngredientVariants() {
     searchTerm,
     filterInspected,
     filterAuto,
+    filterOrigin,
+    setFilterOrigin,
     sort,
     currentPage,
     totalPages,

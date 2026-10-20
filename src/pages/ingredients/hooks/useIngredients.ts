@@ -9,12 +9,15 @@ import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, CreateIngredientData, UpdateIngredientData } from '../types';
 import { normalizeRiskLevel } from '../types';
+import type { OriginFilterValue } from '../components/OriginFilter';
 
 export function useIngredients() {
   // Local filter state
   const [filterRisk, setFilterRisk] = useState<string>('ALL');
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
   const [filterReason, setFilterReason] = useState<string>('ALL');
+  // Por defecto, solo lo cargado o aprobado por personas: lo que creó la IA se aprueba con su producto.
+  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('HUMAN');
   // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
   // (ordenar solo la página visible daría un resultado engañoso).
   const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
@@ -27,6 +30,7 @@ export function useIngredients() {
   const reason = filterReason === 'ALL'
     ? undefined
     : (filterReason as 'WITH_REASON' | 'WITHOUT_REASON');
+  const origin = filterOrigin === 'ALL' ? undefined : filterOrigin;
 
   const normalizeIngredient = (ingredient: any): Ingredient => ({
     ...ingredient,
@@ -42,10 +46,11 @@ export function useIngredients() {
         toxicityLevel,
         inspected,
         reason,
+        origin,
         sortBy: sort.key as IngredientSortBy,
         sortDir: sort.direction,
       }),
-    [toxicityLevel, inspected, reason, sort],
+    [toxicityLevel, inspected, reason, origin, sort],
   );
 
   const {
@@ -105,6 +110,8 @@ export function useIngredients() {
     searchTerm,
     filterRisk,
     filterInspected,
+    filterOrigin,
+    setFilterOrigin,
     filterReason,
     sort,
     currentPage,

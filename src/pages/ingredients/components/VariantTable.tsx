@@ -4,6 +4,7 @@
  */
 import { useMemo } from 'react';
 import { DataTable, ColumnFilter, AttributeBadge } from '../../../components/ui';
+import { ProductCountCell } from './ProductCountCell';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
@@ -77,7 +78,12 @@ export function VariantTable({
         width: '23%',
         resizable: true,
         render: (variant) => (
-          <span className="td-name" title={variant.name}>{variant.name}</span>
+          <span className="td-name-cell">
+            <span className="td-name" title={variant.name}>{variant.name}</span>
+            {variant.createdByAi && !variant.isInspected && (
+              <span className="badge-ai" title="La creó la IA al cargar un producto y nadie la aprobó todavía">IA</span>
+            )}
+          </span>
         ),
       },
       {
@@ -133,6 +139,16 @@ export function VariantTable({
             </div>
           );
         },
+      },
+      {
+        key: 'productCount',
+        header: 'Productos',
+        sortable: true,
+        align: 'center',
+        width: '110px',
+        render: (variant) => (
+          <ProductCountCell count={variant.productCount} onClick={() => onViewProducts(variant)} />
+        ),
       },
       {
         key: 'createdAt',
@@ -191,6 +207,7 @@ export function VariantTable({
       isAutoAttribute,
       describeAttribute,
       onValidationChange,
+      onViewProducts,
       validatingId,
       filterInspected,
       onFilterInspectedChange,

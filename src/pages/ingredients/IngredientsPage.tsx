@@ -17,6 +17,7 @@ import { useIngredientVariants } from './hooks/useIngredientVariants';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
 import { apiService } from '../../services/api.service';
 import type { Ingredient, IngredientFormData, IngredientVariant, IngredientVariantFormData } from './types';
+import { OriginFilter } from './components/OriginFilter';
 import './IngredientsPage.css';
 
 type ActiveTab = 'ingredients' | 'variants';
@@ -32,6 +33,8 @@ export function IngredientsPage() {
     filterRisk,
     filterInspected,
     filterReason,
+    filterOrigin,
+    setFilterOrigin,
     sort,
     currentPage,
     totalPages,
@@ -78,6 +81,8 @@ export function IngredientsPage() {
   // Products modal state (for variants)
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<IngredientVariant | null>(null);
+  // Productos de un ingrediente (columna "Productos" de la pestaña Ingredientes).
+  const [productsOfIngredient, setProductsOfIngredient] = useState<Ingredient | null>(null);
 
   // Merge modal state
   const [showMergeModal, setShowMergeModal] = useState(false);
@@ -479,8 +484,13 @@ export function IngredientsPage() {
           <>
             {!showModal && <NotificationBanner type="error" message={error} />}
 
-            {/* Sin barra de filtros: riesgo, justificación y validado se filtran desde
-                el embudo de su propia columna. */}
+            {/* Origen arriba (por defecto oculta lo que generó la IA); riesgo, justificación y
+                validado se filtran desde el embudo de su propia columna. */}
+            <OriginFilter
+              value={filterOrigin}
+              onChange={(next) => { setFilterOrigin(next); setCurrentPage(1); }}
+              noun="ingredientes"
+            />
             <IngredientTable
               ingredients={ingredients}
               loading={loading}
@@ -499,6 +509,7 @@ export function IngredientsPage() {
               onFilterRiskChange={(next) => { setFilterRisk(next); setCurrentPage(1); }}
               filterReason={filterReason}
               onFilterReasonChange={(next) => { setFilterReason(next); setCurrentPage(1); }}
+              onViewProducts={setProductsOfIngredient}
             />
 
             <Pagination
@@ -550,6 +561,14 @@ export function IngredientsPage() {
               onClose={() => setShowMergeModal(false)}
               onConfirm={handleMergeIngredients}
             />
+
+            {productsOfIngredient && (
+              <ProductsByIngredientModal
+                ingredientId={productsOfIngredient.id}
+                ingredientName={productsOfIngredient.name}
+                onClose={() => setProductsOfIngredient(null)}
+              />
+            )}
           </>
         )}
 
@@ -558,7 +577,16 @@ export function IngredientsPage() {
           <>
             {!showVariantModal && <NotificationBanner type="error" message={variantsHook.error} />}
 
-            {/* Sin barra de filtros: validado se filtra desde el embudo de su columna. */}
+            {/* Origen arriba (por defecto oculta lo que generó la IA); validado se filtra desde
+                el embudo de su columna. */}
+            <OriginFilter
+              value={variantsHook.filterOrigin}
+              onChange={(next) => {
+                variantsHook.setFilterOrigin(next);
+                variantsHook.setCurrentPage(1);
+              }}
+              noun="variantes"
+            />
             <VariantTable
               variants={variantsHook.variants}
               loading={variantsHook.loading}
