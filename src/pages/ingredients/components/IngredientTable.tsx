@@ -3,6 +3,7 @@
  */
 import { useMemo } from 'react';
 import { DataTable, ColumnFilter } from '../../../components/ui';
+import { ProductCountCell } from './ProductCountCell';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { Ingredient } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
@@ -28,6 +29,8 @@ interface IngredientTableProps {
   onFilterRiskChange: (value: string) => void;
   filterReason: string;
   onFilterReasonChange: (value: string) => void;
+  /** Ver los productos que usan el ingrediente (desde la columna Productos). */
+  onViewProducts: (ingredient: Ingredient) => void;
 }
 
 const INSPECTED_OPTIONS: ColumnFilterOption[] = [
@@ -69,6 +72,7 @@ export function IngredientTable({
   onFilterRiskChange,
   filterReason,
   onFilterReasonChange,
+  onViewProducts,
 }: IngredientTableProps) {
   const getScoreColor = (score: number): string => {
     if (score >= 8) return '#388E3C';
@@ -195,6 +199,16 @@ export function IngredientTable({
       ),
     },
     {
+      key: 'productCount',
+      header: 'Productos',
+      sortable: true,
+      align: 'center',
+      width: '110px',
+      render: (ingredient) => (
+        <ProductCountCell count={ingredient.productCount} onClick={() => onViewProducts(ingredient)} />
+      ),
+    },
+    {
       key: 'createdAt',
       header: 'Creado',
       sortable: true,
@@ -241,7 +255,7 @@ export function IngredientTable({
       },
     },
   ], [
-    onValidationChange, validatingId,
+    onValidationChange, validatingId, onViewProducts,
     filterInspected, onFilterInspectedChange,
     filterRisk, onFilterRiskChange,
     filterReason, onFilterReasonChange,

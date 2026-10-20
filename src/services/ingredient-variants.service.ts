@@ -6,7 +6,7 @@ import { apiService } from './api.service';
 import type { IngredientVariant } from '../pages/ingredients/types';
 
 /** Columnas admitidas por el backend para ordenar. */
-export type VariantSortBy = 'name' | 'createdAt';
+export type VariantSortBy = 'name' | 'createdAt' | 'productCount';
 
 export interface AdminVariantListQuery {
   limit: number;

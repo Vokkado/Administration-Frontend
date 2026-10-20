@@ -6,7 +6,7 @@ import { apiService } from './api.service';
 import type { Ingredient, UpdateIngredientData } from '../pages/ingredients/types';
 
 /** Columnas admitidas por el backend para ordenar. */
-export type IngredientSortBy = 'name' | 'createdAt';
+export type IngredientSortBy = 'name' | 'createdAt' | 'productCount';
 
 export interface AdminIngredientListQuery {
   limit: number;

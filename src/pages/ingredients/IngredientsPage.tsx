@@ -81,6 +81,8 @@ export function IngredientsPage() {
   // Products modal state (for variants)
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<IngredientVariant | null>(null);
+  // Productos de un ingrediente (columna "Productos" de la pestaña Ingredientes).
+  const [productsOfIngredient, setProductsOfIngredient] = useState<Ingredient | null>(null);
 
   // Merge modal state
   const [showMergeModal, setShowMergeModal] = useState(false);
@@ -507,6 +509,7 @@ export function IngredientsPage() {
               onFilterRiskChange={(next) => { setFilterRisk(next); setCurrentPage(1); }}
               filterReason={filterReason}
               onFilterReasonChange={(next) => { setFilterReason(next); setCurrentPage(1); }}
+              onViewProducts={setProductsOfIngredient}
             />
 
             <Pagination
@@ -558,6 +561,14 @@ export function IngredientsPage() {
               onClose={() => setShowMergeModal(false)}
               onConfirm={handleMergeIngredients}
             />
+
+            {productsOfIngredient && (
+              <ProductsByIngredientModal
+                ingredientId={productsOfIngredient.id}
+                ingredientName={productsOfIngredient.name}
+                onClose={() => setProductsOfIngredient(null)}
+              />
+            )}
           </>
         )}
 

@@ -250,6 +250,35 @@
     letter-spacing: 0.3px;
   }
 
+  /* Cantidad de productos (clic → lista). */
+  .product-count {
+    min-width: 36px;
+    padding: 4px 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  button.product-count:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .product-count.is-empty {
+    display: inline-block;
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-grey);
+    font-weight: 600;
+    cursor: default;
+  }
+
   /* ========================= */
   /* Filtro de origen           */
   /* ========================= */

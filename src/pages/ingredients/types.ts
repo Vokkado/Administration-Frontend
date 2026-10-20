@@ -14,6 +14,8 @@ export interface Ingredient {
   isInspected: boolean;
   /** Lo creó la IA al cargar un producto (no cambia al validarlo). */
   createdByAi?: boolean;
+  /** Productos distintos que lo usan (por cualquiera de sus variantes). Viene en el listado. */
+  productCount?: number;
   isNutritive: boolean;
   restrictionIds?: string[];
   createdAt: string;
@@ -27,6 +29,8 @@ export interface IngredientVariant {
   isInspected: boolean;
   /** La creó la IA al cargar un producto (no cambia al validarla). */
   createdByAi?: boolean;
+  /** Productos distintos que la usan. Viene en el listado. */
+  productCount?: number;
   attributeIds?: string[];
   createdAt: string;
   updatedAt: string;

@@ -4,6 +4,7 @@
  */
 import { useMemo } from 'react';
 import { DataTable, ColumnFilter } from '../../../components/ui';
+import { ProductCountCell } from './ProductCountCell';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
@@ -110,6 +111,16 @@ export function VariantTable({
         },
       },
       {
+        key: 'productCount',
+        header: 'Productos',
+        sortable: true,
+        align: 'center',
+        width: '110px',
+        render: (variant) => (
+          <ProductCountCell count={variant.productCount} onClick={() => onViewProducts(variant)} />
+        ),
+      },
+      {
         key: 'createdAt',
         header: 'Creado',
         sortable: true,
@@ -160,7 +171,7 @@ export function VariantTable({
         },
       },
     ],
-    [getIngredientName, getAttributeName, onValidationChange, validatingId, filterInspected, onFilterInspectedChange],
+    [getIngredientName, getAttributeName, onValidationChange, onViewProducts, validatingId, filterInspected, onFilterInspectedChange],
   );
 
   const renderActions = useMemo(
