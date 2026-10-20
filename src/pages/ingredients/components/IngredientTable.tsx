@@ -84,7 +84,12 @@ export function IngredientTable({
       width: '23%',
       resizable: true,
       render: (ingredient) => (
-        <span className="td-name" title={ingredient.name}>{ingredient.name}</span>
+        <span className="td-name-cell">
+          <span className="td-name" title={ingredient.name}>{ingredient.name}</span>
+          {ingredient.createdByAi && !ingredient.isInspected && (
+            <span className="badge-ai" title="Lo creó la IA al cargar un producto y nadie lo aprobó todavía">IA</span>
+          )}
+        </span>
       ),
     },
     {

@@ -13,6 +13,8 @@ export interface AdminVariantListQuery {
   offset: number;
   search?: string;
   inspected?: boolean;
+  /** AI = creadas por IA sin aprobar; HUMAN = cargadas o aprobadas por personas. Sin esto: todas. */
+  origin?: 'AI' | 'HUMAN';
   /** Default en el backend: name asc. */
   sortBy?: VariantSortBy;
   sortDir?: 'asc' | 'desc';
@@ -32,6 +34,7 @@ export class IngredientVariantsService {
 
     if (query.search) params.append('search', query.search);
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
+    if (query.origin) params.append('origin', query.origin);
     if (query.sortBy) params.append('sortBy', query.sortBy);
     if (query.sortDir) params.append('sortDir', query.sortDir);
 

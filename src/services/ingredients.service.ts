@@ -15,6 +15,8 @@ export interface AdminIngredientListQuery {
   toxicityLevel?: string;
   inspected?: boolean;
   reason?: 'WITH_REASON' | 'WITHOUT_REASON';
+  /** AI = creados por IA sin aprobar; HUMAN = cargados o aprobados por personas. Sin esto: todos. */
+  origin?: 'AI' | 'HUMAN';
   /** Default en el backend: name asc. */
   sortBy?: IngredientSortBy;
   sortDir?: 'asc' | 'desc';
@@ -36,6 +38,7 @@ export class IngredientsService {
     if (query.toxicityLevel) params.append('toxicityLevel', query.toxicityLevel);
     if (query.inspected !== undefined) params.append('inspected', String(query.inspected));
     if (query.reason) params.append('reason', query.reason);
+    if (query.origin) params.append('origin', query.origin);
     if (query.sortBy) params.append('sortBy', query.sortBy);
     if (query.sortDir) params.append('sortDir', query.sortDir);
 

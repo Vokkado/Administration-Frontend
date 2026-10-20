@@ -17,6 +17,7 @@ import { useIngredientVariants } from './hooks/useIngredientVariants';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
 import { apiService } from '../../services/api.service';
 import type { Ingredient, IngredientFormData, IngredientVariant, IngredientVariantFormData } from './types';
+import { OriginFilter } from './components/OriginFilter';
 import './IngredientsPage.css';
 
 type ActiveTab = 'ingredients' | 'variants';
@@ -32,6 +33,8 @@ export function IngredientsPage() {
     filterRisk,
     filterInspected,
     filterReason,
+    filterOrigin,
+    setFilterOrigin,
     sort,
     currentPage,
     totalPages,
@@ -479,8 +482,13 @@ export function IngredientsPage() {
           <>
             {!showModal && <NotificationBanner type="error" message={error} />}
 
-            {/* Sin barra de filtros: riesgo, justificación y validado se filtran desde
-                el embudo de su propia columna. */}
+            {/* Origen arriba (por defecto oculta lo que generó la IA); riesgo, justificación y
+                validado se filtran desde el embudo de su propia columna. */}
+            <OriginFilter
+              value={filterOrigin}
+              onChange={(next) => { setFilterOrigin(next); setCurrentPage(1); }}
+              noun="ingredientes"
+            />
             <IngredientTable
               ingredients={ingredients}
               loading={loading}
@@ -558,7 +566,16 @@ export function IngredientsPage() {
           <>
             {!showVariantModal && <NotificationBanner type="error" message={variantsHook.error} />}
 
-            {/* Sin barra de filtros: validado se filtra desde el embudo de su columna. */}
+            {/* Origen arriba (por defecto oculta lo que generó la IA); validado se filtra desde
+                el embudo de su columna. */}
+            <OriginFilter
+              value={variantsHook.filterOrigin}
+              onChange={(next) => {
+                variantsHook.setFilterOrigin(next);
+                variantsHook.setCurrentPage(1);
+              }}
+              noun="variantes"
+            />
             <VariantTable
               variants={variantsHook.variants}
               loading={variantsHook.loading}

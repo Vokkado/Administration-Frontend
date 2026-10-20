@@ -230,6 +230,52 @@
     word-break: break-word;
   }
 
+  /* Nombre + etiqueta "IA" (creado por IA, sin aprobar). */
+  .td-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .badge-ai {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid #9575CD;
+    background: #EDE7F6;
+    color: #4527A0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* ========================= */
+  /* Filtro de origen           */
+  /* ========================= */
+  .origin-filter {
+    margin-bottom: 16px;
+  }
+
+  .origin-filter .filter-button-group {
+    margin-bottom: 0;
+  }
+
+  .origin-filter-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--color-secondary);
+  }
+
+  @media (max-width: 767px) {
+    .origin-filter .filter-btn {
+      flex: 1 1 auto;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+  }
+
   /* ========================= */
   /* Action Buttons             */
   /* ========================= */

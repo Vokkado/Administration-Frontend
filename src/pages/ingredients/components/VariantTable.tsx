@@ -62,7 +62,12 @@ export function VariantTable({
         width: '23%',
         resizable: true,
         render: (variant) => (
-          <span className="td-name" title={variant.name}>{variant.name}</span>
+          <span className="td-name-cell">
+            <span className="td-name" title={variant.name}>{variant.name}</span>
+            {variant.createdByAi && !variant.isInspected && (
+              <span className="badge-ai" title="La creó la IA al cargar un producto y nadie la aprobó todavía">IA</span>
+            )}
+          </span>
         ),
       },
       {
