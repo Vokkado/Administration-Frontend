@@ -15,6 +15,7 @@ import { ValidationService, type ValidationDetail, type CategoryOption, type Com
 import { CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
+import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
 const STEPS = ['Básico', 'Composición', 'Más info', 'Finalizar'];
@@ -300,7 +301,7 @@ export function ValidationWizardPage() {
                 <div className="form-group" style={{ marginTop: 8 }}>
                   <label className="form-label">Octógonos / alertas</label>
                   <div className="vw-checks">
-                    <Check label="Ultraprocesado" v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
+                    <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
                     <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
                     <Check label="Exceso grasas sat." v={meta.isSaturatedFatAlert} on={(v) => set('isSaturatedFatAlert', v)} />
                     <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
@@ -383,6 +384,6 @@ function Stepper({ step, onStep }: { step: number; onStep: (s: number) => void }
   );
 }
 
-function Check({ label, v, on }: { label: string; v: boolean; on: (v: boolean) => void }) {
-  return <label className="vw-check"><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;
+function Check({ label, v, on, hint }: { label: string; v: boolean; on: (v: boolean) => void; hint?: string }) {
+  return <label className="vw-check" title={hint}><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;
 }

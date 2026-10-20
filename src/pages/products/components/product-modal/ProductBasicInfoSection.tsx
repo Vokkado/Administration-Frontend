@@ -5,6 +5,7 @@ import { useState, type ChangeEvent } from 'react';
 import { Input, ImageLightbox } from '../../../../components/ui';
 import { apiService } from '../../../../services/api.service';
 import type { ProductFormData, Category } from './types';
+import { NOVA4_HINT } from '../../../../constants/nova';
 
 interface ProductBasicInfoSectionProps {
   formData: ProductFormData;
@@ -218,8 +219,9 @@ export function ProductBasicInfoSection({ formData, categories, onChange }: Prod
             checked={formData.isUltraProcessed}
             onChange={(e) => onChange({ isUltraProcessed: e.target.checked })}
           />
-          <span>Es ultra procesado</span>
+          <span>Es ultraprocesado (NOVA 4)</span>
         </label>
+        <small className="form-hint">{NOVA4_HINT}</small>
       </div>
 
       <div className="form-group">

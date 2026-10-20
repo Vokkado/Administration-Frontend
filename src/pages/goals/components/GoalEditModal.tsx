@@ -13,6 +13,7 @@ import type { AttributeOption } from '../../../hooks/useAttributeOptions';
 import { AttributePicker } from './AttributePicker';
 import { IoLockClosedOutline } from 'react-icons/io5';
 import { GoalIcon } from '../goalIcons';
+import { NOVA4_HINT } from '../../../constants/nova';
 import {
   describeUses,
   displayCode,
@@ -206,7 +207,7 @@ function GoalEditForm({ goal, view, attributeOptions, saving, error, onClose, on
               <h3 className="modal-column-title">Umbrales</h3>
               {goal.paramSpecs.length === 0 ? (
                 <p className="goal-muted">
-                  Esta meta no tiene umbrales: sigue el criterio NOVA 4 (si el producto es ultraprocesado).
+                  Esta meta no tiene umbrales: sigue el criterio NOVA 4. {NOVA4_HINT}
                 </p>
               ) : (
                 <>
