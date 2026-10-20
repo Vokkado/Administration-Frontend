@@ -267,20 +267,16 @@
     border-color: var(--color-primary);
   }
 
+  /* En el flujo (no flotante): dentro de un modal, una lista flotante queda tapada por el pie. */
   .attr-picker-results {
-    position: absolute;
-    z-index: 20;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    margin: 0;
+    margin: 4px 0 0;
     padding: 4px;
     list-style: none;
     max-height: 260px;
     overflow-y: auto;
     border-radius: 10px;
     background: var(--color-white);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--color-border-light);
   }
 
   .attr-picker-option {
