@@ -10,10 +10,14 @@ import { usePaginatedList } from '../../../hooks/usePaginatedList';
 import type { PaginatedFetchParams } from '../../../hooks/usePaginatedList';
 import type { Ingredient, IngredientVariant, AttributeForVariant, AttributeTypeForVariant } from '../types';
 import { getAttributeDisplayName } from '../types';
+import type { OriginFilterValue } from '../components/OriginFilter';
 
 export function useIngredientVariants() {
   // Local filter state
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
+  // Por defecto, solo lo cargado o aprobado por personas: lo que creó la IA se aprueba con su producto.
+  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('HUMAN');
+  const origin = filterOrigin === 'ALL' ? undefined : filterOrigin;
 
   // Lookup data
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -35,10 +39,11 @@ export function useIngredientVariants() {
       IngredientVariantsService.listAdminVariants({
         ...params,
         inspected,
+        origin,
         sortBy: sort.key as VariantSortBy,
         sortDir: sort.direction,
       }),
-    [inspected, sort],
+    [inspected, origin, sort],
   );
 
   const {
@@ -149,6 +154,8 @@ export function useIngredientVariants() {
     error,
     searchTerm,
     filterInspected,
+    filterOrigin,
+    setFilterOrigin,
     sort,
     currentPage,
     totalPages,

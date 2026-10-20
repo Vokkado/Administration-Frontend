@@ -230,6 +230,81 @@
     word-break: break-word;
   }
 
+  /* Nombre + etiqueta "IA" (creado por IA, sin aprobar). */
+  .td-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .badge-ai {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 8px;
+    border: 1px solid #9575CD;
+    background: #EDE7F6;
+    color: #4527A0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* Cantidad de productos (clic → lista). */
+  .product-count {
+    min-width: 36px;
+    padding: 4px 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  button.product-count:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .product-count.is-empty {
+    display: inline-block;
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-grey);
+    font-weight: 600;
+    cursor: default;
+  }
+
+  /* ========================= */
+  /* Filtro de origen           */
+  /* ========================= */
+  .origin-filter {
+    margin-bottom: 16px;
+  }
+
+  .origin-filter .filter-button-group {
+    margin-bottom: 0;
+  }
+
+  .origin-filter-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--color-secondary);
+  }
+
+  @media (max-width: 767px) {
+    .origin-filter .filter-btn {
+      flex: 1 1 auto;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+  }
+
   /* ========================= */
   /* Action Buttons             */
   /* ========================= */

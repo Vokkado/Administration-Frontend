@@ -2,6 +2,9 @@
  * Tipos y constantes para Ingredientes y Variantes de Ingrediente
  */
 
+/** AI = lo creó la IA y nadie lo aprobó; HUMAN = lo cargó o lo aprobó una persona. */
+export type CatalogOrigin = 'AI' | 'HUMAN';
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -9,6 +12,10 @@ export interface Ingredient {
   score: number;
   reason?: string;
   isInspected: boolean;
+  /** Lo creó la IA al cargar un producto (no cambia al validarlo). */
+  createdByAi?: boolean;
+  /** Productos distintos que lo usan (por cualquiera de sus variantes). Viene en el listado. */
+  productCount?: number;
   isNutritive: boolean;
   restrictionIds?: string[];
   createdAt: string;
@@ -20,6 +27,10 @@ export interface IngredientVariant {
   ingredientId: string;
   name: string;
   isInspected: boolean;
+  /** La creó la IA al cargar un producto (no cambia al validarla). */
+  createdByAi?: boolean;
+  /** Productos distintos que la usan. Viene en el listado. */
+  productCount?: number;
   attributeIds?: string[];
   createdAt: string;
   updatedAt: string;
