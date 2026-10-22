@@ -31,7 +31,7 @@ export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string
   },
   yellow: {
     bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b', label: 'Revisar',
-    hint: 'Se vinculó con algo que ya existía, pero por aproximación o sinónimo: puede estar mal. Revisá que corresponda.',
+    hint: 'Se vinculó con algo que ya existía, pero por aproximación o sinónimo (puede estar mal), o el ingrediente ya existía pero nadie lo validó todavía. Revisá que corresponda.',
   },
   red: {
     bg: '#fef2f2', border: '#fecaca', dot: '#ef4444', label: 'Creado por IA',
@@ -59,6 +59,7 @@ const NO_TIER_HINT = 'No hay registro de cómo se hizo este vínculo (por ejempl
 
 const TRAZAS_HINT = 'La etiqueta dice "puede contener": no es un ingrediente, sino un posible rastro por contaminación cruzada en la fábrica.';
 const AI_TAG_HINT = 'No había nada parecido en la base, así que la IA creó el ingrediente y estimó su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
+const UNVALIDATED_TAG_HINT = 'Este ingrediente ya existía en el catálogo (no lo creó la IA), pero nadie revisó todavía su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
 type Picked = { id: string; name: string };
 type PageResult = { items: Picked[]; total: number };
 /** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
@@ -419,13 +420,24 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
         </div>
       </div>
 
-      {ing.color === 'red' && (
-        <div className="vp-ai-panel">
+      {/* Ingrediente sin validar: si lo creó la IA (rojo) o si ya existía y nadie lo revisó (amarillo). */}
+      {!ing.ingredientInspected && (
+        <div className={`vp-ai-panel ${ing.color === 'red' ? '' : 'vp-ai-panel--pending'}`}>
           <div className="vp-ai-head">
-            <Tooltip content={AI_TAG_HINT}>
-              <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
-            </Tooltip>
-            <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+            {ing.color === 'red' ? (
+              <Tooltip content={AI_TAG_HINT}>
+                <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
+              </Tooltip>
+            ) : (
+              <Tooltip content={UNVALIDATED_TAG_HINT}>
+                <span className="vp-ai-tag vp-ai-tag--pending" tabIndex={0}>Sin validar</span>
+              </Tooltip>
+            )}
+            <span className="vp-ai-hint">
+              {ing.color === 'red'
+                ? 'Revisá el puntaje y la toxicidad antes de validarlo.'
+                : 'Ya existía en el catálogo, pero todavía no está validado: revisá su puntaje y toxicidad.'}
+            </span>
           </div>
 
           {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}

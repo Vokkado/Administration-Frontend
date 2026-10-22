@@ -300,6 +300,16 @@
   border-radius: 10px;
 }
 
+/* Ingrediente que ya existía pero nadie validó (filas amarillas): mismo panel, en amarillo. */
+.vp-ai-panel--pending {
+  border-color: #fde68a;
+  background: rgba(255, 251, 235, 0.85);
+}
+
+.vp-ai-tag--pending {
+  background: #f59e0b;
+}
+
 .vp-ai-head {
   display: flex;
   align-items: center;

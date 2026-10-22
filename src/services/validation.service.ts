@@ -26,6 +26,8 @@ export interface ValidationIngredient {
   matchTier: string | null;
   linkInspected: boolean;
   ingredientInspected: boolean;
+  /** La IA creó el ingrediente al cargar un producto (rojo si además nadie lo validó). */
+  ingredientCreatedByAi?: boolean;
   score: number | null;
   toxicityLevel: string | null;
   reason: string | null;
