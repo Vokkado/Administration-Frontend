@@ -24,6 +24,7 @@ import { PregnancyPanel } from './components/PregnancyPanel';
 import { GoalEditModal } from './components/GoalEditModal';
 import { GoalHistoryModal } from './components/GoalHistoryModal';
 import { GroupsModal } from './components/GroupsModal';
+import { GoalsHelpModal } from './components/GoalsHelpModal';
 import { displayCode } from './goalFormat';
 import './GoalsPage.css';
 
@@ -53,6 +54,7 @@ export function GoalsPage() {
   const [history, setHistory] = useState<AdminGoal | null>(null);
   const [toggling, setToggling] = useState<AdminGoal | null>(null);
   const [showGroups, setShowGroups] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
   const [pageError, setPageError] = useState('');
@@ -226,6 +228,9 @@ export function GoalsPage() {
           Grupos
         </Button>
       )}
+      <Button variant="outline" onClick={() => setShowHelp(true)}>
+        ¿Cómo se evalúan?
+      </Button>
     </div>
   );
 
@@ -306,6 +311,7 @@ export function GoalsPage() {
         </>
       )}
       <GoalHistoryModal goal={history} onClose={() => setHistory(null)} />
+      <GoalsHelpModal show={showHelp} onClose={() => setShowHelp(false)} />
 
       <ConfirmDialog
         show={toggling !== null}

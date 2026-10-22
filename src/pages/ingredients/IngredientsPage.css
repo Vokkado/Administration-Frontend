@@ -297,11 +297,20 @@
     color: var(--color-secondary);
   }
 
+  /* Celular: una sola fila de 3 botones iguales (con flex, "Todos" caía solo a otro renglón). */
   @media (max-width: 767px) {
+    .origin-filter .filter-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
     .origin-filter .filter-btn {
-      flex: 1 1 auto;
-      padding: 8px 10px;
-      font-size: 13px;
+      min-width: 0;
+      padding: 8px 6px;
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: normal;
     }
   }
 
