@@ -15,7 +15,7 @@ import './ValidationWizardPage.css';
 /** Qué cuenta cada color en la cola (la consulta solo cuenta vínculos de ingredientes). */
 const COUNT_HINTS: Record<LinkColor, (n: number) => string> = {
   green: (n) => `${n} ${n === 1 ? 'ingrediente ya existía' : 'ingredientes ya existían'} y no hace falta revisarlos.`,
-  yellow: (n) => `${n} ${n === 1 ? 'ingrediente se vinculó' : 'ingredientes se vincularon'} por aproximación o sinónimo: conviene revisarlos.`,
+  yellow: (n) => `${n} ${n === 1 ? 'ingrediente se vinculó' : 'ingredientes se vincularon'} por aproximación o sinónimo, o ya ${n === 1 ? 'existía' : 'existían'} pero nadie ${n === 1 ? 'lo' : 'los'} validó: conviene revisarlos.`,
   red: (n) => `${n} ${n === 1 ? 'ingrediente lo creó' : 'ingredientes los creó'} la IA: hay que validarlos.`,
 };
 

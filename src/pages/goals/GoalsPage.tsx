@@ -318,7 +318,7 @@ export function GoalsPage() {
         title={toggling?.isActive ? 'Desactivar meta' : 'Activar meta'}
         message={
           toggling?.isActive
-            ? `"${toggling.name}" deja de ofrecerse en la app y no se evalúa más. Los ${toggling.usersCount} usuarios que la eligieron la conservan: si se vuelve a activar, la recuperan. Sus análisis quedan desactualizados.`
+            ? `"${toggling.name}" deja de ofrecerse en la app y no se evalúa más. ${toggling.usersCount === 1 ? 'La persona que la eligió la conserva' : `Los ${toggling.usersCount} usuarios que la eligieron la conservan`}: si se vuelve a activar, la recuperan. Sus análisis quedan desactualizados.`
             : `"${toggling?.name ?? ''}" vuelve a ofrecerse en la app y a evaluarse para quienes la tenían elegida.`
         }
         confirmText={toggling?.isActive ? 'Desactivar' : 'Activar'}

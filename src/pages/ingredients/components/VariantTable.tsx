@@ -69,7 +69,7 @@ export function VariantTable({
   sort,
   onSortChange,
 }: VariantTableProps) {
-  const { describeAttribute } = useGoalsAdminView();
+  const { describeAttribute, attributeUsedBy } = useGoalsAdminView();
   const columns = useMemo<DataTableColumn<IngredientVariant>[]>(
     () => [
       {
@@ -113,9 +113,11 @@ export function VariantTable({
         ),
         render: (variant) => {
           const attrs = variant.attributeIds || [];
-          // Los de Metas / Embarazo van resaltados; el resto, en la lista común (hasta 3).
-          const auto = attrs.filter((id) => isAutoAttribute(id));
-          const others = attrs.filter((id) => !isAutoAttribute(id));
+          // Los de Metas / Embarazo van resaltados (se asignan solos o los usa una meta / el
+          // embarazo); el resto, en la lista común (hasta 3).
+          const isGoals = (id: string) => isAutoAttribute(id) || attributeUsedBy(id).length > 0;
+          const auto = attrs.filter(isGoals);
+          const others = attrs.filter((id) => !isGoals(id));
           return (
             <div className="variant-attributes">
               {auto.length > 0 && (
@@ -205,6 +207,7 @@ export function VariantTable({
       getIngredientName,
       getAttributeName,
       isAutoAttribute,
+      attributeUsedBy,
       describeAttribute,
       onValidationChange,
       onViewProducts,

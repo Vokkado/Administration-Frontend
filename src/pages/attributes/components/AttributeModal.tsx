@@ -50,6 +50,9 @@ export function AttributeModal({
   // Quién usa el atributo (metas por rol y Embarazo), para "Lo usan: …".
   const { attributeUsedBy } = useGoalsAdminView();
   const usedBy = editingAttribute ? attributeUsedBy(editingAttribute.id) : [];
+  // El tipo "Metas" o "Embarazo" solo ordena la lista: lo que hace que cuente es el vínculo.
+  const selectedTypeName = attributeTypes.find((t) => t.id === formData.typeId)?.type;
+  const isGoalsType = selectedTypeName === 'Metas' || selectedTypeName === 'Embarazo';
 
   // Restrictions state
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
@@ -279,6 +282,16 @@ export function AttributeModal({
                     <strong>Lo usan:</strong> {usedBy.join(', ')}
                   </p>
                 )}
+                {usedBy.length === 0 && isGoalsType && (
+                  <p className="attr-used-by">
+                    El tipo solo ordena: este atributo todavía <strong>no lo usa ninguna meta ni el embarazo</strong>.
+                    Para que cuente, vinculalo en <strong>Metas y Embarazo</strong>.
+                  </p>
+                )}
+                <small className="form-hint">
+                  Con criterio o palabras clave, se asigna solo a las variantes nuevas. Cambiarlos no reclasifica las
+                  variantes que ya existen. "Excluir si dice" solo frena a las palabras clave.
+                </small>
                 <textarea
                   id="attribute-ai-criterion"
                   className="textarea"

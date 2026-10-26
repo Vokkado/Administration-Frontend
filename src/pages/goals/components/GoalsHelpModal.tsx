@@ -14,7 +14,7 @@ const RESULTS: { dot: string; label: string; when: string; effect: string }[] = 
     dot: 'goal-help-dot--red',
     label: 'Va en contra',
     when: 'Exceso según la tabla, octógono del envase, o un ingrediente que cuenta para la meta entre los primeros de la lista.',
-    effect: 'El producto queda en Precaución.',
+    effect: 'No cambia el estado (si es apto sigue Apto), pero no puede ser Recomendado. La app lo marca en rojo en "Tus metas".',
   },
   {
     dot: 'goal-help-dot--orange',
@@ -78,7 +78,11 @@ export function GoalsHelpModal({ show, onClose }: GoalsHelpModalProps) {
             ))}
           </div>
           <ul className="goal-help-notes">
-            <li>Las metas <strong>nunca</strong> dan No apto: eso lo dan solo las restricciones.</li>
+            <li>
+              Las metas <strong>nunca</strong> cambian si un producto es apto: Precaución y No apto los dan solo las
+              restricciones de salud (y el embarazo). En la app, las metas se ven aparte: en la sección "Tus metas" y en el
+              ícono 🚩 Metas del encabezado del análisis.
+            </li>
             <li>
               <strong>Evitar ultraprocesados</strong> usa el criterio NOVA 4: ingredientes industriales o aditivos como
               colorantes y saborizantes. La cantidad de ingredientes no cuenta.

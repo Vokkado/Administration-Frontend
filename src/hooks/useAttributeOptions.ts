@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiService } from '../services/api.service';
 import { getApiMessage } from '../services/apiError';
+import { getAttributeTypeLabel } from '../pages/attributes/types';
 
 export interface AttributeOption {
   id: string;
@@ -53,7 +54,8 @@ export function useAttributeOptions(enabled = true) {
           .map((a) => ({
             id: a.id,
             name: a.name,
-            typeName: types.get(a.typeId) ?? '',
+            // "SUBTYPE" → "Subtipo": los tipos viejos tienen nombre técnico en la base.
+            typeName: getAttributeTypeLabel(types.get(a.typeId) ?? ''),
             restrictionIds: a.restrictionIds ?? a.restriction_ids ?? [],
             isAuto: !!a.aiCriterion || (a.keywords?.length ?? 0) > 0,
           }))

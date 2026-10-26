@@ -11,6 +11,7 @@
  *   atributos; se suma sola a quien marcó embarazo en el perfil.
  */
 import { apiService } from './api.service';
+import { getAttributeTypeLabel } from '../pages/attributes/types';
 
 // ── Metas ────────────────────────────────────────────────────────────────────
 
@@ -145,7 +146,14 @@ export const ROLE_LABELS: Record<GoalAttributeRole, string> = {
 export class GoalsService {
   static async getAdminView(): Promise<AdminGoalsView> {
     const res = await apiService.get<{ data: AdminGoalsView }>('/goal-definitions');
-    return res.data;
+    // Los tipos viejos tienen nombre técnico en la base ("SUBTYPE"): se muestran traducidos.
+    const label = (attrs: AttributeRef[]) => attrs.map((a) => ({ ...a, typeName: getAttributeTypeLabel(a.typeName) }));
+    const view = res.data;
+    return {
+      ...view,
+      goals: view.goals.map((g) => ({ ...g, roles: g.roles.map((r) => ({ ...r, attributes: label(r.attributes) })) })),
+      pregnancy: view.pregnancy ? { ...view.pregnancy, attributes: label(view.pregnancy.attributes) } : null,
+    };
   }
 
   static async updateGoal(code: string, input: UpdateGoalInput): Promise<AdminGoal> {

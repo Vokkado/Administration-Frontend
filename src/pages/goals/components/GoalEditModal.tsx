@@ -212,7 +212,8 @@ function GoalEditForm({ goal, view, attributeOptions, saving, error, onClose, on
               ) : (
                 <>
                   <small className="form-hint goal-params-intro">
-                    Valores por 100 g (sólidos) y por 100 ml (líquidos). La lógica de la meta no cambia: solo los valores.
+                    Los valores nutricionales son por 100 g (sólidos) y por 100 ml (líquidos). La lógica de la meta no
+                    cambia: solo los valores.
                   </small>
                   <div className="goal-params">
                     {goal.paramSpecs.map((spec) => (
@@ -239,8 +240,11 @@ function GoalEditForm({ goal, view, attributeOptions, saving, error, onClose, on
                 <>
                   <h3 className="modal-column-title goal-roles-title">Ingredientes que cuentan</h3>
                   <small className="form-hint goal-params-intro">
-                    Cuando el producto no trae tabla nutricional, la meta mira los ingredientes: cuenta las variantes
-                    que tengan alguno de estos atributos.
+                    Si el producto no trae tabla nutricional ni octógono, la meta mira los ingredientes: cuentan las
+                    variantes con alguno de estos atributos. Entre los primeros (ver "Ingredientes principales" en los
+                    umbrales) → Va en contra; más abajo → Aviso. Nunca cambia si el producto es apto. Un atributo que se
+                    asigna solo (Auto) llega a las variantes nuevas sin trabajo manual; uno que no, solo cuenta en las
+                    variantes que lo tengan cargado.
                   </small>
                   <div className="goal-roles">
                     {goal.roles.map((r) => (

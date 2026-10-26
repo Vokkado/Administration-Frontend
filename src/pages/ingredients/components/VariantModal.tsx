@@ -76,7 +76,7 @@ export function VariantModal({
   // cuenta cuáles tienen sus hermanas (solo como dato: "jamón cocido" no tiene por qué llevar lo de
   // "jamón crudo"). Al CREAR, los de palabras clave / IA se premarcan; si la persona destilda uno,
   // no se vuelve a marcar solo. Al editar no se premarca nada: se ofrecen para agregar.
-  const { describeAttribute } = useGoalsAdminView();
+  const { describeAttribute, attributeUsedBy } = useGoalsAdminView();
   const [suggestions, setSuggestions] = useState<AttributeSuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
   const autoAddedRef = useRef<Set<string>>(new Set());
@@ -198,19 +198,27 @@ export function VariantModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestions]);
 
+  /** ¿Se asigna solo (criterio para la IA o palabras clave)? */
   const isAuto = (attr?: AttributeForVariant) => !!attr && (!!attr.aiCriterion || (attr.keywords?.length ?? 0) > 0);
+  /**
+   * ¿Cuenta para metas o embarazo? Los que se asignan solos, y también cualquiera que una meta o el
+   * embarazo tenga vinculado (ej. "Subtipo › Miel" en "Fuentes de azúcar"), aunque se cargue a mano.
+   */
+  const isGoalsAttribute = (attr?: AttributeForVariant) => !!attr && (isAuto(attr) || attributeUsedBy(attr.id).length > 0);
 
   /** Atributos de metas / embarazo marcados (con la sugerencia, si se marcaron solos). */
   const selectedAuto = useMemo(() => {
     const out: { attr: AttributeForVariant; suggestion?: AttributeSuggestion }[] = [];
     for (const attrId of selectedAttributes) {
       const attr = attributes.find((a) => a.id === attrId);
-      if (!attr || !isAuto(attr)) continue;
+      if (!attr || !isGoalsAttribute(attr)) continue;
       const suggestion = autoAddedRef.current.has(attrId) ? suggestions.find((s) => s.attributeId === attrId) : undefined;
       out.push({ attr, suggestion });
     }
     return out;
-  }, [selectedAttributes, attributes, suggestions]);
+    // isGoalsAttribute depende de attributeUsedBy (cambia cuando carga la vista de metas).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAttributes, attributes, suggestions, attributeUsedBy]);
 
   /** Sugerencias que no están marcadas (para agregar con un clic). */
   const pendingSuggestions = useMemo(
