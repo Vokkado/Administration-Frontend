@@ -32,6 +32,7 @@ const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
 const AttributesPage = lazy(() => import('./pages/attributes/AttributesPage').then(m => ({ default: m.AttributesPage })));
+const TagsPage = lazy(() => import('./pages/tags/TagsPage').then(m => ({ default: m.TagsPage })));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStatisticsPage').then(m => ({ default: m.ProductStatisticsPage })));
 const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
@@ -224,6 +225,15 @@ function App() {
               element={
                 <ProtectedRoute roles={CATALOG_ROLES}>
                   <AttributesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/tags"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <TagsPage />
                 </ProtectedRoute>
               }
             />

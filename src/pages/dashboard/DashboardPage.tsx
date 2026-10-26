@@ -52,6 +52,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Productos', description: 'Gestiona los productos alimenticios', path: '/products', buttonLabel: 'Ver Productos' },
       { title: 'Ingredientes', description: 'Gestiona los ingredientes', path: '/ingredients', buttonLabel: 'Ver Ingredientes' },
       { title: 'Categorías', description: 'Gestiona las categorías de productos', path: '/categories', buttonLabel: 'Ver Categorías' },
+      { title: 'Tags', description: 'Validá y corregí los tags de los productos (los usan las alternativas)', path: '/tags', buttonLabel: 'Ver Tags' },
       { title: 'Empresas', description: 'Gestiona las empresas productoras', path: '/companies', buttonLabel: 'Ver Empresas' },
     ],
   },

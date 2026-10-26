@@ -65,7 +65,12 @@ export function usePaginatedList<T>({
   normalizeRef.current = normalize;
 
   // Core fetch — depends on fetchFn (consumer's useCallback with filter deps) + debouncedSearch
+  // Solo la respuesta del último pedido se muestra: si el usuario cambia un filtro o la búsqueda
+  // mientras otro pedido sigue en vuelo, el viejo puede llegar después y pisaría al nuevo.
+  const requestIdRef = useRef(0);
+
   const doFetch = useCallback(async (page: number) => {
+    const requestId = ++requestIdRef.current;
     try {
       setLoading(true);
       const offset = (page - 1) * itemsPerPage;
@@ -74,6 +79,7 @@ export function usePaginatedList<T>({
         offset,
         search: debouncedSearch || undefined,
       });
+      if (requestId !== requestIdRef.current) return;
 
       const data = normalizeRef.current
         ? response.data.map(normalizeRef.current)
@@ -83,13 +89,14 @@ export function usePaginatedList<T>({
       setTotal(response.total);
       setError('');
     } catch (err: any) {
+      if (requestId !== requestIdRef.current) return;
       if (err.response?.status === 401) {
         setError('No autorizado. Por favor, inicia sesión nuevamente.');
       } else {
         setError(err.response?.data?.message || err.message || 'Error al cargar datos');
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [fetchFn, debouncedSearch, itemsPerPage]);
 
