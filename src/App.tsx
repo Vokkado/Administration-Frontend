@@ -27,6 +27,7 @@ const NutritionFactPage = lazy(() => import('./pages/nutrition_facts/NutritionFa
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
+const BillingPlansPage = lazy(() => import('./pages/billing-plans/BillingPlansPage').then(m => ({ default: m.BillingPlansPage })));
 const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default: m.FaqsPage })));
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
@@ -176,6 +177,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfessionalVerificationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/billing-plans"
+              element={
+                <ProtectedRoute>
+                  <BillingPlansPage />
                 </ProtectedRoute>
               }
             />

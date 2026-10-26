@@ -75,6 +75,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
     cards: [
       { title: 'Accesos y roles', description: 'Administra las cuentas y qué rol tiene cada una', path: '/users', buttonLabel: 'Ver Accesos' },
       { title: 'Solicitudes de acceso', description: 'Aprobá o rechazá los pedidos de acceso al panel', path: '/access-requests', buttonLabel: 'Ver Solicitudes' },
+      { title: 'Planes', description: 'Precios y límites de pacientes de la web de nutricionistas', path: '/billing-plans', buttonLabel: 'Ver Planes' },
       { title: 'Verificaciones profesionales', description: 'Verificá el registro de los nutricionistas que piden acceso a su web', path: '/professional-verifications', buttonLabel: 'Ver Verificaciones' },
       { title: 'Reportes', description: 'Gestiona reportes de BUG y productos faltantes', path: '/reports', buttonLabel: 'Ver Reportes' },
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
