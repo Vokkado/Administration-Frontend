@@ -82,6 +82,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
       { title: 'Notificaciones', description: 'Envía notificaciones push a los usuarios', path: '/notifications', buttonLabel: 'Ver Notificaciones' },
       { title: 'Términos y Privacidad', description: 'Edita y publica nuevas versiones de los Términos y la Política de Privacidad', path: '/legal', buttonLabel: 'Editar Términos' },
+      { title: 'Versiones de la app', description: 'Versión mínima obligatoria y actual de Android e iOS: con una menor, la app pide actualizar', path: '/app-versions', buttonLabel: 'Ver Versiones' },
     ],
   },
   {

@@ -38,6 +38,7 @@ const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStati
 const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
 const BadgesPage = lazy(() => import('./pages/statistics/BadgesPage').then(m => ({ default: m.BadgesPage })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
+const AppVersionsPage = lazy(() => import('./pages/app-versions/AppVersionsPage').then(m => ({ default: m.AppVersionsPage })));
 const SessionsPage = lazy(() => import('./pages/sessions/SessionsPage').then(m => ({ default: m.SessionsPage })));
 const AccessRequestsPage = lazy(() => import('./pages/access-requests/AccessRequestsPage').then(m => ({ default: m.AccessRequestsPage })));
 const ProfessionalVerificationsPage = lazy(() => import('./pages/professional-verifications/ProfessionalVerificationsPage').then(m => ({ default: m.ProfessionalVerificationsPage })));
@@ -279,6 +280,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LegalPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/app-versions"
+              element={
+                <ProtectedRoute>
+                  <AppVersionsPage />
                 </ProtectedRoute>
               }
             />
