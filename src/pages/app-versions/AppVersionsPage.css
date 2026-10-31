@@ -40,7 +40,7 @@
     height: 44px;
     border-radius: 12px;
     background: var(--color-grey-100);
-    font-size: 22px;
+    color: var(--color-primary-dark);
   }
 
   .app-versions-fields {

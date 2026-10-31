@@ -3,6 +3,8 @@
  * Con una versión menor a la mínima, la app muestra un cartel que no se puede cerrar hasta actualizar.
  */
 import { useEffect, useState } from 'react';
+import type { IconType } from 'react-icons';
+import { IoLogoAppleAppstore, IoLogoGooglePlaystore } from 'react-icons/io5';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, ConfirmDialog, Input, LoadingSpinner, NotificationBanner, PageHeader } from '../../components/ui';
 import {
@@ -15,9 +17,9 @@ import {
 import { getApiMessage } from '../../services/apiError';
 import './AppVersionsPage.css';
 
-const PLATFORMS: Array<{ key: AppPlatform; label: string; store: string; icon: string }> = [
-  { key: 'ANDROID', label: 'Android', store: 'Google Play', icon: '🤖' },
-  { key: 'IOS', label: 'iOS', store: 'App Store', icon: '🍎' },
+const PLATFORMS: Array<{ key: AppPlatform; label: string; store: string; Icon: IconType }> = [
+  { key: 'ANDROID', label: 'Android', store: 'Google Play', Icon: IoLogoGooglePlaystore },
+  { key: 'IOS', label: 'iOS', store: 'App Store', Icon: IoLogoAppleAppstore },
 ];
 
 interface Draft {
@@ -119,7 +121,7 @@ export function AppVersionsPage() {
               return (
                 <section key={platform.key} className="app-versions-card">
                   <header className="app-versions-card-header">
-                    <span className="app-versions-icon" aria-hidden>{platform.icon}</span>
+                    <span className="app-versions-icon" aria-hidden><platform.Icon size={24} /></span>
                     <div>
                       <h3>{platform.label}</h3>
                       <span>{platform.store}</span>
