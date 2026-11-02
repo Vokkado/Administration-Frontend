@@ -12,6 +12,7 @@ import type {
 } from '../types';
 import { 
   RISK_LABELS, 
+  RISK_DESCRIPTIONS,
   RESTRICTION_TYPE_LABELS,
 } from '../types';
 import { apiService } from '../../../services/api.service';
@@ -193,6 +194,9 @@ export function IngredientModal({
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
+                {formData.toxicityLevel && (
+                  <small className="form-hint">{RISK_DESCRIPTIONS[formData.toxicityLevel as RiskLevel]}</small>
+                )}
               </div>
 
               <div className="form-group">

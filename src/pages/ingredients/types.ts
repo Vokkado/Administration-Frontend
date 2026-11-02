@@ -285,6 +285,19 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
   'NONE': 'Ninguno'
 };
 
+/**
+ * Qué significa cada nivel de riesgo y cuánto pesa en el puntaje del producto. El riesgo es del
+ * ingrediente en sí, en cantidades normales: "consumir con moderación" (sal, azúcar, harina) no es
+ * un riesgo, eso ya lo miden la puntuación del ingrediente y la tabla nutricional.
+ */
+export const RISK_DESCRIPTIONS: Record<RiskLevel, string> = {
+  NONE: 'Alimentos e ingredientes sin riesgo propio: verduras, frutas, legumbres, cereales, carnes, pescados, leche, huevo, agua, aceites, especias, sal y azúcar. No resta.',
+  LOW: 'Riesgo leve aun en cantidades normales (por ejemplo, un aditivo con alguna evidencia de efectos no deseados). Resta unos 5 a 7 puntos al producto si está entre los primeros ingredientes.',
+  MEDIUM: 'Riesgo moderado: aditivos con límites de consumo bajos o evidencia de efectos adversos (por ejemplo, ciertos conservantes o colorantes). Resta bastante más y cuenta como alerta.',
+  MEDIUM_HIGH: 'Riesgo considerable: evitar en consumo frecuente. Resta fuerte.',
+  HIGH: 'Riesgo alto (por ejemplo, grasas trans industriales o aditivos cuestionados). Resta lo máximo.',
+};
+
 export const RISK_COLORS: Record<RiskLevel, string> = {
   'HIGH': '#D32F2F',
   'MEDIUM_HIGH': '#f54500',
