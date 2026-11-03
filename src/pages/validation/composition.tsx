@@ -107,6 +107,15 @@ function TierBadge({ tier }: { tier: string | null }) {
   );
 }
 
+/** Flecha fina para subir/bajar un ingrediente (hereda el color del botón). */
+function Chevron({ dir }: { dir: 'up' | 'down' }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden focusable="false">
+      <path d={dir === 'up' ? 'M3 7.5 6 4.5l3 3' : 'M3 4.5 6 7.5l3-3'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function CompositionStep({ productId, detail, busy, setBusy, onChanged }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
@@ -119,6 +128,23 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Orden de la etiqueta. Se muestra al instante (optimista) y se guarda en el backend;
+  // si falla, vuelve al orden que vino del servidor.
+  const [ordered, setOrdered] = useState(detail.ingredients);
+  useEffect(() => setOrdered(detail.ingredients), [detail.ingredients]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const endDrag = () => { setDragIndex(null); setOverIndex(null); };
+  const move = (from: number, to: number) => {
+    if (busy || from === to || to < 0 || to >= ordered.length) return;
+    const next = [...ordered];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setOrdered(next);
+    run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
+      .catch(() => setOrdered(detail.ingredients));
+  };
 
   /** Editar solo refresca; una variante recién creada además se vincula al producto. */
   const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
@@ -178,18 +204,78 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             </Button>
           </div>
         }>
-        {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
-        {detail.ingredients.map((ing) => (
-          <IngredientRow
+        {ordered.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
+        {ordered.length > 1 && (
+          <p className="vp-order-hint">
+            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde el número o usá las flechas.
+          </p>
+        )}
+        {ordered.map((ing, idx) => (
+          <div
             key={ing.variantId}
-            productId={productId}
-            ing={ing}
-            busy={busy}
-            setBusy={setBusy}
-            onChanged={onChanged}
-            onEditVariant={() => setVariantEditor({ id: ing.variantId })}
-            onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
-          />
+            className={`vp-order-row${dragIndex === idx ? ' is-dragging' : ''}${overIndex === idx && dragIndex !== null && dragIndex !== idx ? ' is-over' : ''}`}
+            onDragOver={(e) => {
+              if (dragIndex === null) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (overIndex !== idx) setOverIndex(idx);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) move(dragIndex, idx);
+              endDrag();
+            }}
+          >
+            <div className="vp-order-handle">
+              <button
+                type="button"
+                className={`vp-order-arrow${idx === 0 ? ' is-edge' : ''}`}
+                onClick={() => move(idx, idx - 1)}
+                disabled={busy || idx === 0}
+                aria-label={`Subir ${ing.variantName}`}
+                title="Subir"
+              >
+                <Chevron dir="up" />
+              </button>
+              {/* Solo el número arrastra: así no se pisa con los campos y botones de la fila. */}
+              <span
+                className="vp-order-num"
+                draggable={!busy}
+                onDragStart={(e) => {
+                  setDragIndex(idx);
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('text/plain', ing.variantId);
+                  const row = (e.currentTarget as HTMLElement).closest('.vp-order-row');
+                  if (row) e.dataTransfer.setDragImage(row, 24, 24);
+                }}
+                onDragEnd={endDrag}
+                title="Posición en la etiqueta. Arrastrá para moverlo."
+              >
+                {idx + 1}
+              </span>
+              <button
+                type="button"
+                className={`vp-order-arrow${idx === ordered.length - 1 ? ' is-edge' : ''}`}
+                onClick={() => move(idx, idx + 1)}
+                disabled={busy || idx === ordered.length - 1}
+                aria-label={`Bajar ${ing.variantName}`}
+                title="Bajar"
+              >
+                <Chevron dir="down" />
+              </button>
+            </div>
+            <div className="vp-order-body">
+              <IngredientRow
+                productId={productId}
+                ing={ing}
+                busy={busy}
+                setBusy={setBusy}
+                onChanged={onChanged}
+                onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+                onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+              />
+            </div>
+          </div>
         ))}
       </Section>
 
