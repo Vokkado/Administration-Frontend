@@ -242,6 +242,89 @@
   justify-content: flex-end;
 }
 
+/* ── Orden de la etiqueta: número de posición + flechas, a la izquierda de cada fila ── */
+.vp-order-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-grey-500);
+}
+
+.vp-order-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  border-radius: 12px;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vp-order-row.is-dragging { opacity: 0.45; }
+
+/* Dónde va a caer: una línea del color de la marca arriba de la fila destino. */
+.vp-order-row.is-over { box-shadow: 0 -3px 0 0 var(--color-primary); }
+
+/* Discreto a propósito: no tiene que competir con los números de los pasos del wizard. */
+.vp-order-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-shrink: 0;
+  width: 22px;
+}
+
+.vp-order-num {
+  min-width: 20px;
+  padding: 1px 0;
+  border-radius: 4px;
+  text-align: center;
+  color: var(--color-grey-500);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: grab;
+  user-select: none;
+}
+
+.vp-order-num:hover { background: var(--color-grey-100); color: var(--color-grey-700); }
+.vp-order-num:active { cursor: grabbing; }
+
+.vp-order-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-grey-300);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.vp-order-row:hover .vp-order-arrow:not(:disabled),
+.vp-order-arrow:focus-visible { color: var(--color-grey-500); }
+
+.vp-order-arrow:hover:not(:disabled) {
+  background: var(--color-grey-100);
+  color: var(--color-primary);
+}
+
+.vp-order-arrow.is-edge { visibility: hidden; }
+
+.vp-order-arrow:disabled {
+  cursor: default;
+}
+
+.vp-order-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Fila de ingrediente ─────────────────────────────────────────────── */
 .vp-row-head {
   display: flex;

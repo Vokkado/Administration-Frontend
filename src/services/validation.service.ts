@@ -160,6 +160,11 @@ export class ValidationService {
     await apiService.put(`${BASE}/${id}/ingredient/reassign`, { oldVariantId, newVariantId });
   }
 
+  /** Guarda el orden de la etiqueta: todas las variantes vinculadas, de la primera a la última. */
+  static async reorderIngredients(id: string, variantIds: string[]): Promise<void> {
+    await apiService.put(`${BASE}/${id}/ingredients/order`, { variantIds });
+  }
+
   static async validateIngredient(
     ingredientId: string,
     edits?: { score?: number; toxicityLevel?: string; reason?: string; isNutritive?: boolean },
