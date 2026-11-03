@@ -300,9 +300,9 @@ export const RISK_DESCRIPTIONS: Record<RiskLevel, string> = {
 
 /** Qué mide la puntuación del ingrediente (1–10), con ejemplos reales del catálogo. */
 export const SCORE_HINT =
-  'Qué tan bueno es el ingrediente: qué tan natural, saludable y nutritivo es (cuánto te aporta). ' +
-  'Va de 1 (peor) a 10 (mejor). Ej.: tomate 10, avena 9, harina de trigo 6, azúcar 4, grasa vegetal hidrogenada 3. ' +
-  '0 = no se evalúa (solo para trazas, como "Minerales del agua").';
+  'Nota general del ingrediente: lo que aporta (nutrientes, qué tan natural o procesado es) menos lo que ' +
+  'puede perjudicar. 1 = muy malo, 10 = excelente. Ej.: tomate 10, harina de trigo 6, azúcar 4, ' +
+  'grasa hidrogenada 3. 0 = no se evalúa (trazas, como "Minerales del agua").';
 
 export const RISK_COLORS: Record<RiskLevel, string> = {
   'HIGH': '#D32F2F',
