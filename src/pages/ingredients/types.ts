@@ -286,17 +286,23 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
 };
 
 /**
- * Qué significa cada nivel de riesgo y cuánto pesa en el puntaje del producto. El riesgo es del
- * ingrediente en sí, en cantidades normales: "consumir con moderación" (sal, azúcar, harina) no es
- * un riesgo, eso ya lo miden la puntuación del ingrediente y la tabla nutricional.
+ * Qué significa cada nivel de riesgo y cuánto pesa en el puntaje del producto (máximos con el
+ * ingrediente en primer lugar; ver Pasos 2 y 3 de ProductScoringService en el backend). Lo bueno
+ * que es el ingrediente, aunque no tenga riesgo, lo mide la puntuación (SCORE_HINT).
  */
 export const RISK_DESCRIPTIONS: Record<RiskLevel, string> = {
-  NONE: 'Alimentos e ingredientes sin riesgo propio: verduras, frutas, legumbres, cereales, carnes, pescados, leche, huevo, agua, aceites, especias, sal y azúcar. No resta.',
-  LOW: 'Riesgo leve aun en cantidades normales (por ejemplo, un aditivo con alguna evidencia de efectos no deseados). Resta unos 5 a 7 puntos al producto si está entre los primeros ingredientes.',
-  MEDIUM: 'Riesgo moderado: aditivos con límites de consumo bajos o evidencia de efectos adversos (por ejemplo, ciertos conservantes o colorantes). Resta bastante más y cuenta como alerta.',
-  MEDIUM_HIGH: 'Riesgo considerable: evitar en consumo frecuente. Resta fuerte.',
-  HIGH: 'Riesgo alto (por ejemplo, grasas trans industriales o aditivos cuestionados). Resta lo máximo.',
+  NONE: 'Alimentos sin riesgo propio: verduras, frutas, legumbres, cereales, carnes, pescados, leche, huevo, agua, aceites y especias. No resta. Qué tan bueno es el ingrediente, tenga riesgo o no, se refleja en la puntuación.',
+  LOW: 'Ingredientes a moderar (como la sal y los azúcares refinados o agregados) o aditivos con alguna evidencia de efectos no deseados. Resta hasta unos 7 puntos si es el ingrediente principal; menos si está más abajo en la lista.',
+  MEDIUM: 'Riesgo moderado: aditivos con límites de consumo bajos o evidencia de efectos adversos (por ejemplo, ciertos conservantes o colorantes). Resta hasta unos 13 puntos.',
+  MEDIUM_HIGH: 'Riesgo considerable: evitar en consumo frecuente. Resta hasta unos 18 puntos.',
+  HIGH: 'Riesgo alto (por ejemplo, grasas trans industriales o aditivos cuestionados). Resta lo máximo: hasta unos 20 puntos.',
 };
+
+/** Qué mide la puntuación del ingrediente (1–10), con ejemplos reales del catálogo. */
+export const SCORE_HINT =
+  'Qué tan bueno es el ingrediente: qué tan natural, saludable y nutritivo es (cuánto te aporta). ' +
+  'Va de 1 (peor) a 10 (mejor). Ej.: tomate 10, avena 9, harina de trigo 6, azúcar 4, grasa vegetal hidrogenada 3. ' +
+  '0 = no se evalúa (solo para trazas, como "Minerales del agua").';
 
 export const RISK_COLORS: Record<RiskLevel, string> = {
   'HIGH': '#D32F2F',

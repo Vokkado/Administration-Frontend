@@ -13,6 +13,7 @@ import type {
 import { 
   RISK_LABELS, 
   RISK_DESCRIPTIONS,
+  SCORE_HINT,
   RESTRICTION_TYPE_LABELS,
 } from '../types';
 import { apiService } from '../../../services/api.service';
@@ -221,7 +222,7 @@ export function IngredientModal({
                 <small className="form-hint">
                   {String(formData.score) === '0'
                     ? '0 = no se evalúa: el ingrediente no cuenta en el puntaje del producto (por ejemplo, "Minerales del agua", que son trazas).'
-                    : 'Entre 1 (peor) y 10 (mejor). 0 = no se evalúa (solo para trazas, como "Minerales del agua").'}
+                    : SCORE_HINT}
                 </small>
               </div>
 
