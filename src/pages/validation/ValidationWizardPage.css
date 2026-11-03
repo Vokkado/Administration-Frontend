@@ -37,11 +37,14 @@
     min-height: max(520px, calc(100vh - 320px));
   }
 
-  /* Fotos + información de la IA apiladas, llenando la columna. Abajo deja el mismo margen
-     que las cards de la izquierda, para que los dos bordes inferiores queden alineados. */
+  /* Fotos + información de la IA apiladas. Quedan fijas en pantalla (sticky) mientras se
+     scrollea el paso: con muchos ingredientes, estirarlas al alto de toda la columna dejaba la
+     foto centrada metros más abajo. Miden lo que entra en la ventana, o la columna si es más
+     corta; abajo dejan el mismo margen que las cards de la izquierda. */
   .vw-split-aside-stack {
-    position: absolute;
-    inset: 0 0 14px 0;
+    position: sticky;
+    top: 16px;
+    height: min(calc(100vh - 32px), calc(100% - 14px));
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -300,7 +303,7 @@
     /* minmax(0, …): sin esto la columna toma el ancho de su contenido más largo y estira la página. */
     .vw-split { grid-template-columns: minmax(0, 1fr); }
     .vw-split-aside { min-height: 0; }
-    .vw-split-aside-stack { position: static; }
+    .vw-split-aside-stack { position: static; height: auto; }
     .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
   }
 
