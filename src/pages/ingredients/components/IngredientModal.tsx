@@ -200,16 +200,16 @@ export function IngredientModal({
               </div>
 
               <div className="form-group">
-                <label>Puntuación (1-10) *</label>
+                <label>Puntuación (0-10) *</label>
                 <Input
                   type="number"
-                  min="1"
+                  min="0"
                   max="10"
                   placeholder="Ej: 7"
                   value={formData.score}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    if (value >= 1 && value <= 10) {
+                    if (value >= 0 && value <= 10) {
                       onChange({ score: e.target.value });
                     } else if (e.target.value === '') {
                       onChange({ score: '' });
@@ -219,7 +219,9 @@ export function IngredientModal({
                   fullWidth
                 />
                 <small className="form-hint">
-                  Ingrese un valor entre 1 (peor) y 10 (mejor)
+                  {String(formData.score) === '0'
+                    ? '0 = no se evalúa: el ingrediente no cuenta en el puntaje del producto (por ejemplo, "Minerales del agua", que son trazas).'
+                    : 'Entre 1 (peor) y 10 (mejor). 0 = no se evalúa (solo para trazas, como "Minerales del agua").'}
                 </small>
               </div>
 
