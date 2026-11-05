@@ -977,3 +977,15 @@
   color: #6d28d9;
   background: #ede9fe;
 }
+
+/* ── Modal de valor nutricional (alta y edición) ─────────────────────── */
+.vp-nutri-form { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px 20px; }
+.vp-nutri-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-grey-700); }
+.vp-nutri-fields { display: flex; gap: 8px; }
+.vp-nutri-value { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.vp-nutri-value.input { padding: 10px 14px; font-size: 15px; }
+.vp-nutri-unit.input { width: 96px; flex-shrink: 0; padding: 10px 12px; font-size: 15px; cursor: pointer; }
+.vp-nutri-value[aria-invalid="true"] { border-color: var(--color-error); }
+.vp-nutri-hint { margin: 0; font-size: 12px; color: var(--color-grey-500); }
+.vp-nutri-error { margin: 0; font-size: 12px; color: var(--color-error); }
+.vp-nutri-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }

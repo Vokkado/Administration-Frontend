@@ -63,7 +63,7 @@ const TRAZAS_HINT = 'La etiqueta dice "puede contener": no es un ingrediente, si
 const AI_TAG_HINT = 'No había nada parecido en la base, así que la IA creó el ingrediente y estimó su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
 const UNVALIDATED_TAG_HINT = 'Este ingrediente ya existía en el catálogo (no lo creó la IA), pero nadie revisó todavía su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
 /** `extra`: lo que se muestra al lado del nombre en el buscador (origen, ingrediente, uso). */
-type Picked = { id: string; name: string; extra?: React.ReactNode };
+type Picked = { id: string; name: string; extra?: React.ReactNode; /** Nutrientes: su unidad base (g, mg, µg, kcal). */ unit?: string };
 type PageResult = { items: Picked[]; total: number };
 /** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
 type PickerSearch = (term: string, offset: number, limit: number) => Promise<PageResult>;
@@ -77,7 +77,7 @@ const allergenSearch: PickerSearch = (term, offset, limit) =>
     .then((r) => ({ items: r.data.map((a: any) => ({ id: a.id, name: a.name })), total: r.total }));
 const nutritionSearch: PickerSearch = (term, offset, limit) =>
   NutritionFactsService.listAdminNutritionFacts({ limit, offset, search: term || undefined })
-    .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name })), total: r.total }));
+    .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name, unit: x.baseUnit })), total: r.total }));
 
 /**
  * Al buscar una variante: a qué ingrediente apunta, si la variante (y el ingrediente, cuando no
@@ -680,26 +680,83 @@ function formatNutritionValue(value: number | string | null): string {
   return Number.isFinite(n) ? String(n) : String(value);
 }
 
+const ENERGY_UNITS = ['kcal', 'kJ'];
+const MASS_UNITS = ['g', 'mg', 'µg'];
+/** "gr", "GR", "mcg"… → la unidad estándar de la lista (el backend igual las normaliza al puntuar). */
+function standardUnit(unit: string | null | undefined): string | null {
+  const u = (unit ?? '').trim().toLowerCase();
+  if (!u) return null;
+  if (['g', 'gr', 'grs', 'gramos'].includes(u)) return 'g';
+  if (['mg'].includes(u)) return 'mg';
+  if (['µg', 'ug', 'mcg'].includes(u)) return 'µg';
+  if (u === 'kcal') return 'kcal';
+  if (u === 'kj') return 'kJ';
+  return null;
+}
+/** Acepta coma decimal ("0,2"); null si no es un número válido (incluido vacío o negativo). */
+function parseAmount(raw: string): number | null {
+  const n = Number(raw.trim().replace(',', '.'));
+  return raw.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/**
+ * Valor + unidad de un nutriente, en un modal (alta y edición). La unidad sale de una lista
+ * estándar según el tipo de nutriente (energía: kcal / kJ; el resto: g / mg / µg), arrancando
+ * por la unidad base del nutriente o la que ya tenía.
+ */
+function NutritionValueModal({ name, initialValue, initialUnit, busy, onSave, onClose }: {
+  name: string; initialValue: string; initialUnit: string; busy: boolean;
+  onSave: (value: number, unit: string) => void; onClose: () => void;
+}) {
+  const units = ENERGY_UNITS.map((u) => u.toLowerCase()).includes(initialUnit.toLowerCase()) ? ENERGY_UNITS : MASS_UNITS;
+  const [value, setValue] = useState(initialValue);
+  const [unit, setUnit] = useState(units.includes(initialUnit) ? initialUnit : units[0]);
+  const amount = parseAmount(value);
+  const save = () => { if (amount !== null) onSave(amount, unit); };
+  return (
+    <Modal show title={name} onClose={onClose} maxWidth="420px">
+      <form className="vp-nutri-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <label className="vp-nutri-label">
+          Valor
+          <div className="vp-nutri-fields">
+            <input autoFocus className="input vp-nutri-value" inputMode="decimal" value={value}
+              onChange={(e) => setValue(e.target.value)} placeholder="Ej. 0,2" aria-invalid={value !== '' && amount === null} />
+            <select className="input vp-nutri-unit" value={unit} onChange={(e) => setUnit(e.target.value)} aria-label="Unidad">
+              {units.map((u) => <option key={u} value={u}>{u}</option>)}
+            </select>
+          </div>
+        </label>
+        <p className="vp-nutri-hint">Copiá el número tal cual la tabla (si la tabla es por porción, cargá la porción en Más info). Podés usar coma.</p>
+        {value !== '' && amount === null && <p className="vp-nutri-error">Tiene que ser un número (ej. 0,2).</p>}
+        <div className="vp-nutri-actions">
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" variant="primary" disabled={busy || amount === null}>Guardar</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState<string>(formatNutritionValue(n.value));
-  const [unit, setUnit] = useState<string>(n.unit ?? '');
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
       <span><Dot color={n.color} hint /> {n.name}</span>
-      {editing ? (
-        <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <input value={value} onChange={(e) => setValue(e.target.value)} style={{ width: 70 }} />
-          <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unidad" style={{ width: 60 }} />
-          <Button variant="primary" onClick={() => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, Number(value), unit || null); setEditing(false); })} disabled={busy}>OK</Button>
-        </span>
-      ) : (
-        <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <strong>{formatNutritionValue(n.value) || '—'} {n.unit ?? ''}</strong>
-          <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
-          <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
-        </span>
+      <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <strong>{formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}</strong>
+        <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
+        <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
+      </span>
+      {editing && (
+        <NutritionValueModal
+          name={n.name}
+          initialValue={formatNutritionValue(n.value)}
+          initialUnit={standardUnit(n.unit) ?? 'g'}
+          busy={busy}
+          onClose={() => setEditing(false)}
+          onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, value, unit); setEditing(false); })}
+        />
       )}
     </div>
   );
@@ -707,25 +764,25 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
 
 function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: string; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [picked, setPicked] = useState<Picked | null>(null);
-  const [value, setValue] = useState(''); const [unit, setUnit] = useState('');
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
-  if (picked) {
-    return (
-      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-        <strong style={{ fontSize: 13 }}>{picked.name}:</strong>
-        <input autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="valor" style={{ width: 70 }} />
-        <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unidad" style={{ width: 60 }} />
-        <Button variant="primary" onClick={() => run(async () => { await ValidationService.upsertNutrition(productId, picked.id, Number(value), unit || null); setPicked(null); setValue(''); setUnit(''); })} disabled={busy || !value}>Agregar</Button>
-        <Button variant="outline" onClick={() => setPicked(null)}>Cancelar</Button>
-      </span>
-    );
-  }
   return (
-    <AdderButton label="+ Agregar nutriente"
-      title="Agregar valor nutricional"
-      placeholder="Buscar nutriente…"
-      search={nutritionSearch}
-      onPick={(p) => setPicked(p)} />
+    <>
+      <AdderButton label="+ Agregar nutriente"
+        title="Agregar valor nutricional"
+        placeholder="Buscar nutriente…"
+        search={nutritionSearch}
+        onPick={(p) => setPicked(p)} />
+      {picked && (
+        <NutritionValueModal
+          name={picked.name}
+          initialValue=""
+          initialUnit={standardUnit(picked.unit) ?? 'g'}
+          busy={busy}
+          onClose={() => setPicked(null)}
+          onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, picked.id, value, unit); setPicked(null); })}
+        />
+      )}
+    </>
   );
 }
 
