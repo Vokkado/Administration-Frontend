@@ -152,6 +152,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // Nutriente elegido en el buscador y todavía sin valor (fila en edición arriba de la lista).
+  const [nutritionDraft, setNutritionDraft] = useState<Picked | null>(null);
 
   // Orden de la etiqueta. Se muestra al instante (optimista) y se guarda en el backend;
   // si falla, vuelve al orden que vino del servidor.
@@ -332,8 +334,30 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
       <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
 
       <Section title={`Nutrición (${detail.nutrition.length})`}
-        adder={<NutritionAdder productId={productId} busy={busy} setBusy={setBusy} onChanged={onChanged} />}>
-        {detail.nutrition.length === 0 && <Muted>Sin valores nutricionales.</Muted>}
+        adder={<AdderButton label="+ Agregar nutriente"
+          title="Agregar valor nutricional"
+          placeholder="Buscar nutriente…"
+          search={nutritionSearch}
+          onPick={(p) => setNutritionDraft(p)} />}>
+        {/* El nutriente recién elegido entra como fila en edición, arriba de la lista: se carga
+            mirando la etiqueta, sin un modal que la tape. */}
+        {nutritionDraft && (
+          <div style={{ ...rowBox('yellow'), justifyContent: 'space-between' }}>
+            <span><strong>{nutritionDraft.name}</strong> <span className="vp-nutri-new">nuevo</span></span>
+            <NutritionInlineEditor
+              key={nutritionDraft.id}
+              initialValue=""
+              initialUnit={standardUnit(nutritionDraft.unit) ?? 'g'}
+              busy={busy}
+              onCancel={() => setNutritionDraft(null)}
+              onSave={(value, unit) => run(async () => {
+                await ValidationService.upsertNutrition(productId, nutritionDraft.id, value, unit);
+                setNutritionDraft(null);
+              })}
+            />
+          </div>
+        )}
+        {detail.nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
         {detail.nutrition.map((n) => (
           <NutritionRow key={n.nutritionFactId} productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
         ))}
@@ -700,40 +724,35 @@ function parseAmount(raw: string): number | null {
 }
 
 /**
- * Valor + unidad de un nutriente, en un modal (alta y edición). La unidad sale de una lista
- * estándar según el tipo de nutriente (energía: kcal / kJ; el resto: g / mg / µg), arrancando
- * por la unidad base del nutriente o la que ya tenía.
+ * Valor + unidad de un nutriente, editados DENTRO de la fila (sin modal, para seguir viendo la
+ * etiqueta). La unidad sale de una lista estándar según el tipo de nutriente (energía: kcal / kJ;
+ * el resto: g / mg / µg). Enter guarda, Esc cancela.
  */
-function NutritionValueModal({ name, initialValue, initialUnit, busy, onSave, onClose }: {
-  name: string; initialValue: string; initialUnit: string; busy: boolean;
-  onSave: (value: number, unit: string) => void; onClose: () => void;
+function NutritionInlineEditor({ initialValue, initialUnit, busy, onSave, onCancel }: {
+  initialValue: string; initialUnit: string; busy: boolean;
+  onSave: (value: number, unit: string) => void; onCancel: () => void;
 }) {
   const units = ENERGY_UNITS.map((u) => u.toLowerCase()).includes(initialUnit.toLowerCase()) ? ENERGY_UNITS : MASS_UNITS;
   const [value, setValue] = useState(initialValue);
   const [unit, setUnit] = useState(units.includes(initialUnit) ? initialUnit : units[0]);
   const amount = parseAmount(value);
-  const save = () => { if (amount !== null) onSave(amount, unit); };
+  const invalid = value !== '' && amount === null;
+  const save = () => { if (amount !== null && !busy) onSave(amount, unit); };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
   return (
-    <Modal show title={name} onClose={onClose} maxWidth="420px">
-      <form className="vp-nutri-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
-        <label className="vp-nutri-label">
-          Valor
-          <div className="vp-nutri-fields">
-            <input autoFocus className="input vp-nutri-value" inputMode="decimal" value={value}
-              onChange={(e) => setValue(e.target.value)} placeholder="Ej. 0,2" aria-invalid={value !== '' && amount === null} />
-            <select className="input vp-nutri-unit" value={unit} onChange={(e) => setUnit(e.target.value)} aria-label="Unidad">
-              {units.map((u) => <option key={u} value={u}>{u}</option>)}
-            </select>
-          </div>
-        </label>
-        <p className="vp-nutri-hint">Copiá el número tal cual la tabla (si la tabla es por porción, cargá la porción en Más info). Podés usar coma.</p>
-        {value !== '' && amount === null && <p className="vp-nutri-error">Tiene que ser un número (ej. 0,2).</p>}
-        <div className="vp-nutri-actions">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="primary" disabled={busy || amount === null}>Guardar</Button>
-        </div>
-      </form>
-    </Modal>
+    <span className="vp-nutri-inline">
+      <input autoFocus className="input vp-nutri-value" inputMode="decimal" value={value} placeholder="0,2"
+        onChange={(e) => setValue(e.target.value)} onKeyDown={onKeyDown} aria-invalid={invalid}
+        title={invalid ? 'Tiene que ser un número (podés usar coma)' : 'Valor tal cual la tabla. Enter guarda, Esc cancela.'} />
+      <select className="input vp-nutri-unit" value={unit} onChange={(e) => setUnit(e.target.value)} onKeyDown={onKeyDown} aria-label="Unidad">
+        {units.map((u) => <option key={u} value={u}>{u}</option>)}
+      </select>
+      <button type="button" className="vp-nutri-btn is-save" onClick={save} disabled={busy || amount === null} title="Guardar (Enter)" aria-label="Guardar">✓</button>
+      <button type="button" className="vp-nutri-btn" onClick={onCancel} title="Cancelar (Esc)" aria-label="Cancelar">✕</button>
+    </span>
   );
 }
 
@@ -743,46 +762,24 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
       <span><Dot color={n.color} hint /> {n.name}</span>
-      <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <strong>{formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}</strong>
-        <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
-        <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
-      </span>
-      {editing && (
-        <NutritionValueModal
-          name={n.name}
+      {editing ? (
+        <NutritionInlineEditor
           initialValue={formatNutritionValue(n.value)}
           initialUnit={standardUnit(n.unit) ?? 'g'}
           busy={busy}
-          onClose={() => setEditing(false)}
+          onCancel={() => setEditing(false)}
           onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, value, unit); setEditing(false); })}
         />
+      ) : (
+        <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button type="button" className="vp-nutri-amount" onClick={() => !busy && setEditing(true)} title="Editar">
+            {formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}
+          </button>
+          <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
+          <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
+        </span>
       )}
     </div>
-  );
-}
-
-function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: string; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
-  const [picked, setPicked] = useState<Picked | null>(null);
-  const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
-  return (
-    <>
-      <AdderButton label="+ Agregar nutriente"
-        title="Agregar valor nutricional"
-        placeholder="Buscar nutriente…"
-        search={nutritionSearch}
-        onPick={(p) => setPicked(p)} />
-      {picked && (
-        <NutritionValueModal
-          name={picked.name}
-          initialValue=""
-          initialUnit={standardUnit(picked.unit) ?? 'g'}
-          busy={busy}
-          onClose={() => setPicked(null)}
-          onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, picked.id, value, unit); setPicked(null); })}
-        />
-      )}
-    </>
   );
 }
 
