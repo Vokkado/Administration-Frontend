@@ -75,6 +75,15 @@ export interface TaggedProductsQuery {
 }
 
 /** Propuesta de la IA para un grupo (tagId null = tag que todavía no existe). */
+export interface ProductTagLink {
+  tagId: string;
+  tagName: string;
+  tagGroupId: string;
+  tagGroupName: string;
+  isInspected: boolean;
+  source: 'ai' | 'admin';
+}
+
 export interface TagSuggestion {
   groupId: string;
   groupName: string;
@@ -174,6 +183,12 @@ export class TagsService {
    */
   static async suggestProductTags(productId: string, categoryId?: string): Promise<TagSuggestion[]> {
     const res = await apiService.post<ApiEnvelope<TagSuggestion[]>>(`/products/${productId}/tags/suggest`, categoryId ? { categoryId } : {});
+    return res.data ?? [];
+  }
+
+  /** Tags vinculados a un producto, con su grupo y si están validados. */
+  static async getProductTags(productId: string): Promise<ProductTagLink[]> {
+    const res = await apiService.get<ApiEnvelope<ProductTagLink[]>>(`/products/${productId}/tags`);
     return res.data ?? [];
   }
 

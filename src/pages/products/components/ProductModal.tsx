@@ -14,6 +14,7 @@ import {
   ProductCompaniesSection,
   ProductNutritionSection,
   ProductIngredientsSection,
+  ProductTagsSection,
 } from './product-modal';
 import type {
   ProductFormData,
@@ -38,7 +39,7 @@ interface ProductModalProps {
   onValidate?: (id: string, currentState: boolean) => void;
 }
 
-type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'origen';
+type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'tags' | 'origen';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'basic', label: 'Información Básica' },
@@ -47,6 +48,8 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'nutrition', label: 'Información Nutricional' },
   { id: 'ingredients', label: 'Ingredientes' },
   { id: 'allergens', label: 'Alérgenos' },
+  // Necesita el producto ya creado (los tags se guardan al momento): solo al editar.
+  { id: 'tags', label: 'Tags' },
   { id: 'origen', label: 'Origen' },
 ];
 
@@ -66,6 +69,10 @@ export function ProductModal({
   onValidate,
 }: ProductModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('basic');
+  // Categorías creadas desde la sugerencia de la IA (pestaña Tags), hasta que se recargue la lista.
+  const [createdCategories, setCreatedCategories] = useState<Category[]>([]);
+  const allCategories = [...categories, ...createdCategories.filter((c) => !categories.some((x) => x.id === c.id))];
+  const tabs = TABS.filter((t) => t.id !== 'tags' || !!editingProduct);
 
   // Ingredient variants
   const [ingredientVariants, setIngredientVariants] = useState<IngredientVariant[]>([]);
@@ -294,7 +301,7 @@ export function ProductModal({
         <div className="modal-body">
           {/* Tabs */}
           <div className="product-tabs">
-            {TABS.map(tab => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 type="button"
@@ -321,7 +328,7 @@ export function ProductModal({
               <>
                 <ProductBasicInfoSection
                   formData={formData}
-                  categories={categories}
+                  categories={allCategories}
                   onChange={onChange}
                 />
                 <ProductSourceImagesSection productId={editingProduct?.id} />
@@ -419,6 +426,20 @@ export function ProductModal({
               </div>
             )}
           </form>
+
+          {/* Fuera del <form>: sus botones (Sugerir, Agregar…) no son de envío y se guardan solos. */}
+          {activeTab === 'tags' && editingProduct && (
+            <ProductTagsSection
+              productId={editingProduct.id}
+              categoryId={formData.categoryId}
+              onUseCategory={(categoryId) => onChange({ categoryId })}
+              onCategoryCreated={(c) => {
+                setCreatedCategories((list) => [...list, { id: c.id, name: c.name, parentCategoryId: c.parentId, isAssignable: true }]);
+                onChange({ categoryId: c.id });
+              }}
+            />
+          )}
+
         </div>
 
         <div className="modal-footer">
