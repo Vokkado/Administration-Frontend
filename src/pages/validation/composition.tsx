@@ -996,7 +996,7 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
   productId: string; categoryId: string; linkedTagIds: string[]; busy: boolean; setBusy: (b: boolean) => void;
   onUseCategory: (categoryId: string) => void;
   /** Categoría nueva creada desde la propuesta de la IA: el wizard la suma a la lista y la elige. */
-  onCategoryCreated: (category: { id: string; name: string }) => void;
+  onCategoryCreated: (category: { id: string; name: string; parentId: string | null }) => void;
   onChanged: () => void;
 }) {
   type Category = Awaited<ReturnType<typeof ValidationService.suggestCategory>>;
@@ -1045,7 +1045,7 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
     setBusy(true); setError(null);
     try {
       const created = await ValidationService.createCategory({ name: p.name, parentCategoryId: p.parentId });
-      onCategoryCreated(created);
+      onCategoryCreated({ ...created, parentId: p.parentId });
       setResult((r) => (r ? { ...r, category: { match: { categoryId: created.id, categoryName: created.name, confidence: 'MEDIUM' }, proposal: null } } : r));
     } catch {
       setError('No se pudo crear la categoría (¿ya existe con otro nombre?). Creala desde Categorías.');
