@@ -86,7 +86,7 @@ export interface TagSuggestion {
  * Grupos donde la IA inventa valores nuevos (el resto son listas cerradas). Espejo de
  * GENERATIVE_GROUPS del backend (ClassifyTagsPrompt.ts).
  */
-export const OPEN_TAG_GROUPS = ['Tipo de producto', 'Variante o sabor'];
+export const OPEN_TAG_GROUPS = ['Tipo de producto', 'Estilo o variedad', 'Sabor'];
 
 export interface AdminTagListQuery {
   limit: number;
