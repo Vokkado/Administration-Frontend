@@ -250,6 +250,10 @@ export function ValidationWizardPage() {
                       busy={busy}
                       setBusy={setBusy}
                       onUseCategory={(categoryId) => set('categoryId', categoryId)}
+                      onCategoryCreated={(c) => {
+                        setCategories((list) => [...list, c].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+                        set('categoryId', c.id);
+                      }}
                       onChanged={loadDetail}
                     />
                   </div>

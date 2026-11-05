@@ -938,9 +938,12 @@ export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChan
  * Los tags se piden para la categoría elegida en pantalla o, si no hay, para la que sugiere la IA.
  * Son dos llamadas a la IA por clic.
  */
-export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setBusy, onUseCategory, onChanged }: {
+export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setBusy, onUseCategory, onCategoryCreated, onChanged }: {
   productId: string; categoryId: string; linkedTagIds: string[]; busy: boolean; setBusy: (b: boolean) => void;
-  onUseCategory: (categoryId: string) => void; onChanged: () => void;
+  onUseCategory: (categoryId: string) => void;
+  /** Categoría nueva creada desde la propuesta de la IA: el wizard la suma a la lista y la elige. */
+  onCategoryCreated: (category: { id: string; name: string }) => void;
+  onChanged: () => void;
 }) {
   type Category = Awaited<ReturnType<typeof ValidationService.suggestCategory>>;
   const [loading, setLoading] = useState(false);
@@ -953,7 +956,7 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
     setLoading(true); setError(null);
     try {
       const category = await ValidationService.suggestCategory(productId);
-      const forTags = categoryId || category?.categoryId;
+      const forTags = categoryId || category.match?.categoryId;
       const linked = new Set(linkedTagIds);
       const tags = (await TagsService.suggestProductTags(productId, forTags)).filter((t) => !t.tagId || !linked.has(t.tagId));
       setResult({ category, tags });
@@ -982,40 +985,61 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
     } finally { setBusy(false); }
   };
 
+  const createCategory = async () => {
+    const p = result?.category.proposal;
+    if (!p) return;
+    setBusy(true); setError(null);
+    try {
+      const created = await ValidationService.createCategory({ name: p.name, parentCategoryId: p.parentId });
+      onCategoryCreated(created);
+      setResult((r) => (r ? { ...r, category: { match: { categoryId: created.id, categoryName: created.name, confidence: 'MEDIUM' }, proposal: null } } : r));
+    } catch {
+      setError('No se pudo crear la categoría (¿ya existe con otro nombre?). Creala desde Categorías.');
+    } finally { setBusy(false); }
+  };
+
   const toggle = (i: number) => setSelected((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; });
-  const cat = result?.category;
+  const cat = result?.category.match;
+  const proposal = result?.category.proposal;
 
   return (
-    <div className="vp-ai-suggest">
-      <div className="vp-ai-suggest-head">
-        <p className="vp-ai-suggest-note">La IA propone categoría y tags mirando la foto de portada y los datos actuales (nombre, marca e ingredientes ya corregidos). Revisalos antes de usarlos.</p>
+    <div className="vp-sugg">
+      <div className="vp-sugg-head">
+        <p className="vp-sugg-note">La IA propone categoría y tags mirando la foto de portada y los datos actuales (nombre, marca e ingredientes ya corregidos). Revisalos antes de usarlos.</p>
         <Button variant="outline" onClick={suggest} loading={loading} disabled={busy || loading}>✨ Sugerir con IA</Button>
       </div>
-      {error && <div className="vp-ai-suggest-note" role="alert" style={{ color: 'var(--color-error)' }}>{error}</div>}
+      {error && <div className="vp-sugg-note" role="alert" style={{ color: 'var(--color-error)' }}>{error}</div>}
       {result && (
         <>
-          <div className="vp-ai-suggest-row">
-            <span className="vp-ai-suggest-label">Categoría</span>
+          <div className="vp-sugg-row">
+            <span className="vp-sugg-label">Categoría</span>
             {cat ? (
               <>
                 <strong>{cat.categoryName}</strong>
-                <span className="vp-ai-suggest-note">confianza {cat.confidence === 'HIGH' ? 'alta' : 'media'}</span>
+                <span className="vp-sugg-note">confianza {cat.confidence === 'HIGH' ? 'alta' : 'media'}</span>
                 {cat.categoryId === categoryId
-                  ? <span className="vp-ai-suggest-note">(es la que ya tiene)</span>
+                  ? <span className="vp-sugg-note">(es la que ya tiene)</span>
                   : <Button variant="primary" onClick={() => onUseCategory(cat.categoryId)} disabled={busy}>Usar</Button>}
               </>
-            ) : <span className="vp-ai-suggest-note">No está segura: elegila a mano.</span>}
+            ) : proposal ? (
+              <>
+                <span className="vp-sugg-note">Ninguna encaja. Propone una nueva:</span>
+                <strong>{proposal.name}</strong>
+                {proposal.parentName && <span className="vp-sugg-note">en {proposal.parentName}</span>}
+                <Button variant="outline" onClick={createCategory} disabled={busy}>Crear y usar</Button>
+              </>
+            ) : <span className="vp-sugg-note">No está segura: elegila a mano.</span>}
           </div>
-          <div className="vp-ai-suggest-row" style={{ alignItems: 'flex-start' }}>
-            <span className="vp-ai-suggest-label">Tags</span>
-            {result.tags.length === 0 ? <span className="vp-ai-suggest-note">Nada nuevo para agregar.</span> : (
+          <div className="vp-sugg-row" style={{ alignItems: 'flex-start' }}>
+            <span className="vp-sugg-label">Tags</span>
+            {result.tags.length === 0 ? <span className="vp-sugg-note">Nada nuevo para agregar.</span> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-                <div className="vp-ai-tags">
+                <div className="vp-sugg-tags">
                   {result.tags.map((t, i) => (
-                    <label key={key(t)} className="vp-ai-tag">
+                    <label key={key(t)} className="vp-sugg-tag">
                       <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} disabled={busy} />
-                      <span className="vp-ai-tag-group">{t.groupName}:</span> {t.tagName}
-                      {!t.tagId && <span className="vp-ai-tag-new" title="No existe: se crea en ese grupo al agregarlo">nuevo</span>}
+                      <span className="vp-sugg-tag-group">{t.groupName}:</span> {t.tagName}
+                      {!t.tagId && <span className="vp-sugg-tag-new" title="No existe: se crea en ese grupo al agregarlo">nuevo</span>}
                     </label>
                   ))}
                 </div>

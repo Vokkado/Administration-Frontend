@@ -93,6 +93,11 @@ export interface ValidationCompany {
   role: string;
 }
 
+export interface CategorySuggestion {
+  match: { categoryId: string; categoryName: string; confidence: 'HIGH' | 'MEDIUM' } | null;
+  proposal: { name: string; parentId: string | null; parentName: string | null } | null;
+}
+
 export interface ValidationTag {
   tagId: string;
   tagName: string;
@@ -180,10 +185,18 @@ export class ValidationService {
   static async updateMeta(id: string, data: Record<string, any>): Promise<void> {
     await apiService.patch(`${BASE}/${id}/meta`, data);
   }
-  /** Categoría que propone la IA (una llamada a la IA, no guarda nada). null = no está segura. */
-  static async suggestCategory(id: string): Promise<{ categoryId: string; categoryName: string; confidence: 'HIGH' | 'MEDIUM' } | null> {
+  /**
+   * Categoría que propone la IA (una llamada a la IA, no guarda nada): una de la lista (`match`) o,
+   * si ninguna encaja, una nueva con la sección donde iría (`proposal`). Los dos null = no está segura.
+   */
+  static async suggestCategory(id: string): Promise<CategorySuggestion> {
     const res = await apiService.post<any>(`${BASE}/${id}/suggest-category`, {});
-    return res.data ?? null;
+    return { match: res.data?.match ?? null, proposal: res.data?.proposal ?? null };
+  }
+  /** Crea una categoría asignable (la que propuso la IA y aceptó el admin). */
+  static async createCategory(data: { name: string; parentCategoryId: string | null }): Promise<CategoryOption> {
+    const res = await apiService.post<any>('/categories', data);
+    return { id: res.data.id, name: res.data.name };
   }
   static async getCategories(): Promise<CategoryOption[]> {
     const res = await apiService.get<any>('/categories');

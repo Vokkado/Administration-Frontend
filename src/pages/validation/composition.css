@@ -908,7 +908,7 @@
 .vp-allergen-move:disabled { cursor: default; opacity: 0.5; }
 
 /* ── Sugerencia de categoría y tags con IA (paso "Más info") ───────────── */
-.vp-ai-suggest {
+.vp-sugg {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -918,7 +918,7 @@
   background: #faf5ff;
 }
 
-.vp-ai-suggest-head {
+.vp-sugg-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -926,9 +926,9 @@
   flex-wrap: wrap;
 }
 
-.vp-ai-suggest-note { margin: 0; font-size: 12px; color: var(--color-grey-500); }
+.vp-sugg-note { margin: 0; font-size: 12px; color: var(--color-grey-500); }
 
-.vp-ai-suggest-row {
+.vp-sugg-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -936,7 +936,7 @@
   font-size: 14px;
 }
 
-.vp-ai-suggest-label {
+.vp-sugg-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--color-grey-600);
@@ -944,19 +944,32 @@
   letter-spacing: 0.04em;
 }
 
-.vp-ai-tags { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.vp-sugg-tags { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 
-.vp-ai-tag {
+/* Chip tildable: fondo blanco y texto oscuro (buen contraste sobre el panel lila). Pisa el estilo
+   genérico de .form-group label (display block, margen, verde) porque el panel vive en un form-group. */
+.form-group label.vp-sugg-tag,
+.vp-sugg-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  margin: 0;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-grey-800);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
 }
 
-.vp-ai-tag-group { color: var(--color-grey-500); }
+.vp-sugg-tag:has(input:checked) { border-color: #a78bfa; }
+.vp-sugg-tag input { margin: 0; accent-color: #7c3aed; }
 
-.vp-ai-tag-new {
+.vp-sugg-tag-group { color: var(--color-grey-500); font-weight: 400; }
+
+.vp-sugg-tag-new {
   font-size: 10px;
   font-weight: 700;
   padding: 0 6px;
