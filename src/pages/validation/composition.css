@@ -978,14 +978,26 @@
   background: #ede9fe;
 }
 
-/* ── Modal de valor nutricional (alta y edición) ─────────────────────── */
-.vp-nutri-form { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px 20px; }
-.vp-nutri-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-grey-700); }
-.vp-nutri-fields { display: flex; gap: 8px; }
-.vp-nutri-value { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
-.vp-nutri-value.input { padding: 10px 14px; font-size: 15px; }
-.vp-nutri-unit.input { width: 96px; flex-shrink: 0; padding: 10px 12px; font-size: 15px; cursor: pointer; }
+/* ── Nutrientes: edición dentro de la fila (sin modal, la etiqueta queda a la vista) ── */
+.vp-nutri-inline { display: inline-flex; align-items: center; gap: 6px; }
+.vp-nutri-value.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.vp-nutri-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; cursor: pointer; }
 .vp-nutri-value[aria-invalid="true"] { border-color: var(--color-error); }
-.vp-nutri-hint { margin: 0; font-size: 12px; color: var(--color-grey-500); }
-.vp-nutri-error { margin: 0; font-size: 12px; color: var(--color-error); }
-.vp-nutri-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.vp-nutri-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0;
+  border: 1.5px solid var(--color-grey-300); border-radius: 8px;
+  background: #fff; color: var(--color-grey-600); font-size: 14px; cursor: pointer;
+}
+.vp-nutri-btn.is-save { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+.vp-nutri-btn:disabled { opacity: 0.4; cursor: default; }
+/* El valor guardado es clickeable para editarlo. */
+.vp-nutri-amount {
+  padding: 2px 6px; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-weight: 700; color: inherit; cursor: pointer;
+}
+.vp-nutri-amount:hover { background: rgba(0, 0, 0, 0.05); }
+.vp-nutri-new {
+  margin-left: 6px; padding: 0 6px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; color: #92400e; background: #fde68a;
+}
