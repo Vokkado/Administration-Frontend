@@ -31,6 +31,10 @@ export interface IngredientVariant {
   createdByAi?: boolean;
   /** Productos distintos que la usan. Viene en el listado. */
   productCount?: number;
+  /** Solo en el listado admin: el ingrediente al que apunta y su estado (para el buscador). */
+  ingredientName?: string;
+  ingredientInspected?: boolean;
+  ingredientCreatedByAi?: boolean;
   attributeIds?: string[];
   createdAt: string;
   updatedAt: string;

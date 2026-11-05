@@ -12,7 +12,7 @@ import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/u
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
-import { CompositionStep, Legend, TagsSection } from './composition';
+import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { NOVA4_HINT } from '../../constants/nova';
@@ -242,6 +242,17 @@ export function ValidationWizardPage() {
             {step === 2 && (
               <div className="vw-card">
                 <div className="vw-form-grid">
+                  <div className="form-group form-group-full">
+                    <AiSuggestPanel
+                      productId={id}
+                      categoryId={meta.categoryId}
+                      linkedTagIds={(detail?.tags ?? []).map((t) => t.tagId)}
+                      busy={busy}
+                      setBusy={setBusy}
+                      onUseCategory={(categoryId) => set('categoryId', categoryId)}
+                      onChanged={loadDetail}
+                    />
+                  </div>
                   <div className="form-group form-group-full">
                     <label className="form-label">Categoría</label>
                     <select className="form-select" value={meta.categoryId} onChange={(e) => set('categoryId', e.target.value)}>

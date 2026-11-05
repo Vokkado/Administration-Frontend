@@ -711,7 +711,10 @@
 }
 
 .vp-picker-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   width: 100%;
   text-align: left;
   padding: 9px 10px;
@@ -730,6 +733,20 @@
   color: var(--color-primary-dark);
   font-weight: 600;
 }
+
+/* Al lado del nombre: ingrediente al que apunta, origen y uso (buscador de variantes). */
+.vp-picker-item-name { flex: 1 1 auto; min-width: 0; }
+
+.vp-picker-item-extra {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-weight: 400;
+}
+
+.vp-picker-item-parent { font-size: 12px; color: var(--color-grey-500); }
+.vp-picker-item-count { font-size: 11px; color: var(--color-grey-400); font-variant-numeric: tabular-nums; }
 
 .vp-picker-mark {
   background: rgba(245, 158, 11, 0.28);
@@ -846,4 +863,104 @@
     margin-left: 0;
     width: 100%;
   }
+}
+
+/* ── Alérgenos: "Contiene" y "Puede contener" por separado ──────────────── */
+.vp-allergen-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vp-allergen-group + .vp-allergen-group {
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-grey-200);
+}
+
+.vp-allergen-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-grey-600);
+}
+
+.vp-allergen-group-count {
+  font-weight: 600;
+  color: var(--color-grey-400);
+}
+
+/* Pasa el alérgeno al otro grupo. */
+.vp-allergen-move {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vp-allergen-move:hover:not(:disabled) { color: var(--color-primary); }
+.vp-allergen-move:disabled { cursor: default; opacity: 0.5; }
+
+/* ── Sugerencia de categoría y tags con IA (paso "Más info") ───────────── */
+.vp-ai-suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #ddd6fe;
+  border-radius: 10px;
+  background: #faf5ff;
+}
+
+.vp-ai-suggest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vp-ai-suggest-note { margin: 0; font-size: 12px; color: var(--color-grey-500); }
+
+.vp-ai-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.vp-ai-suggest-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-grey-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vp-ai-tags { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+
+.vp-ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.vp-ai-tag-group { color: var(--color-grey-500); }
+
+.vp-ai-tag-new {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #6d28d9;
+  background: #ede9fe;
 }

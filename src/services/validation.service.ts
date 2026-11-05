@@ -180,6 +180,11 @@ export class ValidationService {
   static async updateMeta(id: string, data: Record<string, any>): Promise<void> {
     await apiService.patch(`${BASE}/${id}/meta`, data);
   }
+  /** Categoría que propone la IA (una llamada a la IA, no guarda nada). null = no está segura. */
+  static async suggestCategory(id: string): Promise<{ categoryId: string; categoryName: string; confidence: 'HIGH' | 'MEDIUM' } | null> {
+    const res = await apiService.post<any>(`${BASE}/${id}/suggest-category`, {});
+    return res.data ?? null;
+  }
   static async getCategories(): Promise<CategoryOption[]> {
     const res = await apiService.get<any>('/categories');
     return (res.data ?? []).map((c: any) => ({ id: c.id, name: c.name }));
@@ -191,8 +196,8 @@ export class ValidationService {
   static async addIngredient(id: string, variantId: string): Promise<void> {
     await apiService.post(`${BASE}/${id}/ingredient`, { variantId });
   }
-  static async addAllergen(id: string, allergenId: string): Promise<void> {
-    await apiService.post(`${BASE}/${id}/allergen`, { allergenId });
+  static async addAllergen(id: string, allergenId: string, presence: 'CONTAINS' | 'MAY_CONTAIN' = 'CONTAINS'): Promise<void> {
+    await apiService.post(`${BASE}/${id}/allergen`, { allergenId, presence });
   }
   static async removeAllergen(id: string, allergenId: string): Promise<void> {
     await apiService.delete(`${BASE}/${id}/allergen/${allergenId}`);
