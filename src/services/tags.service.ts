@@ -168,9 +168,12 @@ export class TagsService {
     return { data: res.data ?? [], total: res.total ?? 0 };
   }
 
-  /** Lo que propone la IA para el producto. No guarda nada (una llamada a la IA). */
-  static async suggestProductTags(productId: string): Promise<TagSuggestion[]> {
-    const res = await apiService.post<ApiEnvelope<TagSuggestion[]>>(`/products/${productId}/tags/suggest`, {});
+  /**
+   * Lo que propone la IA para el producto. No guarda nada (una llamada a la IA).
+   * `categoryId`: la categoría elegida en pantalla y todavía sin guardar (si no, usa la del producto).
+   */
+  static async suggestProductTags(productId: string, categoryId?: string): Promise<TagSuggestion[]> {
+    const res = await apiService.post<ApiEnvelope<TagSuggestion[]>>(`/products/${productId}/tags/suggest`, categoryId ? { categoryId } : {});
     return res.data ?? [];
   }
 

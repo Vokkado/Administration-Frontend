@@ -15,7 +15,9 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, getAttributeDisplayName } from '../types';
+import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName } from '../types';
+import type { RiskLevel } from '../types';
+import { OriginBadge } from './OriginBadge';
 import { matchesSearch } from '../../../utils/search';
 import { apiService } from '../../../services/api.service';
 
@@ -367,7 +369,13 @@ export function VariantModal({
                           className={`autocomplete-item ${formData.ingredientId === ing.id ? 'selected' : ''}`}
                           onClick={() => handleIngredientSelect(ing)}
                         >
-                          {ing.name}
+                          <span className="autocomplete-item-row">
+                            <span className="autocomplete-item-name">{ing.name}</span>
+                            <span className="autocomplete-item-meta">
+                              {ing.score} · {RISK_LABELS[ing.toxicityLevel as RiskLevel] ?? '—'}
+                            </span>
+                            <OriginBadge createdByAi={ing.createdByAi} inspected={ing.isInspected} />
+                          </span>
                         </div>
                       ))}
                     </div>

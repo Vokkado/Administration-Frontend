@@ -17,10 +17,12 @@ import {
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
-import { TagsService, type ApplicableTagGroup } from '../../services/tags.service';
+import { TagsService, type ApplicableTagGroup, type TagSuggestion } from '../../services/tags.service';
 import { EditIngredientModal } from './EditIngredientModal';
 import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
 import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
+import { OriginBadge, originLabel } from '../ingredients/components/OriginBadge';
+import type { IngredientVariant } from '../ingredients/types';
 import './composition.css';
 
 /** `hint` sigue la regla de color de `ProductValidationService` (backend). */
@@ -60,7 +62,8 @@ const NO_TIER_HINT = 'No hay registro de cómo se hizo este vínculo (por ejempl
 const TRAZAS_HINT = 'La etiqueta dice "puede contener": no es un ingrediente, sino un posible rastro por contaminación cruzada en la fábrica.';
 const AI_TAG_HINT = 'No había nada parecido en la base, así que la IA creó el ingrediente y estimó su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
 const UNVALIDATED_TAG_HINT = 'Este ingrediente ya existía en el catálogo (no lo creó la IA), pero nadie revisó todavía su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
-type Picked = { id: string; name: string };
+/** `extra`: lo que se muestra al lado del nombre en el buscador (origen, ingrediente, uso). */
+type Picked = { id: string; name: string; extra?: React.ReactNode };
 type PageResult = { items: Picked[]; total: number };
 /** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
 type PickerSearch = (term: string, offset: number, limit: number) => Promise<PageResult>;
@@ -68,13 +71,34 @@ type PickerSearch = (term: string, offset: number, limit: number) => Promise<Pag
 // Helpers a nivel módulo = identidad estable (el SearchPicker los usa en deps de useEffect).
 const variantSearch: PickerSearch = (term, offset, limit) =>
   IngredientVariantsService.listAdminVariants({ limit, offset, search: term || undefined })
-    .then((r) => ({ items: r.data.map((v: any) => ({ id: v.id, name: v.name })), total: r.total }));
+    .then((r) => ({ items: r.data.map((v) => ({ id: v.id, name: v.name, extra: <VariantPickerInfo v={v} /> })), total: r.total }));
 const allergenSearch: PickerSearch = (term, offset, limit) =>
   AllergensService.listAdminAllergens({ limit, offset, search: term || undefined })
     .then((r) => ({ items: r.data.map((a: any) => ({ id: a.id, name: a.name })), total: r.total }));
 const nutritionSearch: PickerSearch = (term, offset, limit) =>
   NutritionFactsService.listAdminNutritionFacts({ limit, offset, search: term || undefined })
     .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name })), total: r.total }));
+
+/**
+ * Al buscar una variante: a qué ingrediente apunta, si la variante (y el ingrediente, cuando no
+ * coincide) la creó la IA o una persona y si está validada, y en cuántos productos está.
+ */
+function VariantPickerInfo({ v }: { v: IngredientVariant }) {
+  const sameName = v.ingredientName && v.ingredientName.trim().toLowerCase() === v.name.trim().toLowerCase();
+  // El estado del ingrediente solo se muestra si no es el mismo que el de la variante (evita repetir).
+  const ingredientDiffers = v.ingredientInspected !== undefined
+    && originLabel(v.ingredientCreatedByAi, v.ingredientInspected).text !== originLabel(v.createdByAi, v.isInspected).text;
+  return (
+    <span className="vp-picker-item-extra">
+      {v.ingredientName && !sameName && <span className="vp-picker-item-parent">→ {v.ingredientName}</span>}
+      <OriginBadge createdByAi={v.createdByAi} inspected={v.isInspected} />
+      {v.ingredientName && !sameName && v.ingredientInspected !== undefined && ingredientDiffers && (
+        <OriginBadge prefix="ingr.:" createdByAi={v.ingredientCreatedByAi} inspected={v.ingredientInspected} />
+      )}
+      {v.productCount !== undefined && <span className="vp-picker-item-count">{v.productCount} prod.</span>}
+    </span>
+  );
+}
 
 /** `hint` = mostrar al hover qué significa el color (en la leyenda ya lo explica el texto de al lado). */
 export function Dot({ color, hint = false }: { color: LinkColor; hint?: boolean }) {
@@ -305,27 +329,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
       {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
 
-      <Section title={`Alérgenos (${detail.allergens.length})`}
-        adder={<AdderButton label="+ Agregar"
-          title="Agregar alérgeno"
-          placeholder="Buscar alérgeno…"
-          search={allergenSearch}
-          onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
-        {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {detail.allergens.map((a) => (
-            <span key={a.allergenId} style={chip(a.color)}>
-              <Dot color={a.color} hint /> {a.allergenName}
-              {a.presence === 'MAY_CONTAIN' && (
-                <Tooltip content={TRAZAS_HINT}>
-                  <span className="vp-hint-text" tabIndex={0}>(trazas)</span>
-                </Tooltip>
-              )}
-              <span onClick={() => !busy && run(() => ValidationService.removeAllergen(productId, a.allergenId))} style={xStyle} title="Quitar">✕</span>
-            </span>
-          ))}
-        </div>
-      </Section>
+      <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
 
       <Section title={`Nutrición (${detail.nutrition.length})`}
         adder={<NutritionAdder productId={productId} busy={busy} setBusy={setBusy} onChanged={onChanged} />}>
@@ -335,6 +339,66 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
         ))}
       </Section>
     </>
+  );
+}
+
+type AllergenPresence = 'CONTAINS' | 'MAY_CONTAIN';
+const PRESENCE: Record<AllergenPresence, { title: string; add: string; empty: string; moveTo: string }> = {
+  CONTAINS: { title: 'Contiene', add: '+ Contiene', empty: 'Ninguno.', moveTo: 'Pasar a "puede contener"' },
+  MAY_CONTAIN: { title: 'Puede contener (trazas)', add: '+ Puede contener', empty: 'Ninguno.', moveTo: 'Pasar a "contiene"' },
+};
+
+/**
+ * Alérgenos separados en "Contiene" (es ingrediente) y "Puede contener" (trazas por contaminación
+ * cruzada en la fábrica). Cada uno se agrega directo en su grupo, y ⇄ lo pasa al otro (el backend
+ * hace upsert de la presencia, así que agregar el mismo alérgeno con la otra presencia lo mueve).
+ */
+function AllergensSection({ productId, allergens, busy, run }: {
+  productId: string; allergens: ValidationDetail['allergens']; busy: boolean; run: (fn: () => Promise<void>) => Promise<void>;
+}) {
+  const presenceOf = (a: ValidationDetail['allergens'][number]): AllergenPresence => (a.presence === 'MAY_CONTAIN' ? 'MAY_CONTAIN' : 'CONTAINS');
+  const groups: AllergenPresence[] = ['CONTAINS', 'MAY_CONTAIN'];
+  return (
+    <Section title={`Alérgenos (${allergens.length})`}
+      adder={
+        <div className="vp-section-actions">
+          {groups.map((p) => (
+            <AdderButton key={p} label={PRESENCE[p].add}
+              title={p === 'CONTAINS' ? 'Agregar alérgeno: contiene' : 'Agregar alérgeno: puede contener (trazas)'}
+              placeholder="Buscar alérgeno…"
+              search={allergenSearch}
+              onPick={(picked) => run(() => ValidationService.addAllergen(productId, picked.id, p))} />
+          ))}
+        </div>
+      }>
+      {groups.map((p) => {
+        const items = allergens.filter((a) => presenceOf(a) === p);
+        const other: AllergenPresence = p === 'CONTAINS' ? 'MAY_CONTAIN' : 'CONTAINS';
+        return (
+          <div key={p} className="vp-allergen-group">
+            <div className="vp-allergen-group-title">
+              {p === 'MAY_CONTAIN' ? (
+                <Tooltip content={TRAZAS_HINT}><span className="vp-hint-text" tabIndex={0}>{PRESENCE[p].title}</span></Tooltip>
+              ) : PRESENCE[p].title}
+              <span className="vp-allergen-group-count">{items.length}</span>
+            </div>
+            {items.length === 0 ? <Muted>{PRESENCE[p].empty}</Muted> : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {items.map((a) => (
+                  <span key={a.allergenId} style={chip(a.color)}>
+                    <Dot color={a.color} hint /> {a.allergenName}
+                    <button type="button" className="vp-allergen-move" disabled={busy}
+                      onClick={() => run(() => ValidationService.addAllergen(productId, a.allergenId, other))}
+                      title={PRESENCE[p].moveTo} aria-label={`${PRESENCE[p].moveTo}: ${a.allergenName}`}>⇄</button>
+                    <span onClick={() => !busy && run(() => ValidationService.removeAllergen(productId, a.allergenId))} style={xStyle} title="Quitar">✕</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Section>
   );
 }
 
@@ -803,7 +867,8 @@ function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }
             onMouseEnter={() => setActive(i)}
             onClick={() => onSelect(r)}
           >
-            <Highlight text={r.name} term={term} />
+            <span className="vp-picker-item-name"><Highlight text={r.name} term={term} /></span>
+            {r.extra}
           </button>
         ))}
         {!loading && results.length === 0 && (
@@ -862,6 +927,109 @@ export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChan
         ))}
       </div>
     </Section>
+  );
+}
+
+/**
+ * "Sugerir con IA" (paso Más info): pide a la IA la categoría y los tags del producto (mira la foto de
+ * portada y los datos actuales: ver classificationContext en el backend), sin guardar
+ * nada. La categoría se aplica al formulario (se guarda al avanzar, como el resto del paso) y los
+ * tags marcados se agregan al producto; los que la IA propone y no existen se crean en su grupo.
+ * Los tags se piden para la categoría elegida en pantalla o, si no hay, para la que sugiere la IA.
+ * Son dos llamadas a la IA por clic.
+ */
+export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setBusy, onUseCategory, onChanged }: {
+  productId: string; categoryId: string; linkedTagIds: string[]; busy: boolean; setBusy: (b: boolean) => void;
+  onUseCategory: (categoryId: string) => void; onChanged: () => void;
+}) {
+  type Category = Awaited<ReturnType<typeof ValidationService.suggestCategory>>;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ category: Category; tags: TagSuggestion[] } | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const key = (t: TagSuggestion) => `${t.groupId}|${t.tagName}`;
+
+  const suggest = async () => {
+    setLoading(true); setError(null);
+    try {
+      const category = await ValidationService.suggestCategory(productId);
+      const forTags = categoryId || category?.categoryId;
+      const linked = new Set(linkedTagIds);
+      const tags = (await TagsService.suggestProductTags(productId, forTags)).filter((t) => !t.tagId || !linked.has(t.tagId));
+      setResult({ category, tags });
+      setSelected(new Set(tags.map((_, i) => i)));
+    } catch {
+      setError('La IA no respondió. Probá de nuevo en un rato.');
+    } finally { setLoading(false); }
+  };
+
+  const addTags = async () => {
+    if (!result) return;
+    const chosen = result.tags.filter((_, i) => selected.has(i));
+    setBusy(true); setError(null);
+    try {
+      for (const t of chosen) {
+        const tagId = t.tagId ?? (await TagsService.createTag({ tagGroupId: t.groupId, name: t.tagName })).id;
+        await ValidationService.addTag(productId, tagId);
+      }
+      const done = new Set(chosen.map(key));
+      setResult({ ...result, tags: result.tags.filter((t) => !done.has(key(t))) });
+      setSelected(new Set());
+      onChanged();
+    } catch {
+      setError('No se pudieron agregar todos los tags. Revisá la lista y probá de nuevo.');
+      onChanged();
+    } finally { setBusy(false); }
+  };
+
+  const toggle = (i: number) => setSelected((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  const cat = result?.category;
+
+  return (
+    <div className="vp-ai-suggest">
+      <div className="vp-ai-suggest-head">
+        <p className="vp-ai-suggest-note">La IA propone categoría y tags mirando la foto de portada y los datos actuales (nombre, marca e ingredientes ya corregidos). Revisalos antes de usarlos.</p>
+        <Button variant="outline" onClick={suggest} loading={loading} disabled={busy || loading}>✨ Sugerir con IA</Button>
+      </div>
+      {error && <div className="vp-ai-suggest-note" role="alert" style={{ color: 'var(--color-error)' }}>{error}</div>}
+      {result && (
+        <>
+          <div className="vp-ai-suggest-row">
+            <span className="vp-ai-suggest-label">Categoría</span>
+            {cat ? (
+              <>
+                <strong>{cat.categoryName}</strong>
+                <span className="vp-ai-suggest-note">confianza {cat.confidence === 'HIGH' ? 'alta' : 'media'}</span>
+                {cat.categoryId === categoryId
+                  ? <span className="vp-ai-suggest-note">(es la que ya tiene)</span>
+                  : <Button variant="primary" onClick={() => onUseCategory(cat.categoryId)} disabled={busy}>Usar</Button>}
+              </>
+            ) : <span className="vp-ai-suggest-note">No está segura: elegila a mano.</span>}
+          </div>
+          <div className="vp-ai-suggest-row" style={{ alignItems: 'flex-start' }}>
+            <span className="vp-ai-suggest-label">Tags</span>
+            {result.tags.length === 0 ? <span className="vp-ai-suggest-note">Nada nuevo para agregar.</span> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                <div className="vp-ai-tags">
+                  {result.tags.map((t, i) => (
+                    <label key={key(t)} className="vp-ai-tag">
+                      <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} disabled={busy} />
+                      <span className="vp-ai-tag-group">{t.groupName}:</span> {t.tagName}
+                      {!t.tagId && <span className="vp-ai-tag-new" title="No existe: se crea en ese grupo al agregarlo">nuevo</span>}
+                    </label>
+                  ))}
+                </div>
+                <div>
+                  <Button variant="primary" onClick={addTags} disabled={busy || selected.size === 0}>
+                    Agregar {selected.size} {selected.size === 1 ? 'tag' : 'tags'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
