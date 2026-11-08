@@ -180,8 +180,9 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
                     sub={n.suspect ? <span style={{ color: '#b91c1c' }}>⚠ {n.suspect}</span> : n.unitWarning ? <span style={{ color: '#b45309' }}>{n.unitWarning}</span> : n.status === 'falta en catálogo' ? 'No existe ese nutriente: crealo en Nutrientes si corresponde.' : undefined} />
                 ))}
                 {proposal.removeNutrition.map((n) => (
-                  <Row key={n.nutritionFactId} status="quitar" check={{ on: checked.has(`nutdel:${n.nutritionFactId}`), toggle: () => toggle(`nutdel:${n.nutritionFactId}`) }}
-                    main={<>Quitar <strong>{n.name}</strong> (no es una fila de la tabla)</>} />
+                  <Row key={n.nutritionFactId} check={{ on: checked.has(`nutdel:${n.nutritionFactId}`), toggle: () => toggle(`nutdel:${n.nutritionFactId}`) }}
+                    status="revisar" main={<>No la encontró en la tabla: <strong>{n.name}</strong></>}
+                    sub="Tildala solo si de verdad no es una fila de la tabla: se quita del producto." />
                 ))}
               </Block>
 
@@ -235,7 +236,6 @@ function defaults(p: AiProposal | null): Set<string> {
   p.allergens.forEach((a) => { if (a.status !== 'igual') s.add(`al:${a.allergenId}`); });
   p.removeAllergens.forEach((a) => s.add(`aldel:${a.allergenId}`));
   p.nutrition.forEach((n, i) => { if (n.nutritionFactId && !n.unitWarning && !n.suspect && (n.status === 'nuevo' || n.status === 'cambia')) s.add(`nut:${i}`); });
-  p.removeNutrition.forEach((n) => s.add(`nutdel:${n.nutritionFactId}`));
   return s;
 }
 
