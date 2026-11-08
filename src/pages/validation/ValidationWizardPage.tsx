@@ -60,6 +60,16 @@ export function ValidationWizardPage() {
   const [needsPhotosNote, setNeedsPhotosNote] = useState('');
   // Qué fotos faltan: solo se le piden esas al usuario.
   const [needsParts, setNeedsParts] = useState<NeedsPhotoPart[]>([]);
+  // Al abrir: si ya estaba marcado, arranca con lo que falta tildado y la nota cargada (para editarla).
+  const openNeedsPhotos = () => {
+    if (!showNeedsPhotos && detail?.product.needsPhotos) {
+      setNeedsParts((detail.product.needsPhotosParts as NeedsPhotoPart[] | null | undefined)?.length
+        ? (detail.product.needsPhotosParts as NeedsPhotoPart[])
+        : ['cover', 'nutrition', 'ingredients']);
+      setNeedsPhotosNote(detail.product.needsPhotosNote ?? '');
+    }
+    setShowNeedsPhotos((v) => !v);
+  };
   const toggleNeedsPart = (p: NeedsPhotoPart) => setNeedsParts((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
   const [error, setError] = useState<string | null>(null);
 
@@ -370,10 +380,10 @@ export function ValidationWizardPage() {
                   <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
                   <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). También da por validadas las señales de sus ingredientes (azúcar, sodio…). Le otorga puntos a quien lo cargó.<br />
                   <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.<br />
-                  <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee tiene que sacar las 3 fotos, y cuando lleguen vuelve a la cola con ellas.
+                  <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee o lo busque tiene que sacar las fotos que tildes (portada, tabla o ingredientes), y cuando lleguen vuelve a la cola con ellas.
                 </p>
                 <div className="vw-finish-actions">
-                  <Button variant="outline" onClick={() => setShowNeedsPhotos((v) => !v)} disabled={busy}>📷 Falta información</Button>
+                  <Button variant="outline" onClick={openNeedsPhotos} disabled={busy}>📷 {detail.product.needsPhotos ? 'Editar lo que falta' : 'Falta información'}</Button>
                   <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
                   <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
                 </div>
@@ -393,7 +403,7 @@ export function ValidationWizardPage() {
                       placeholder="Ej.: la lista de ingredientes está cortada y no hay foto de la tabla" />
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                       <Button variant="outline" onClick={() => setShowNeedsPhotos(false)} disabled={busy}>Cancelar</Button>
-                      <Button variant="primary" onClick={onNeedsPhotos} disabled={busy || needsParts.length === 0}>Marcar y pedir {needsParts.length === 1 ? 'la foto' : 'las fotos'}</Button>
+                      <Button variant="primary" onClick={onNeedsPhotos} disabled={busy || needsParts.length === 0}>{detail.product.needsPhotos ? 'Guardar cambios' : `Marcar y pedir ${needsParts.length === 1 ? 'la foto' : 'las fotos'}`}</Button>
                     </div>
                   </div>
                 )}
