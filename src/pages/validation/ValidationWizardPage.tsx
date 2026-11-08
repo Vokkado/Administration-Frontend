@@ -346,11 +346,14 @@ export function ValidationWizardPage() {
             {/* Fotos arriba (se estiran) y, debajo, de dónde sacó cada dato el enriquecimiento IA. */}
             <div className="vw-split-aside-stack">
               <SourceImagesPanel productId={id} initialKey={STEP_PHOTO[step]} />
-              {detail.product.enrichmentSources?.length ? (
-                <div className="vw-photo-panel vw-ai-panel">
-                  <AiSourcesInfo sources={detail.product.enrichmentSources} />
-                </div>
-              ) : null}
+              <div className="vw-photo-panel vw-ai-panel">
+                <AiSourcesInfo
+                  sources={detail.product.enrichmentSources}
+                  labelSources={detail.product.labelSources}
+                  productId={id}
+                  onChanged={loadDetail}
+                />
+              </div>
             </div>
           </div>
         </div>

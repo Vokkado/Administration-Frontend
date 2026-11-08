@@ -19,6 +19,7 @@ import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
 import { TagsService, type ApplicableTagGroup, type TagSuggestion } from '../../services/tags.service';
 import { EditIngredientModal } from './EditIngredientModal';
+import { AiCompositionPanel } from './AiCompositionPanel';
 import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
 import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
 import { OriginBadge, originLabel } from '../ingredients/components/OriginBadge';
@@ -190,6 +191,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
   return (
     <>
+      <AiCompositionPanel productId={productId} detail={detail} busy={busy} setBusy={setBusy} onChanged={onChanged} />
       <Section
         title={`Ingredientes (${detail.ingredients.length})`}
         help={

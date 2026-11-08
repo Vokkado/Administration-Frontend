@@ -85,6 +85,44 @@ export interface ValidationProduct {
   servingSizeAmount: number | null; servingSizeUnit: string | null;
   /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
   enrichmentSources: EnrichmentSourceSummary[] | null;
+  /** Fotos y textos de cada fuente, guardados (botón "Traer fotos y textos" o "Completar con IA"). */
+  labelSources?: LabelSources | null;
+  /** Lo último que propuso "Completar con IA (Beta)". */
+  aiCompositionDraft?: AiCompositionDraft | null;
+}
+
+export interface LabelSource {
+  store: string; url: string | null; name: string | null;
+  coverUrl: string | null; labelImageUrls: string[];
+  ingredientsText: string | null; nutritionText: string | null;
+}
+export interface LabelSources {
+  fetchedAt: string;
+  userPhotos: { cover: string | null; ingredients: string | null; nutritionFacts: string | null };
+  sources: LabelSource[];
+}
+
+export interface AiProposedIngredient {
+  labelText: string; variantId: string | null; variantName: string | null; ingredientName: string | null;
+  validated: boolean; status: 'igual' | 'nuevo' | 'crear'; newVariant: string | null;
+  confidence: 'alta' | 'media' | 'baja'; reason: string;
+}
+export interface AiProposal {
+  ingredients: AiProposedIngredient[];
+  removeIngredients: { variantId: string; variantName: string }[];
+  allergens: { allergenId: string; name: string; presence: 'CONTAINS' | 'MAY_CONTAIN'; status: 'igual' | 'nuevo' | 'cambia' }[];
+  removeAllergens: { allergenId: string; name: string }[];
+  nutrition: { nutritionFactId: string | null; name: string; value: number | null; unit: string | null; unitWarning?: string; current: { value: number | null; unit: string | null } | null; status: 'igual' | 'cambia' | 'nuevo' | 'falta en catálogo' }[];
+  removeNutrition: { nutritionFactId: string; name: string }[];
+  portion: { amount: number | null; unit: string | null; basis: string | null; current: { amount: number | null; unit: string | null } };
+  doubts: string[];
+  sourceUsed: string;
+  labelReadable: boolean;
+}
+export interface AiCompositionDraft {
+  proposal?: AiProposal;
+  usage: { step: string; promptTokens: number; completionTokens: number; model: string; ms: number }[];
+  updatedAt: string;
 }
 
 export interface ValidationCompany {
@@ -137,6 +175,19 @@ export class ValidationService {
     if (sortDir) params.append('sortDir', sortDir);
     const res = await apiService.get<any>(`${BASE}/queue?${params.toString()}`);
     return res.data ?? { items: [], total: 0 };
+  }
+
+  /** Completar con IA (Beta): 1) fuentes, 2) leer etiqueta, 3) elegir del catálogo. Solo propone. */
+  static async aiSources(id: string): Promise<LabelSources> {
+    const res = await apiService.post<{ success: boolean; data: LabelSources }>(`${BASE}/${id}/ai/sources`, {});
+    return res.data;
+  }
+  static async aiExtract(id: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/ai/extract`, {});
+  }
+  static async aiMap(id: string): Promise<AiProposal> {
+    const res = await apiService.post<{ success: boolean; data: AiProposal }>(`${BASE}/${id}/ai/map`, {});
+    return res.data;
   }
 
   static async getDetail(id: string): Promise<ValidationDetail> {
