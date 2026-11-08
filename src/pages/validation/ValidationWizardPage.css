@@ -541,3 +541,15 @@
     }
   }
 }
+
+/* Botón "Traer fotos y textos" de "Información de la IA" */
+.vw-ai-fetch-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+}
+.vw-ai-fetch-btn:disabled { opacity: .6; cursor: default; }
