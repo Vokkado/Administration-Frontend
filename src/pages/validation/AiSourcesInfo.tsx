@@ -62,15 +62,11 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
   labelSources?: LabelSources | null; loading: boolean; error: string | null; onFetch: () => void;
 }) {
   const [zoom, setZoom] = useState<string | null>(null);
-  const user = labelSources?.userPhotos;
-  const userImgs = (user
-    ? [user.ingredients ? { url: user.ingredients, label: 'Ingredientes' } : null, user.nutritionFacts ? { url: user.nutritionFacts, label: 'Tabla' } : null]
-    : []).filter((x): x is { url: string; label: string } => !!x);
 
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <h4 className="vw-ai-sources-title" style={{ margin: 0 }}>📷 La etiqueta en cada fuente</h4>
+        <h4 className="vw-ai-sources-title" style={{ margin: 0 }}>📷 La etiqueta en los súper y la marca</h4>
         <button type="button" className="vw-ai-fetch-btn" onClick={onFetch} disabled={loading}>
           {loading ? 'Buscando…' : labelSources ? '↻ Actualizar' : 'Traer fotos y textos'}
         </button>
@@ -84,9 +80,6 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
       {labelSources && (
         <>
           <p className="vw-ai-sources-hint">Buscado el {new Date(labelSources.fetchedAt).toLocaleString('es-UY')}. Tocá una foto para verla grande.</p>
-          {userImgs.length > 0 && (
-            <SourceCard title="Fotos del usuario (privadas: no usar como portada)" images={userImgs} onZoom={setZoom} />
-          )}
           {labelSources.sources.map((s, i) => (
             <SourceCard
               key={`${s.store}-${i}`}
@@ -103,7 +96,7 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
               onZoom={setZoom}
             />
           ))}
-          {labelSources.sources.length === 0 && userImgs.length === 0 && (
+          {labelSources.sources.length === 0 && (
             <p className="vw-ai-sources-hint">No se encontró nada en los súper ni en el sitio de la marca.</p>
           )}
         </>
