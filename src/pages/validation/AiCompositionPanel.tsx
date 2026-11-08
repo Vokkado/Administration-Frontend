@@ -10,9 +10,9 @@ import { useMemo, useState } from 'react';
 import { Button } from '../../components/ui';
 import { ValidationService, type AiProposal, type ValidationDetail } from '../../services/validation.service';
 
-type Step = 'idle' | 'sources' | 'extract' | 'map' | 'apply';
+type Step = 'idle' | 'sources' | 'orient' | 'extract' | 'map' | 'apply';
 const STEP_LABEL: Record<Step, string> = {
-  idle: '', sources: 'Buscando fotos y textos de la etiqueta…', extract: 'Leyendo la etiqueta…',
+  idle: '', sources: 'Buscando fotos y textos de la etiqueta…', orient: 'Enderezando las fotos giradas…', extract: 'Leyendo la etiqueta…',
   map: 'Buscando cada ingrediente en el catálogo…', apply: 'Aplicando lo elegido…',
 };
 
@@ -40,6 +40,7 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
     setError(null); setOpen(true);
     try {
       setStep('sources'); await ValidationService.aiSources(productId);
+      setStep('orient'); await ValidationService.aiOrient(productId);
       setStep('extract'); await ValidationService.aiExtract(productId);
       setStep('map'); const p = await ValidationService.aiMap(productId);
       setProposal(p); setChecked(defaults(p));
@@ -148,7 +149,8 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
                 )}
                 {proposal.removeIngredients.map((r) => (
                   <Row key={r.variantId} check={{ on: checked.has(`ingdel:${r.variantId}`), toggle: () => toggle(`ingdel:${r.variantId}`) }}
-                    status="quitar" main={<>Quitar <strong>{r.variantName}</strong> (no está en la etiqueta)</>} />
+                    status="quitar" main={<>Quitar <strong>{r.variantName}</strong></>}
+                    sub="La IA no lo leyó en la etiqueta. A veces se saltea un aditivo: confirmalo en la foto antes de tildar." />
                 ))}
               </Block>
 
@@ -175,7 +177,7 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
                   <Row key={i} status={n.status}
                     check={n.nutritionFactId && (n.status === 'nuevo' || n.status === 'cambia') ? { on: checked.has(`nut:${i}`), toggle: () => toggle(`nut:${i}`) } : null}
                     main={<><strong>{n.name}</strong>: {fmt(n.value)} {n.unit ?? ''}{n.status === 'cambia' && n.current ? <span style={{ color: '#6b7280' }}> (antes {fmt(n.current.value)} {n.current.unit ?? ''})</span> : null}</>}
-                    sub={n.unitWarning ? <span style={{ color: '#b45309' }}>{n.unitWarning}</span> : n.status === 'falta en catálogo' ? 'No existe ese nutriente: crealo en Nutrientes si corresponde.' : undefined} />
+                    sub={n.suspect ? <span style={{ color: '#b91c1c' }}>⚠ {n.suspect}</span> : n.unitWarning ? <span style={{ color: '#b45309' }}>{n.unitWarning}</span> : n.status === 'falta en catálogo' ? 'No existe ese nutriente: crealo en Nutrientes si corresponde.' : undefined} />
                 ))}
                 {proposal.removeNutrition.map((n) => (
                   <Row key={n.nutritionFactId} status="quitar" check={{ on: checked.has(`nutdel:${n.nutritionFactId}`), toggle: () => toggle(`nutdel:${n.nutritionFactId}`) }}
@@ -230,10 +232,9 @@ function defaults(p: AiProposal | null): Set<string> {
   const s = new Set<string>(['order']);
   if (!p) return s;
   p.ingredients.forEach((ing, i) => { if (ing.status === 'nuevo' && ing.confidence !== 'baja') s.add(`ing:${i}`); });
-  p.removeIngredients.forEach((r) => s.add(`ingdel:${r.variantId}`));
   p.allergens.forEach((a) => { if (a.status !== 'igual') s.add(`al:${a.allergenId}`); });
   p.removeAllergens.forEach((a) => s.add(`aldel:${a.allergenId}`));
-  p.nutrition.forEach((n, i) => { if (n.nutritionFactId && !n.unitWarning && (n.status === 'nuevo' || n.status === 'cambia')) s.add(`nut:${i}`); });
+  p.nutrition.forEach((n, i) => { if (n.nutritionFactId && !n.unitWarning && !n.suspect && (n.status === 'nuevo' || n.status === 'cambia')) s.add(`nut:${i}`); });
   p.removeNutrition.forEach((n) => s.add(`nutdel:${n.nutritionFactId}`));
   return s;
 }
