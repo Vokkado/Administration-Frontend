@@ -47,6 +47,8 @@ export function ValidationListPage() {
   // importó, así que al enriquecerlo quedaría enterrado al fondo de la cola en vez de
   // arriba, que es donde lo busca quien acaba de enriquecerlo.
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
+  // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
+  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no'>('all');
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -55,8 +57,9 @@ export function ValidationListPage() {
         params.search,
         sort.key as 'name' | 'createdAt' | 'updatedAt',
         sort.direction,
+        needsFilter === 'all' ? undefined : needsFilter === 'yes',
       ).then((r) => ({ data: r.items, total: r.total })),
-    [sort],
+    [sort, needsFilter],
   );
   const { items, total, loading, currentPage, totalPages, setCurrentPage, searchTerm, setSearchTerm } =
     usePaginatedList<ValidationQueueItem>({ fetchFn });
@@ -80,6 +83,11 @@ export function ValidationListPage() {
       key: 'name', header: 'Producto', render: (p) => (
         <>
           <strong>{p.name}</strong>
+          {p.needsPhotos && (
+            <Tooltip content={p.needsPhotosNote ? `Esperando fotos de un usuario. Nota: ${p.needsPhotosNote}` : 'Esperando que un usuario saque las 3 fotos.'}>
+              <span className="vq-needs-photos">📷 Info insuficiente</span>
+            </Tooltip>
+          )}
           {/* En celular no entran las columnas Vínculos y acciones: van debajo del nombre. */}
           <div className="vq-mobile-extra">
             {renderCounts(p)}
@@ -134,6 +142,12 @@ export function ValidationListPage() {
               <span className="count-label">{total === 1 ? 'producto' : 'productos'}</span>
             </div>
 
+            <select className="vq-filter" value={needsFilter} aria-label="Filtrar por información"
+              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no'); setCurrentPage(1); }}>
+              <option value="all">Todos</option>
+              <option value="yes">📷 Info insuficiente</option>
+              <option value="no">Con información</option>
+            </select>
             <div className="header-search">
               <SearchInput
                 value={searchTerm}

@@ -55,6 +55,9 @@ export function ValidationWizardPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showReject, setShowReject] = useState(false);
+  // "Falta información: pedir fotos" (paso Finalizar): se abre un recuadro con nota opcional.
+  const [showNeedsPhotos, setShowNeedsPhotos] = useState(false);
+  const [needsPhotosNote, setNeedsPhotosNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = async () => { setDetail(await ValidationService.getDetail(id)); };
@@ -148,6 +151,26 @@ export function ValidationWizardPage() {
     } finally { setBusy(false); }
   };
 
+  // "Falta información": guarda lo hecho, marca el producto y vuelve a la lista. El próximo que lo
+  // escanee tiene que sacar las 3 fotos; al llegar, la marca se limpia sola.
+  const onNeedsPhotos = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await saveMeta();
+      await ValidationService.setNeedsPhotos(id, needsPhotosNote.trim() || undefined);
+      navigate('/validation');
+    } catch {
+      setError('No pudimos marcar el producto. Revisá tu conexión e intentá de nuevo.');
+    } finally { setBusy(false); }
+  };
+  const onClearNeedsPhotos = async () => {
+    setBusy(true);
+    try { await ValidationService.clearNeedsPhotos(id); await loadDetail(); }
+    catch { setError('No pudimos quitar la marca.'); }
+    finally { setBusy(false); }
+  };
+
   // Descartar (soft-reject): saca el producto de la cola conservando el registro. No da puntos.
   const onReject = async () => {
     setBusy(true);
@@ -186,6 +209,16 @@ export function ValidationWizardPage() {
         </div>
 
         {error && <div className="vw-error" role="alert">{error}</div>}
+
+        {detail.product.needsPhotos && (
+          <div className="vw-needs-photos" role="status">
+            <div>
+              <strong>📷 Info insuficiente: esperando fotos.</strong> El próximo usuario que lo escanee tiene que sacar las 3 fotos (portada, tabla e ingredientes); cuando lleguen, la marca se quita sola y el producto vuelve a la cola con las fotos nuevas.
+              {detail.product.needsPhotosNote && <div style={{ marginTop: 4 }}>Nota: {detail.product.needsPhotosNote}</div>}
+            </div>
+            <Button variant="outline" size="small" onClick={onClearNeedsPhotos} disabled={busy}>Quitar marca</Button>
+          </div>
+        )}
 
         <Stepper step={step} onStep={(s) => setStep(s)} />
 
@@ -333,12 +366,25 @@ export function ValidationWizardPage() {
                 <p style={{ color: 'var(--color-grey-600)' }}>
                   <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
                   <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). También da por validadas las señales de sus ingredientes (azúcar, sodio…). Le otorga puntos a quien lo cargó.<br />
-                  <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.
+                  <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.<br />
+                  <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee tiene que sacar las 3 fotos, y cuando lleguen vuelve a la cola con ellas.
                 </p>
                 <div className="vw-finish-actions">
+                  <Button variant="outline" onClick={() => setShowNeedsPhotos((v) => !v)} disabled={busy}>📷 Falta información</Button>
                   <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
                   <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
                 </div>
+                {showNeedsPhotos && (
+                  <div className="vw-needs-photos-form">
+                    <label htmlFor="np-note"><strong>¿Qué falta?</strong> (opcional, lo ve quien valide después)</label>
+                    <textarea id="np-note" rows={2} maxLength={500} value={needsPhotosNote} onChange={(e) => setNeedsPhotosNote(e.target.value)}
+                      placeholder="Ej.: la lista de ingredientes está cortada y no hay foto de la tabla" />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <Button variant="outline" onClick={() => setShowNeedsPhotos(false)} disabled={busy}>Cancelar</Button>
+                      <Button variant="primary" onClick={onNeedsPhotos} disabled={busy}>Marcar y pedir fotos</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
