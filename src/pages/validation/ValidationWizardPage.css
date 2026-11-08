@@ -53,14 +53,19 @@
   /* El panel de fotos se lleva todo lo que no usa la información de la IA, y adentro la foto
      se estira para ocupar lo que dejan título, miniaturas y aviso. */
   .vw-split-aside .vw-photo-panel--fill {
-    flex: 1;
-    min-height: 0;
+    flex: 1 1 55%;
+    /* Las fotos del usuario siempre se ven enteras (y quién lo subió), aunque abajo haya fuentes. */
+    min-height: 340px;
     display: flex;
     flex-direction: column;
   }
 
+  /* Segundo bloque: fuentes de la etiqueta + qué usó la IA. Scroll propio para no aplastar las fotos. */
   .vw-ai-panel {
-    flex-shrink: 0;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 45%;
+    overflow-y: auto;
   }
 
   .vw-split-aside .vw-photo-panel--fill .vw-photo-main-wrap {
@@ -304,6 +309,7 @@
     .vw-split { grid-template-columns: minmax(0, 1fr); }
     .vw-split-aside { min-height: 0; }
     .vw-split-aside-stack { position: static; height: auto; }
+    .vw-ai-panel { max-height: none; overflow: visible; }
     .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
   }
 
