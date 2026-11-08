@@ -92,7 +92,7 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
               ingredientsText={s.ingredientsText}
               nutritionText={s.nutritionText}
               productName={s.name}
-              match={s.store === 'openfoodfacts' ? undefined : s.matchedByEan ? 'ean' : 'name'}
+              match={s.store === 'openfoodfacts' || s.matchedByEan === undefined ? undefined : s.matchedByEan ? 'ean' : 'name'}
               onZoom={setZoom}
             />
           ))}
