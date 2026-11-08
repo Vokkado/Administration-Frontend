@@ -95,6 +95,8 @@ export interface LabelSource {
   store: string; url: string | null; name: string | null;
   coverUrl: string | null; labelImageUrls: string[];
   ingredientsText: string | null; nutritionText: string | null;
+  /** true = el súper devolvió este código de barras; false = solo por nombre (puede ser otro producto). */
+  matchedByEan?: boolean;
 }
 export interface LabelSources {
   fetchedAt: string;

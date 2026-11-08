@@ -113,7 +113,7 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
 
       {proposal && (
         <>
-          <button type="button" className="vp-help-btn" style={{ width: 'auto', padding: '0 10px', borderRadius: 8, marginTop: 4 }} onClick={() => setOpen(!open)}>
+          <button type="button" className="vw-ai-fetch-btn" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => setOpen(!open)}>
             {open ? 'Ocultar propuesta' : 'Ver propuesta'}
           </button>
           {open && (
