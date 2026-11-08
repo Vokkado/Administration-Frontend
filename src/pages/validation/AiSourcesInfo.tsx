@@ -98,6 +98,8 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
               ]}
               ingredientsText={s.ingredientsText}
               nutritionText={s.nutritionText}
+              productName={s.name}
+              match={s.store === 'openfoodfacts' ? undefined : s.matchedByEan ? 'ean' : 'name'}
               onZoom={setZoom}
             />
           ))}
@@ -120,14 +122,18 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
   );
 }
 
-function SourceCard({ title, url, images, ingredientsText, nutritionText, onZoom }: {
+function SourceCard({ title, url, images, ingredientsText, nutritionText, onZoom, productName, match }: {
   title: string; url?: string | null; images: { url: string; label: string }[];
   ingredientsText?: string | null; nutritionText?: string | null; onZoom: (u: string) => void;
+  productName?: string | null; match?: 'ean' | 'name';
 }) {
   return (
     <div className="vw-ai-source-item" style={{ display: 'block', marginTop: 8 }}>
       <strong>{title}</strong>
       {url && <>{' — '}<a href={url} target="_blank" rel="noopener noreferrer">ver fuente</a></>}
+      {match === 'ean' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 8, background: '#ecfdf5', color: '#047857' }}>mismo código de barras</span>}
+      {match === 'name' && <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 6px', borderRadius: 8, background: '#fffbeb', color: '#b45309' }} title="El súper no devolvió este código: puede ser otro producto, otra versión o tamaño">solo por nombre: puede ser otro producto</span>}
+      {productName && <div style={{ fontSize: 12, color: '#6b7280' }}>{productName}</div>}
       {images.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
           {images.map((im) => (
