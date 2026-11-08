@@ -19,7 +19,7 @@ const STEP_LABEL: Record<Step, string> = {
 const chip = (bg: string, color: string): React.CSSProperties => ({ fontSize: 11, padding: '1px 7px', borderRadius: 8, background: bg, color, whiteSpace: 'nowrap' });
 const STATUS_CHIP: Record<string, React.CSSProperties> = {
   igual: chip('#ecfdf5', '#047857'), nuevo: chip('#eff6ff', '#1d4ed8'), cambia: chip('#fffbeb', '#b45309'),
-  crear: chip('#fef2f2', '#b91c1c'), 'falta en catálogo': chip('#fef2f2', '#b91c1c'), quitar: chip('#fef2f2', '#b91c1c'),
+  crear: chip('#fef2f2', '#b91c1c'), revisar: chip('#fffbeb', '#b45309'), 'falta en catálogo': chip('#fef2f2', '#b91c1c'), quitar: chip('#fef2f2', '#b91c1c'),
 };
 const CONF_COLOR = { alta: '#047857', media: '#b45309', baja: '#b91c1c' } as const;
 const fmt = (v: number | null) => (v == null ? '—' : String(v).replace('.', ','));
@@ -149,8 +149,8 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
                 )}
                 {proposal.removeIngredients.map((r) => (
                   <Row key={r.variantId} check={{ on: checked.has(`ingdel:${r.variantId}`), toggle: () => toggle(`ingdel:${r.variantId}`) }}
-                    status="quitar" main={<>Quitar <strong>{r.variantName}</strong></>}
-                    sub="La IA no lo leyó en la etiqueta. A veces se saltea un aditivo: confirmalo en la foto antes de tildar." />
+                    status="revisar" main={<>No lo encontró en la etiqueta: <strong>{r.variantName}</strong></>}
+                    sub="Ni la lectura ni la segunda mirada lo vieron. Tildalo solo si de verdad no está en la etiqueta: se quita del producto." />
                 ))}
               </Block>
 
