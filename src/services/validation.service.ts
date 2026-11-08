@@ -18,6 +18,7 @@ export interface ValidationQueueItem {
   /** "Info insuficiente": marcado en el wizard; espera que un usuario saque las 3 fotos. */
   needsPhotos?: boolean;
   needsPhotosNote?: string | null;
+  needsPhotosParts?: NeedsPhotoPart[] | null;
 }
 
 export interface ValidationIngredient {
@@ -95,6 +96,16 @@ export interface ValidationProduct {
   needsPhotos?: boolean;
   needsPhotosNote?: string | null;
   needsPhotosAt?: string | null;
+  needsPhotosParts?: NeedsPhotoPart[] | null;
+}
+
+/** Fotos que se pueden pedir con "Falta información". */
+export type NeedsPhotoPart = 'cover' | 'nutrition' | 'ingredients';
+export const NEEDS_PHOTO_LABELS: Record<NeedsPhotoPart, string> = { cover: 'portada', nutrition: 'tabla nutricional', ingredients: 'ingredientes' };
+/** "ingredientes", "tabla nutricional e ingredientes"… (vacío = las 3). */
+export function needsPhotosText(parts?: NeedsPhotoPart[] | null): string {
+  const list = (parts?.length ? parts : (['cover', 'nutrition', 'ingredients'] as NeedsPhotoPart[])).map((p) => NEEDS_PHOTO_LABELS[p]);
+  return list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} e ${list[list.length - 1]}`;
 }
 
 export interface LabelSource {
@@ -210,8 +221,8 @@ export class ValidationService {
   }
 
   /** "Falta información: pedir fotos" (el producto sigue pendiente). */
-  static async setNeedsPhotos(id: string, note?: string): Promise<void> {
-    await apiService.post(`${BASE}/${id}/needs-photos`, { note: note || null });
+  static async setNeedsPhotos(id: string, note?: string, parts?: NeedsPhotoPart[]): Promise<void> {
+    await apiService.post(`${BASE}/${id}/needs-photos`, { note: note || null, parts: parts ?? null });
   }
   static async clearNeedsPhotos(id: string): Promise<void> {
     await apiService.delete(`${BASE}/${id}/needs-photos`);

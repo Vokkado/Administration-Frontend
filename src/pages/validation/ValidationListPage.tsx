@@ -8,7 +8,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
 import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
-import { ValidationService, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
+import { ValidationService, needsPhotosText, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
 import { COLORS } from './composition';
 import './ValidationWizardPage.css';
 
@@ -84,7 +84,7 @@ export function ValidationListPage() {
         <>
           <strong>{p.name}</strong>
           {p.needsPhotos && (
-            <Tooltip content={p.needsPhotosNote ? `Esperando fotos de un usuario. Nota: ${p.needsPhotosNote}` : 'Esperando que un usuario saque las 3 fotos.'}>
+            <Tooltip content={`Esperando foto de ${needsPhotosText(p.needsPhotosParts)}.${p.needsPhotosNote ? ` Nota: ${p.needsPhotosNote}` : ''}`}>
               <span className="vq-needs-photos">📷 Info insuficiente</span>
             </Tooltip>
           )}

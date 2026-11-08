@@ -11,7 +11,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
-import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption } from '../../services/validation.service';
+import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, type NeedsPhotoPart } from '../../services/validation.service';
 import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
@@ -58,6 +58,9 @@ export function ValidationWizardPage() {
   // "Falta información: pedir fotos" (paso Finalizar): se abre un recuadro con nota opcional.
   const [showNeedsPhotos, setShowNeedsPhotos] = useState(false);
   const [needsPhotosNote, setNeedsPhotosNote] = useState('');
+  // Qué fotos faltan: solo se le piden esas al usuario.
+  const [needsParts, setNeedsParts] = useState<NeedsPhotoPart[]>([]);
+  const toggleNeedsPart = (p: NeedsPhotoPart) => setNeedsParts((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
   const [error, setError] = useState<string | null>(null);
 
   const loadDetail = async () => { setDetail(await ValidationService.getDetail(id)); };
@@ -158,7 +161,7 @@ export function ValidationWizardPage() {
     setError(null);
     try {
       await saveMeta();
-      await ValidationService.setNeedsPhotos(id, needsPhotosNote.trim() || undefined);
+      await ValidationService.setNeedsPhotos(id, needsPhotosNote.trim() || undefined, needsParts);
       navigate('/validation');
     } catch {
       setError('No pudimos marcar el producto. Revisá tu conexión e intentá de nuevo.');
@@ -213,7 +216,7 @@ export function ValidationWizardPage() {
         {detail.product.needsPhotos && (
           <div className="vw-needs-photos" role="status">
             <div>
-              <strong>📷 Info insuficiente: esperando fotos.</strong> El próximo usuario que lo escanee tiene que sacar las 3 fotos (portada, tabla e ingredientes); cuando lleguen, la marca se quita sola y el producto vuelve a la cola con las fotos nuevas.
+              <strong>📷 Info insuficiente: esperando foto de {needsPhotosText(detail.product.needsPhotosParts)}.</strong> El próximo usuario que lo escanee (o lo busque) tiene que sacarla antes de ver el análisis; cuando llegue, la marca se quita sola y el producto vuelve a la cola con la foto nueva.
               {detail.product.needsPhotosNote && <div style={{ marginTop: 4 }}>Nota: {detail.product.needsPhotosNote}</div>}
             </div>
             <Button variant="outline" size="small" onClick={onClearNeedsPhotos} disabled={busy}>Quitar marca</Button>
@@ -376,12 +379,21 @@ export function ValidationWizardPage() {
                 </div>
                 {showNeedsPhotos && (
                   <div className="vw-needs-photos-form">
-                    <label htmlFor="np-note"><strong>¿Qué falta?</strong> (opcional, lo ve quien valide después)</label>
+                    <strong>¿Qué foto falta?</strong> <span style={{ fontSize: 13 }}>Solo se le pide al usuario lo que tildes.</span>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {(['cover', 'nutrition', 'ingredients'] as NeedsPhotoPart[]).map((p) => (
+                        <label key={p} style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={needsParts.includes(p)} onChange={() => toggleNeedsPart(p)} />
+                          {NEEDS_PHOTO_LABELS[p][0].toUpperCase() + NEEDS_PHOTO_LABELS[p].slice(1)}
+                        </label>
+                      ))}
+                    </div>
+                    <label htmlFor="np-note"><strong>Nota</strong> (opcional, la ve quien valide después)</label>
                     <textarea id="np-note" rows={2} maxLength={500} value={needsPhotosNote} onChange={(e) => setNeedsPhotosNote(e.target.value)}
                       placeholder="Ej.: la lista de ingredientes está cortada y no hay foto de la tabla" />
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                       <Button variant="outline" onClick={() => setShowNeedsPhotos(false)} disabled={busy}>Cancelar</Button>
-                      <Button variant="primary" onClick={onNeedsPhotos} disabled={busy}>Marcar y pedir fotos</Button>
+                      <Button variant="primary" onClick={onNeedsPhotos} disabled={busy || needsParts.length === 0}>Marcar y pedir {needsParts.length === 1 ? 'la foto' : 'las fotos'}</Button>
                     </div>
                   </div>
                 )}
