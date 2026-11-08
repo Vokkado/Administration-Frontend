@@ -114,7 +114,7 @@ export interface AiProposal {
   removeIngredients: { variantId: string; variantName: string }[];
   allergens: { allergenId: string; name: string; presence: 'CONTAINS' | 'MAY_CONTAIN'; status: 'igual' | 'nuevo' | 'cambia' }[];
   removeAllergens: { allergenId: string; name: string }[];
-  nutrition: { nutritionFactId: string | null; name: string; value: number | null; unit: string | null; unitWarning?: string; current: { value: number | null; unit: string | null } | null; status: 'igual' | 'cambia' | 'nuevo' | 'falta en catálogo' }[];
+  nutrition: { nutritionFactId: string | null; name: string; value: number | null; unit: string | null; unitWarning?: string; suspect?: string; current: { value: number | null; unit: string | null } | null; status: 'igual' | 'cambia' | 'nuevo' | 'falta en catálogo' }[];
   removeNutrition: { nutritionFactId: string; name: string }[];
   portion: { amount: number | null; unit: string | null; basis: string | null; current: { amount: number | null; unit: string | null } };
   doubts: string[];
@@ -183,6 +183,9 @@ export class ValidationService {
   static async aiSources(id: string): Promise<LabelSources> {
     const res = await apiService.post<{ success: boolean; data: LabelSources }>(`${BASE}/${id}/ai/sources`, {});
     return res.data;
+  }
+  static async aiOrient(id: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/ai/orient`, {});
   }
   static async aiExtract(id: string): Promise<void> {
     await apiService.post(`${BASE}/${id}/ai/extract`, {});
