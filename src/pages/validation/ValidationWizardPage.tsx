@@ -11,7 +11,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
-import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, type NeedsPhotoPart } from '../../services/validation.service';
+import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart } from '../../services/validation.service';
 import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
@@ -216,7 +216,7 @@ export function ValidationWizardPage() {
         {detail.product.needsPhotos && (
           <div className="vw-needs-photos" role="status">
             <div>
-              <strong>📷 Info insuficiente: esperando foto de {needsPhotosText(detail.product.needsPhotosParts)}.</strong> El próximo usuario que lo escanee (o lo busque) tiene que sacarla antes de ver el análisis; cuando llegue, la marca se quita sola y el producto vuelve a la cola con la foto nueva.
+              <strong>📷 Info insuficiente · {needsPhotosShort(detail.product.needsPhotosParts)}</strong> — esperando foto de {needsPhotosText(detail.product.needsPhotosParts)}. El próximo usuario que lo escanee (o lo busque) tiene que sacarla antes de ver el análisis; cuando llegue, la marca se quita sola y el producto vuelve a la cola con la foto nueva.
               {detail.product.needsPhotosNote && <div style={{ marginTop: 4 }}>Nota: {detail.product.needsPhotosNote}</div>}
             </div>
             <Button variant="outline" size="small" onClick={onClearNeedsPhotos} disabled={busy}>Quitar marca</Button>

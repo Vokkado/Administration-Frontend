@@ -102,6 +102,12 @@ export interface ValidationProduct {
 /** Fotos que se pueden pedir con "Falta información". */
 export type NeedsPhotoPart = 'cover' | 'nutrition' | 'ingredients';
 export const NEEDS_PHOTO_LABELS: Record<NeedsPhotoPart, string> = { cover: 'portada', nutrition: 'tabla nutricional', ingredients: 'ingredientes' };
+/** Para etiquetas: "Ingredientes", "Tabla · Ingredientes"… (vacío = las 3). */
+export function needsPhotosShort(parts?: NeedsPhotoPart[] | null): string {
+  const short: Record<NeedsPhotoPart, string> = { cover: "Portada", nutrition: "Tabla", ingredients: "Ingredientes" };
+  return (parts?.length ? parts : (["cover", "nutrition", "ingredients"] as NeedsPhotoPart[])).map((p) => short[p]).join(" · ");
+}
+
 /** "ingredientes", "tabla nutricional e ingredientes"… (vacío = las 3). */
 export function needsPhotosText(parts?: NeedsPhotoPart[] | null): string {
   const list = (parts?.length ? parts : (['cover', 'nutrition', 'ingredients'] as NeedsPhotoPart[])).map((p) => NEEDS_PHOTO_LABELS[p]);
