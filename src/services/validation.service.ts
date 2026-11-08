@@ -15,6 +15,9 @@ export interface ValidationQueueItem {
   /** Última modificación: para un producto enriquecido, cuándo se completó. */
   updatedAt: string;
   counts: { green: number; yellow: number; red: number };
+  /** "Info insuficiente": marcado en el wizard; espera que un usuario saque las 3 fotos. */
+  needsPhotos?: boolean;
+  needsPhotosNote?: string | null;
 }
 
 export interface ValidationIngredient {
@@ -89,6 +92,9 @@ export interface ValidationProduct {
   labelSources?: LabelSources | null;
   /** Lo último que propuso "Completar con IA (Beta)". */
   aiCompositionDraft?: AiCompositionDraft | null;
+  needsPhotos?: boolean;
+  needsPhotosNote?: string | null;
+  needsPhotosAt?: string | null;
 }
 
 export interface LabelSource {
@@ -170,8 +176,11 @@ export class ValidationService {
     /** Default en el backend: createdAt desc (más nuevos primero). */
     sortBy?: 'name' | 'createdAt' | 'updatedAt',
     sortDir?: 'asc' | 'desc',
+    /** true = solo "info insuficiente"; false = sin esa marca; undefined = todos. */
+    needsPhotos?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
     if (search) params.append('search', search);
     if (sortBy) params.append('sortBy', sortBy);
     if (sortDir) params.append('sortDir', sortDir);
@@ -198,6 +207,14 @@ export class ValidationService {
   static async getDetail(id: string): Promise<ValidationDetail> {
     const res = await apiService.get<any>(`${BASE}/${id}`);
     return res.data;
+  }
+
+  /** "Falta información: pedir fotos" (el producto sigue pendiente). */
+  static async setNeedsPhotos(id: string, note?: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/needs-photos`, { note: note || null });
+  }
+  static async clearNeedsPhotos(id: string): Promise<void> {
+    await apiService.delete(`${BASE}/${id}/needs-photos`);
   }
 
   static async approve(id: string): Promise<void> {
