@@ -5,7 +5,7 @@
  * Click en la foto hace zoom ahí mismo (para leer la etiqueta sin tapar lo de la
  * izquierda); el botón ⤢ la abre en el lightbox, sin perder la selección.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ImageLightbox } from '../../components/ui';
 import { useSourceImages, type SourcePhotoKey } from '../../hooks/useSourceImages';
 import { UploaderReveal } from '../products/components/product-modal';
@@ -26,6 +26,8 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   // URL que ya terminó de bajar: mientras no coincida con la activa, se muestra el loader.
   const [shownUrl, setShownUrl] = useState<string | null>(null);
+  // Giro de cada foto (0/90/180/270): las tablas de los sobres suelen venir de costado.
+  const [rotation, setRotation] = useState<Record<string, number>>({});
 
   if (loading) {
     return (
@@ -67,9 +69,11 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
 
       {/* `key`: al cambiar de foto el zoom arranca de cero. */}
       <ZoomableImage
-        key={active.url}
+        key={`${active.url}|${rotation[active.key] ?? 0}`}
         src={active.url}
         alt={active.label}
+        rotation={rotation[active.key] ?? 0}
+        onRotate={() => setRotation((r) => ({ ...r, [active.key]: ((r[active.key] ?? 0) + 90) % 360 }))}
         onExpand={() => setLightboxIndex(activeIndex)}
         onLoad={() => setShownUrl(active.url)}
         onError={() => markFailed(active.key)}
@@ -98,7 +102,7 @@ export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: Sou
         </div>
       )}
 
-      <p className="vw-photo-panel-hint">Click para hacer zoom · arrastrá para moverte · rueda para más aumento · ⤢ para verla en grande</p>
+      <p className="vw-photo-panel-hint">Click para hacer zoom · arrastrá para moverte · rueda para más aumento · ⟳ para girarla · ⤢ para verla en grande</p>
 
       {uploader && (
         <div className="vw-photo-uploader">
@@ -145,9 +149,12 @@ function clampPan(z: Zoom, w: number, h: number): Zoom {
  * arrastra para recorrer la etiqueta y la rueda cambia el aumento alrededor del puntero.
  * Un click sin arrastrar vuelve a la foto entera.
  */
-function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
+function ZoomableImage({ src, alt, rotation = 0, onRotate, onExpand, onLoad, onError, children }: {
   src: string;
   alt: string;
+  /** Grados (múltiplo de 90). El zoom y el arrastre se calculan en el marco ya girado. */
+  rotation?: number;
+  onRotate: () => void;
   onExpand: () => void;
   onLoad: () => void;
   onError: () => void;
@@ -162,6 +169,36 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
   // Al soltar un arrastre el navegador igual dispara un click: ese no tiene que sacar el zoom.
   const skipClickRef = useRef(false);
   const zoomed = zoom !== null;
+  const sideways = rotation % 180 !== 0;
+  // Tamaño del recuadro: girada de costado, la foto vive en un marco con ancho y alto cambiados.
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  /** Tamaño del marco donde vive la foto: con 90°/270° el ancho y el alto se intercambian. */
+  const frameSize = (r: DOMRect) => (sideways ? { w: r.height, h: r.width } : { w: r.width, h: r.height });
+  /** Un vector de pantalla, llevado al marco girado (se gira en sentido contrario). */
+  const unrotate = (dx: number, dy: number) => {
+    switch (rotation) {
+      case 90: return { x: dy, y: -dx };
+      case 180: return { x: -dx, y: -dy };
+      case 270: return { x: -dy, y: dx };
+      default: return { x: dx, y: dy };
+    }
+  };
+  /** Punto de pantalla → coordenadas dentro del marco girado. */
+  const toFrame = (clientX: number, clientY: number, r: DOMRect) => {
+    const { w, h } = frameSize(r);
+    const v = unrotate(clientX - (r.left + r.width / 2), clientY - (r.top + r.height / 2));
+    return { x: v.x + w / 2, y: v.y + h / 2, w, h };
+  };
 
   // La rueda ajusta el aumento solo con la foto ampliada; si no, scrollea la página como
   // siempre. Listener nativo porque el onWheel de React es pasivo y no deja cancelar el scroll.
@@ -171,19 +208,19 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const r = el.getBoundingClientRect();
-      const cx = e.clientX - r.left;
-      const cy = e.clientY - r.top;
+      const { x: cx, y: cy, w, h } = toFrame(e.clientX, e.clientY, r);
       const factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
       setZoom((z) => {
         if (!z) return z;
         const scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z.scale * factor));
         const k = scale / z.scale;
         // Lo que está bajo el puntero queda bajo el puntero.
-        return clampPan({ scale, x: cx - (cx - z.x) * k, y: cy - (cy - z.y) * k }, r.width, r.height);
+        return clampPan({ scale, x: cx - (cx - z.x) * k, y: cy - (cy - z.y) * k }, w, h);
       });
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toFrame depende solo de rotation (fija por montaje: key)
   }, [zoomed]);
 
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -192,10 +229,9 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
     // El punto se calcula ya: `e.currentTarget` es null fuera del handler (p. ej. dentro
     // de un updater de setState, que React corre después).
     const r = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - r.left;
-    const py = e.clientY - r.top;
+    const { x: px, y: py, w, h } = toFrame(e.clientX, e.clientY, r);
     // Escalar desde la esquina y desplazar así deja el punto clickeado bajo el mouse.
-    setZoom(clampPan({ scale: ZOOM_DEFAULT, x: px * (1 - ZOOM_DEFAULT), y: py * (1 - ZOOM_DEFAULT) }, r.width, r.height));
+    setZoom(clampPan({ scale: ZOOM_DEFAULT, x: px * (1 - ZOOM_DEFAULT), y: py * (1 - ZOOM_DEFAULT) }, w, h));
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -219,7 +255,9 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
       e.currentTarget.setPointerCapture(e.pointerId);
     }
     const r = e.currentTarget.getBoundingClientRect();
-    setZoom(clampPan({ ...zoom, x: drag.fromX + dx, y: drag.fromY + dy }, r.width, r.height));
+    const { w, h } = frameSize(r);
+    const d = unrotate(dx, dy);
+    setZoom(clampPan({ ...zoom, x: drag.fromX + d.x, y: drag.fromY + d.y }, w, h));
   };
 
   const endDrag = (cancelled: boolean) => {
@@ -241,6 +279,14 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
       onPointerUp={() => endDrag(false)}
       onPointerCancel={() => endDrag(true)}
     >
+      <div
+        className="vw-photo-rot"
+        style={sideways
+          ? { position: 'absolute', left: '50%', top: '50%', width: box?.h ?? 0, height: box?.w ?? 0, transform: `translate(-50%, -50%) rotate(${rotation}deg)`, overflow: 'hidden' }
+          : rotation === 180
+            ? { height: '100%', transform: 'rotate(180deg)', overflow: 'hidden' }
+            : { height: '100%' }}
+      >
       <img
         src={src}
         alt={alt}
@@ -252,7 +298,18 @@ function ZoomableImage({ src, alt, onExpand, onLoad, onError, children }: {
         onError={onError}
         draggable={false}
       />
+      </div>
       {children}
+      <button
+        type="button"
+        className="vw-photo-expand vw-photo-rotate"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onRotate(); }}
+        title="Girar 90°"
+        aria-label="Girar la foto 90 grados"
+      >
+        ⟳
+      </button>
       <button
         type="button"
         className="vw-photo-expand"

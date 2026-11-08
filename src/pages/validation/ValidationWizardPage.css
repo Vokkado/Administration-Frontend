@@ -559,3 +559,8 @@
   cursor: pointer;
 }
 .vw-ai-fetch-btn:disabled { opacity: .6; cursor: default; }
+
+/* Botón ⟳ (girar la foto 90°), a la izquierda del ⤢ */
+.vw-photo-expand.vw-photo-rotate { right: 52px; }
+/* Girada de costado, la foto está en un marco absoluto: el recuadro conserva su alto. */
+.vw-photo-main-wrap { min-height: 200px; }
