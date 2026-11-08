@@ -8,7 +8,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
 import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
-import { ValidationService, needsPhotosText, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
+import { ValidationService, needsPhotosText, needsPhotosShort, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
 import { COLORS } from './composition';
 import './ValidationWizardPage.css';
 
@@ -85,7 +85,7 @@ export function ValidationListPage() {
           <strong>{p.name}</strong>
           {p.needsPhotos && (
             <Tooltip content={`Esperando foto de ${needsPhotosText(p.needsPhotosParts)}.${p.needsPhotosNote ? ` Nota: ${p.needsPhotosNote}` : ''}`}>
-              <span className="vq-needs-photos">📷 Info insuficiente</span>
+              <span className="vq-needs-photos">📷 Info insuficiente · {needsPhotosShort(p.needsPhotosParts)}</span>
             </Tooltip>
           )}
           {/* En celular no entran las columnas Vínculos y acciones: van debajo del nombre. */}
