@@ -18,6 +18,7 @@ import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
 import { ScorePreviewPanel } from './ScorePreviewPanel';
+import { NovaPanel } from './NovaPanel';
 import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
@@ -399,6 +400,11 @@ export function ValidationWizardPage() {
                     <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
                     <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
                   </div>
+                  <NovaPanel
+                    ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
+                    value={meta.isUltraProcessed}
+                    onSet={(v) => set('isUltraProcessed', v)}
+                  />
                   <DecreePanel
                     detail={detail}
                     name={meta.name}
