@@ -641,3 +641,10 @@
 /* Validado por (migración 289) */
 .vw-needs-photos.vw-validated { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
 .vq-needs-photos.vq-validated { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+
+/* Chequeo NOVA (paso Más info, debajo de los tildes) */
+.nova-panel { margin-top: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; overflow-wrap: anywhere; }
+.nova-ok { background: #f0f7ee; border: 1px solid #cfe3c8; color: #2e5a1c; }
+.nova-info { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; }
+.nova-warn { background: #fff7e6; border: 1px solid #f5d08a; color: #7a4a00; }
+.nova-btn { margin-left: auto; border: 1px solid currentColor; background: #fff; color: inherit; border-radius: 6px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
