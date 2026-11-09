@@ -55,7 +55,8 @@ export function ValidationListPage() {
         params.limit,
         params.offset,
         params.search,
-        sort.key as 'name' | 'createdAt' | 'updatedAt',
+        // La columna Vínculos ordena por la cantidad total de ingredientes vinculados.
+        (sort.key === 'counts' ? 'links' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links',
         sort.direction,
         needsFilter === 'all' ? undefined : needsFilter === 'yes',
       ).then((r) => ({ data: r.items, total: r.total })),
@@ -125,7 +126,7 @@ export function ValidationListPage() {
       ),
     },
     {
-      key: 'counts', header: 'Vínculos', width: '140px', hideOnMobile: true, render: renderCounts,
+      key: 'counts', header: 'Vínculos', sortable: true, width: '140px', hideOnMobile: true, render: renderCounts,
     },
   ];
 
