@@ -17,6 +17,7 @@ import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composit
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
+import { ScorePreviewPanel } from './ScorePreviewPanel';
 import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
@@ -425,6 +426,11 @@ export function ValidationWizardPage() {
                   <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
                   <Button variant="primary" onClick={() => onComplete(true)} disabled={busy}>Completar y validar ✓</Button>
                 </div>
+                <ScorePreviewPanel
+                  productId={id}
+                  beforeCalc={saveMeta}
+                  isAlcoholic={meta.alcoholGraduation !== '' && Number(meta.alcoholGraduation) >= 0.5}
+                />
                 {showNeedsPhotos && (
                   <div className="vw-needs-photos-form">
                     <strong>¿Qué foto falta?</strong> <span style={{ fontSize: 13 }}>Solo se le pide al usuario lo que tildes.</span>
