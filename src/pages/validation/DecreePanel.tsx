@@ -33,6 +33,13 @@ export function DecreePanel(props: {
     productName: name,
   }), [detail, name, servingSizeAmount, servingSizeUnit]);
 
+  // Portadas que publican súper/marca (guardadas en label_sources): primero las que coinciden por EAN.
+  const fronts = (detail.product.labelSources?.sources ?? [])
+    .filter((s) => s.coverUrl)
+    .map((s) => ({ url: s.coverUrl as string, store: s.store, name: s.name, byEan: !!s.matchedByEan }))
+    // Primero las seguras (mismo código de barras); las "solo por nombre" pueden ser otro producto.
+    .sort((a, b) => Number(b.byEan) - Number(a.byEan));
+
   // Diferencias claras (la cuenta no deja dudas) y dudosas (probable vs no marcado).
   const sure = result.findings.filter((f) => (f.status === 'exceso' && !values[f.key]) || (f.status === 'ok' && values[f.key]));
   const doubtful = result.findings.filter((f) => f.status === 'probable' && !values[f.key]);
@@ -73,6 +80,19 @@ export function DecreePanel(props: {
           );
         })}
       </ul>
+      {fronts.length > 0 && (
+        <div className="dc-fronts">
+          <div className="dc-fronts-title">Frentes publicados (súper y marca): mirá si traen octógonos</div>
+          <div className="dc-fronts-row">
+            {fronts.map((f) => (
+              <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="dc-front" title={f.name ?? f.store}>
+                <img src={f.url} alt={f.store} loading="lazy" />
+                <span>{f.store}{f.byEan ? ' · mismo código' : ' · por nombre'}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
       {result.notes.map((n) => <div key={n} className="dc-note">ℹ️ {n}</div>)}
       <div className="dc-foot">
         Solo va el octógono del nutriente que se agregó (sal, azúcar, grasas) y cuando supera el límite. Si el frente del envase trae el octógono, gana el envase.
