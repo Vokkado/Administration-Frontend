@@ -126,11 +126,14 @@ export function checkDecree(input: {
   const sat = per100(findRow(rows, (n) => n.startsWith('grasas saturadas')), factor, 'g');
   const kcal = per100(findRow(rows, (n) => n.startsWith('valor energetico') || n.startsWith('energia')), factor, 'kcal');
 
-  const addedSodium = has(ADDED_SODIUM);
-  const addedSugar = ings.some(isAddedSugar);
+  // Producto de UN solo ingrediente (manteca = crema de leche, aceite, sal, azúcar): no se le "agrega"
+  // nada, es el alimento en sí. En la práctica no llevan octógono (Manteca Claldy / Conaprole).
+  const single = ings.length === 1;
+  const addedSodium = !single && has(ADDED_SODIUM);
+  const addedSugar = !single && ings.some(isAddedSugar);
   // Azúcar entre los 2 primeros ingredientes: es un producto dulce (los carbohidratos son casi todo azúcar).
   const sugarOnTop = ings.slice(0, 2).some(isAddedSugar);
-  const addedFat = has(ADDED_FAT);
+  const addedFat = !single && has(ADDED_FAT);
   const sweetener = has(SWEETENER);
   const fluidMilk = has(FLUID_MILK);
   const powderMilk = has(POWDER_MILK);
@@ -228,6 +231,7 @@ export function checkDecree(input: {
     for (const f of findings) if (f.status === 'exceso') f.status = 'probable';
     notes.push('Parece un producto para preparar (sopa, refresco o postre en polvo): el decreto lo evalúa PREPARADO, según las instrucciones del envase. La cuenta de arriba es con el polvo; confirmá con el frente del envase.');
   }
+  if (single) notes.push('Tiene un solo ingrediente: es el alimento en sí, no se le agrega sal, azúcar ni grasa, así que no lleva octógono (ej. manteca, aceite, azúcar).');
   if (!unit) notes.push('La porción no tiene unidad: se tomó como sólido (g).');
   return { liquid, findings, notes };
 }
