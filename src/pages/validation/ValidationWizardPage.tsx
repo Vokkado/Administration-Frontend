@@ -6,6 +6,7 @@
  *   4. Finalizar     — "Completar" (guarda, queda pendiente) / "Completar y validar".
  */
 import { useEffect, useState } from 'react';
+import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
@@ -236,10 +237,16 @@ export function ValidationWizardPage() {
 
         {error && <div className="vw-error" role="alert">{error}</div>}
 
+        {detail.product.isInspected && !detail.product.isRejected && (
+          <div className="vw-needs-photos vw-validated" role="status">
+            <div><strong>✅ {validatedByText(detail.product.validatedByEmail, detail.product.validatedAt)}</strong> — ya está validado; si cambiás algo, se guarda igual.</div>
+          </div>
+        )}
+
         {detail.product.isRejected && (
           <div className="vw-needs-photos vw-rejected" role="status">
             <div>
-              <strong>🚫 Rechazado</strong>{detail.product.rejectedAt ? ` el ${new Date(detail.product.rejectedAt).toLocaleDateString('es-UY')}` : ''} — no aparece en la cola ni en la app (ni al escanear ni al buscar). Si se rechazó por error, volvelo a la cola; para validarlo primero tiene que volver.
+              <strong>🚫 Rechazado</strong>{detail.product.rejectedByEmail ? ` por ${detail.product.rejectedByEmail}` : ''}{detail.product.rejectedAt ? ` el ${new Date(detail.product.rejectedAt).toLocaleDateString('es-UY')}` : ''} — no aparece en la cola ni en la app (ni al escanear ni al buscar). Si se rechazó por error, volvelo a la cola; para validarlo primero tiene que volver.
               {detail.product.rejectedReason && <div style={{ marginTop: 4 }}>Motivo: {detail.product.rejectedReason}</div>}
             </div>
             <Button variant="primary" size="small" onClick={onUnreject} disabled={busy}>↩ Volver a la cola</Button>

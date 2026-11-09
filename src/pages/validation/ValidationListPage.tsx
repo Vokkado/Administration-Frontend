@@ -3,6 +3,7 @@
  * de colores por producto. Clic en "Revisar" → wizard de validación paso a paso.
  */
 import { useCallback, useState } from 'react';
+import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
@@ -48,7 +49,7 @@ export function ValidationListPage() {
   // arriba, que es donde lo busca quien acaba de enriquecerlo.
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
   // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
-  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected'>('all');
+  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated'>('all');
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -56,10 +57,12 @@ export function ValidationListPage() {
         params.offset,
         params.search,
         // La columna Vínculos ordena por la cantidad total de ingredientes vinculados.
-        (sort.key === 'counts' ? 'links' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links',
+        // En "Validados" el orden por fecha es por cuándo se validó.
+        (sort.key === 'counts' ? 'links' : needsFilter === 'validated' && (sort.key === 'updatedAt' || sort.key === 'createdAt') ? 'validatedAt' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links' | 'validatedAt',
         sort.direction,
-        needsFilter === 'all' || needsFilter === 'rejected' ? undefined : needsFilter === 'yes',
+        needsFilter === 'all' || needsFilter === 'rejected' || needsFilter === 'validated' ? undefined : needsFilter === 'yes',
         needsFilter === 'rejected',
+        needsFilter === 'validated',
       ).then((r) => ({ data: r.items, total: r.total })),
     [sort, needsFilter],
   );
@@ -87,7 +90,12 @@ export function ValidationListPage() {
           <strong>{p.name}</strong>
           {p.isRejected && (
             <Tooltip content={`Rechazado${p.rejectedAt ? ` el ${new Date(p.rejectedAt).toLocaleDateString('es-UY')}` : ''}.${p.rejectedReason ? ` Motivo: ${p.rejectedReason}` : ''} Entrá para volverlo a la cola.`}>
-              <span className="vq-needs-photos vq-rejected">🚫 Rechazado</span>
+              <span className="vq-needs-photos vq-rejected">🚫 Rechazado{p.rejectedByEmail ? ` por ${p.rejectedByEmail.split('@')[0]}` : ''}</span>
+            </Tooltip>
+          )}
+          {needsFilter === 'validated' && (
+            <Tooltip content={validatedByText(p.validatedByEmail, p.validatedAt)}>
+              <span className="vq-needs-photos vq-validated">✅ {p.validatedByEmail ? p.validatedByEmail.split('@')[0] : 'sin registro'}{p.validatedAt ? ` · ${new Date(p.validatedAt).toLocaleDateString('es-UY')}` : ''}</span>
             </Tooltip>
           )}
           {p.needsPhotos && (
@@ -150,11 +158,12 @@ export function ValidationListPage() {
             </div>
 
             <select className="vq-filter" value={needsFilter} aria-label="Filtrar por información"
-              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected'); setCurrentPage(1); }}>
+              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected' | 'validated'); setCurrentPage(1); }}>
               <option value="all">Todos</option>
               <option value="yes">📷 Info insuficiente</option>
               <option value="no">Con información</option>
               <option value="rejected">🚫 Rechazados</option>
+              <option value="validated">✅ Validados</option>
             </select>
             <div className="header-search">
               <SearchInput
