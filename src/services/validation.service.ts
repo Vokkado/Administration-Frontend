@@ -135,6 +135,22 @@ export interface LabelSource {
   /** true = el súper devolvió este código de barras; false = solo por nombre (puede ser otro producto). */
   matchedByEan?: boolean;
 }
+export interface ScoreHighlightItem { name: string; valuePer100: number; unit: string }
+/** Respuesta de "Ver posible puntaje" (mismo motor que el puntaje real, sin guardar). */
+export interface ScorePreview {
+  score: number | null;
+  highlights: {
+    beneficials: ScoreHighlightItem[]; notBeneficials: ScoreHighlightItem[]; excesses: ScoreHighlightItem[];
+    neutrals: ScoreHighlightItem[]; neutralExcesses: ScoreHighlightItem[];
+  } | null;
+  breakdown: {
+    scoreFinal: number | null;
+    penaltyIngredientes: number; penaltyToxicidad: number; penaltyRedFlags: number;
+    nutritionNegativeImpact: number; nutritionPositiveImpact: number; penaltyUltraProcessed: number;
+    penaltyPobrezaNutricional: number; penaltyAmortiguacion: number;
+  };
+}
+
 export interface LabelSources {
   fetchedAt: string;
   userPhotos: { cover: string | null; ingredients: string | null; nutritionFacts: string | null };
@@ -252,6 +268,12 @@ export class ValidationService {
   }
   static async clearNeedsPhotos(id: string): Promise<void> {
     await apiService.delete(`${BASE}/${id}/needs-photos`);
+  }
+
+  /** Puntaje estimado con lo cargado hasta ahora (no guarda nada). */
+  static async previewScore(id: string): Promise<ScorePreview> {
+    const res = await apiService.get<{ data: ScorePreview }>(`${BASE}/${id}/score-preview`);
+    return res.data;
   }
 
   static async approve(id: string): Promise<void> {

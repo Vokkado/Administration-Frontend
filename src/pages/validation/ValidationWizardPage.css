@@ -492,6 +492,28 @@
     margin-top: 16px;
   }
 
+  /* "Ver POSIBLE PUNTAJE" (paso Finalizar) */
+  .vw-score-preview {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-grey-200, #e5e7eb);
+  }
+  .vw-score-preview-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .vw-score-preview-note { font-size: 13px; color: var(--color-grey-600); }
+  .vw-score-preview-error { margin-top: 10px; color: var(--color-error, #c62828); font-size: 14px; }
+  .vw-score-preview-none { margin: 12px 0 0; color: var(--color-grey-600); }
+  .vw-score-preview-body { display: flex; gap: 16px; align-items: flex-start; margin-top: 14px; }
+  .vw-score-badge {
+    flex: 0 0 auto;
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 24px; font-weight: 700;
+  }
+  .vw-score-preview-detail { min-width: 0; font-size: 14px; }
+  .vw-score-preview-detail ul { margin: 6px 0 0; padding-left: 18px; }
+  .vw-score-preview-detail li { margin: 2px 0; }
+  .vw-score-preview-hl { margin-top: 8px; display: grid; gap: 4px; color: var(--color-grey-700, #374151); overflow-wrap: anywhere; }
+
   .vw-finish-actions {
     display: flex;
     justify-content: flex-end;
