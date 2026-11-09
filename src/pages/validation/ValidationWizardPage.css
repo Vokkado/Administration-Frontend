@@ -615,3 +615,7 @@
 .dc-fronts-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .dc-front { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 96px; text-decoration: none; color: #6b7280; font-size: 11px; }
 .dc-front img { width: 96px; height: 96px; object-fit: contain; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
+
+/* Validado por (migración 289) */
+.vw-needs-photos.vw-validated { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.vq-needs-photos.vq-validated { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }

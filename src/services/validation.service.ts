@@ -23,6 +23,10 @@ export interface ValidationQueueItem {
   isRejected?: boolean;
   rejectedAt?: string | null;
   rejectedReason?: string | null;
+  rejectedByEmail?: string | null;
+  /** Quién lo validó y cuándo (filtro "Validados"). */
+  validatedAt?: string | null;
+  validatedByEmail?: string | null;
 }
 
 export interface ValidationIngredient {
@@ -104,6 +108,9 @@ export interface ValidationProduct {
   isRejected?: boolean;
   rejectedAt?: string | null;
   rejectedReason?: string | null;
+  rejectedByEmail?: string | null;
+  validatedAt?: string | null;
+  validatedByEmail?: string | null;
 }
 
 /** Fotos que se pueden pedir con "Falta información". */
@@ -198,15 +205,18 @@ export class ValidationService {
     offset = 0,
     search?: string,
     /** Default en el backend: createdAt desc (más nuevos primero). */
-    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'links',
+    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'links' | 'validatedAt',
     sortDir?: 'asc' | 'desc',
     /** true = solo "info insuficiente"; false = sin esa marca; undefined = todos. */
     needsPhotos?: boolean,
     /** true = solo los rechazados (para revisarlos o devolverlos a la cola). */
     rejected?: boolean,
+    /** true = los ya validados (quién y cuándo). */
+    validated?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (rejected) params.append('rejected', 'true');
+    if (validated) params.append('validated', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
     if (search) params.append('search', search);
     if (sortBy) params.append('sortBy', sortBy);

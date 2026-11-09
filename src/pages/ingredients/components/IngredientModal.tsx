@@ -2,6 +2,7 @@
  * Modal para Crear/Editar Ingredientes
  */
 import { useState, useEffect, useRef } from 'react';
+import { validatedByText } from '../../../utils/validatedBy';
 import { Modal, Button, Input } from '../../../components/ui';
 import type { 
   Ingredient, 
@@ -405,7 +406,10 @@ export function IngredientModal({
           <Button type="button" variant="outline" onClick={onClose} disabled={isValidating}>
             Cancelar
           </Button>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {editingIngredient?.isInspected && (
+              <span style={{ fontSize: 12, color: '#065f46' }}>✔ {validatedByText(editingIngredient.validatedByEmail, editingIngredient.validatedAt)}</span>
+            )}
             {editingIngredient && onValidate && (
               <Button
                 type="button"

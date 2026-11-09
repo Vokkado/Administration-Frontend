@@ -12,6 +12,9 @@ export interface Ingredient {
   score: number;
   reason?: string;
   isInspected: boolean;
+  /** Quién lo validó en esta pantalla y cuándo (null si nadie / antes del registro). */
+  validatedByEmail?: string | null;
+  validatedAt?: string | null;
   /** Lo creó la IA al cargar un producto (no cambia al validarlo). */
   createdByAi?: boolean;
   /** Productos distintos que lo usan (por cualquiera de sus variantes). Viene en el listado. */
@@ -27,6 +30,9 @@ export interface IngredientVariant {
   ingredientId: string;
   name: string;
   isInspected: boolean;
+  /** Quién la validó en esta pantalla y cuándo (null si nadie / antes del registro). */
+  validatedByEmail?: string | null;
+  validatedAt?: string | null;
   /** La creó la IA al cargar un producto (no cambia al validarla). */
   createdByAi?: boolean;
   /** Productos distintos que la usan. Viene en el listado. */

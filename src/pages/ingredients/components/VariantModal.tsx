@@ -2,6 +2,7 @@
  * Modal para Crear/Editar Variantes de Ingrediente
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { validatedByText } from '../../../utils/validatedBy';
 import { Modal, Button, Input, Pagination, AttributeBadge } from '../../../components/ui';
 import { IngredientVariantsService } from '../../../services/ingredient-variants.service';
 import type { AttributeSuggestion } from '../../../services/ingredient-variants.service';
@@ -634,7 +635,10 @@ export function VariantModal({
         <Button type="button" variant="outline" onClick={onClose} disabled={isValidating}>
           Cancelar
         </Button>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {editingVariant?.isInspected && (
+            <span style={{ fontSize: 12, color: '#065f46' }}>✔ {validatedByText(editingVariant.validatedByEmail, editingVariant.validatedAt)}</span>
+          )}
           {editingVariant && onValidate && (
             <Button
               type="button"
