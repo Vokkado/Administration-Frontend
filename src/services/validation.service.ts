@@ -191,7 +191,7 @@ export class ValidationService {
     offset = 0,
     search?: string,
     /** Default en el backend: createdAt desc (más nuevos primero). */
-    sortBy?: 'name' | 'createdAt' | 'updatedAt',
+    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'links',
     sortDir?: 'asc' | 'desc',
     /** true = solo "info insuficiente"; false = sin esa marca; undefined = todos. */
     needsPhotos?: boolean,
