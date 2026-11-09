@@ -43,7 +43,7 @@ export interface ValidationIngredient {
   color: LinkColor;
   /**
    * Atributos automáticos de la variante (Metas, Embarazo…). `inspected` false = los puso la IA o
-   * el clasificador y nadie los validó: aprobar el producto los valida.
+   * el clasificador y nadie los validó; se validan en la pantalla del ingrediente (aprobar el producto no).
    */
   autoAttributes?: ValidationAutoAttribute[];
 }

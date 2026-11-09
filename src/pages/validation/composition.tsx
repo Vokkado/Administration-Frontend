@@ -518,7 +518,7 @@ function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
 /**
  * Atributos de metas y embarazo de la variante (Metas > Sodio, Embarazo > Carne cruda o curada…): las
  * metas los usan cuando el producto no tiene tabla y el embarazo avisa por ellos. Los sin validar
- * (los puso la IA o el clasificador) se marcan; aprobar el producto los valida. Para corregirlos: el ✎
+ * (los puso la IA o el clasificador) se marcan; se validan en la pantalla del ingrediente (aprobar el producto no los valida). Para corregirlos: el ✎
  * de la variante.
  */
 function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: ValidationAutoAttribute[]; onEdit: () => void }) {
@@ -540,7 +540,7 @@ function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: Validat
               <>
                 {describeAttribute(a.attributeId)}
                 <br />
-                {a.inspected ? 'Validado.' : 'Lo puso la IA o el clasificador: al aprobar el producto queda validado.'}
+                {a.inspected ? 'Validado.' : 'Lo puso la IA o el clasificador: falta validarlo en la pantalla del ingrediente.'}
               </>
             }
           />
