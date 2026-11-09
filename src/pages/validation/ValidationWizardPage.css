@@ -589,3 +589,24 @@
 /* Rechazado (filtro "Rechazados" + banner en el wizard) */
 .vw-needs-photos.vw-rejected { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
 .vq-needs-photos.vq-rejected { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+/* Chequeo del decreto 34/021 (paso Más info) */
+.dc-panel { margin-top: 12px; border: 1px solid var(--color-grey-200, #e5e7eb); border-radius: 10px; padding: 12px 14px; background: #fafafa; font-size: 14px; }
+.dc-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 8px; }
+.dc-sub { color: #6b7280; font-size: 13px; }
+.dc-apply { margin-left: auto; font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary, #4d7c0f); background: var(--color-primary, #4d7c0f); color: #fff; cursor: pointer; }
+.dc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dc-row { padding: 8px 10px; border-radius: 8px; background: #fff; border: 1px solid #f3f4f6; }
+.dc-row.dc-mismatch { border-color: #fde68a; background: #fffbeb; }
+.dc-row-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dc-label { font-weight: 600; min-width: 130px; }
+.dc-chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.dc-exceso { background: #111827; color: #fff; }
+.dc-probable { background: #fef3c7; color: #92400e; }
+.dc-ok { background: #ecfdf5; color: #065f46; }
+.dc-unknown { background: #f3f4f6; color: #4b5563; }
+.dc-marked { font-size: 12px; color: #6b7280; }
+.dc-btn { margin-left: auto; font: inherit; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 8px; border: 1px solid var(--color-primary, #4d7c0f); background: #fff; color: var(--color-primary, #4d7c0f); cursor: pointer; }
+.dc-detail { margin-top: 4px; color: #374151; font-size: 13px; line-height: 1.4; }
+.dc-note { margin-top: 8px; font-size: 13px; color: #1e3a8a; }
+.dc-foot { margin-top: 8px; font-size: 12px; color: #6b7280; }

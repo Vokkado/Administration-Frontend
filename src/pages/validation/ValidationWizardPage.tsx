@@ -15,6 +15,7 @@ import { ValidationService, type ValidationDetail, type CategoryOption, type Com
 import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
+import { DecreePanel } from './DecreePanel';
 import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
@@ -390,6 +391,14 @@ export function ValidationWizardPage() {
                     <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
                     <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
                   </div>
+                  <DecreePanel
+                    detail={detail}
+                    name={meta.name}
+                    servingSizeAmount={meta.servingSizeAmount}
+                    servingSizeUnit={meta.servingSizeUnit}
+                    values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
+                    onSet={(k, v) => set(k, v)}
+                  />
                 </div>
               </div>
             )}
