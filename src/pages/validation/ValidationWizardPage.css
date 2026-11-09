@@ -585,3 +585,7 @@
   display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
   background: #fffbeb; color: #b45309; border: 1px solid #fde68a; cursor: help; white-space: nowrap;
 }
+
+/* Rechazado (filtro "Rechazados" + banner en el wizard) */
+.vw-needs-photos.vw-rejected { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
+.vq-needs-photos.vq-rejected { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }

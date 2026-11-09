@@ -48,7 +48,7 @@ export function ValidationListPage() {
   // arriba, que es donde lo busca quien acaba de enriquecerlo.
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
   // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
-  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no'>('all');
+  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected'>('all');
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -58,7 +58,8 @@ export function ValidationListPage() {
         // La columna Vínculos ordena por la cantidad total de ingredientes vinculados.
         (sort.key === 'counts' ? 'links' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links',
         sort.direction,
-        needsFilter === 'all' ? undefined : needsFilter === 'yes',
+        needsFilter === 'all' || needsFilter === 'rejected' ? undefined : needsFilter === 'yes',
+        needsFilter === 'rejected',
       ).then((r) => ({ data: r.items, total: r.total })),
     [sort, needsFilter],
   );
@@ -84,6 +85,11 @@ export function ValidationListPage() {
       key: 'name', header: 'Producto', render: (p) => (
         <>
           <strong>{p.name}</strong>
+          {p.isRejected && (
+            <Tooltip content={`Rechazado${p.rejectedAt ? ` el ${new Date(p.rejectedAt).toLocaleDateString('es-UY')}` : ''}.${p.rejectedReason ? ` Motivo: ${p.rejectedReason}` : ''} Entrá para volverlo a la cola.`}>
+              <span className="vq-needs-photos vq-rejected">🚫 Rechazado</span>
+            </Tooltip>
+          )}
           {p.needsPhotos && (
             <Tooltip content={`Esperando foto de ${needsPhotosText(p.needsPhotosParts)}.${p.needsPhotosNote ? ` Nota: ${p.needsPhotosNote}` : ''}`}>
               <span className="vq-needs-photos">📷 Info insuficiente · {needsPhotosShort(p.needsPhotosParts)}</span>
@@ -144,10 +150,11 @@ export function ValidationListPage() {
             </div>
 
             <select className="vq-filter" value={needsFilter} aria-label="Filtrar por información"
-              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no'); setCurrentPage(1); }}>
+              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected'); setCurrentPage(1); }}>
               <option value="all">Todos</option>
               <option value="yes">📷 Info insuficiente</option>
               <option value="no">Con información</option>
+              <option value="rejected">🚫 Rechazados</option>
             </select>
             <div className="header-search">
               <SearchInput

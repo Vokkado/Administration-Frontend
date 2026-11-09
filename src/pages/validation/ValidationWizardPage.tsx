@@ -198,6 +198,16 @@ export function ValidationWizardPage() {
     } finally { setBusy(false); }
   };
 
+  // Deshace el rechazo: vuelve a la cola como pendiente (si nadie re-subió el mismo código).
+  const onUnreject = async () => {
+    setBusy(true);
+    setError(null);
+    try { await ValidationService.unreject(id); await loadDetail(); }
+    catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'No pudimos volverlo a la cola. Revisá tu conexión e intentá de nuevo.');
+    } finally { setBusy(false); }
+  };
+
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     setBusy(true);
@@ -218,10 +228,22 @@ export function ValidationWizardPage() {
         <div className="vw-topbar">
           <button className="vw-back" onClick={() => navigate('/validation')}>← Volver a la lista</button>
           {/* Siempre disponible: rechazar/eliminar el producto en cualquier paso. No otorga puntos. */}
-          <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Rechazar producto</Button>
+          {detail.product.isRejected
+            ? <Button variant="primary" onClick={onUnreject} disabled={busy}>↩ Volver a la cola</Button>
+            : <Button variant="danger" onClick={() => setShowReject(true)} disabled={busy}>Rechazar producto</Button>}
         </div>
 
         {error && <div className="vw-error" role="alert">{error}</div>}
+
+        {detail.product.isRejected && (
+          <div className="vw-needs-photos vw-rejected" role="status">
+            <div>
+              <strong>🚫 Rechazado</strong>{detail.product.rejectedAt ? ` el ${new Date(detail.product.rejectedAt).toLocaleDateString('es-UY')}` : ''} — no aparece en la cola ni en la app (ni al escanear ni al buscar). Si se rechazó por error, volvelo a la cola; para validarlo primero tiene que volver.
+              {detail.product.rejectedReason && <div style={{ marginTop: 4 }}>Motivo: {detail.product.rejectedReason}</div>}
+            </div>
+            <Button variant="primary" size="small" onClick={onUnreject} disabled={busy}>↩ Volver a la cola</Button>
+          </div>
+        )}
 
         {detail.product.needsPhotos && (
           <div className="vw-needs-photos" role="status">
