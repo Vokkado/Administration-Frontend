@@ -19,6 +19,10 @@ export interface ValidationQueueItem {
   needsPhotos?: boolean;
   needsPhotosNote?: string | null;
   needsPhotosParts?: NeedsPhotoPart[] | null;
+  /** Rechazado: solo aparece con el filtro "Rechazados". */
+  isRejected?: boolean;
+  rejectedAt?: string | null;
+  rejectedReason?: string | null;
 }
 
 export interface ValidationIngredient {
@@ -97,6 +101,9 @@ export interface ValidationProduct {
   needsPhotosNote?: string | null;
   needsPhotosAt?: string | null;
   needsPhotosParts?: NeedsPhotoPart[] | null;
+  isRejected?: boolean;
+  rejectedAt?: string | null;
+  rejectedReason?: string | null;
 }
 
 /** Fotos que se pueden pedir con "Falta información". */
@@ -195,8 +202,11 @@ export class ValidationService {
     sortDir?: 'asc' | 'desc',
     /** true = solo "info insuficiente"; false = sin esa marca; undefined = todos. */
     needsPhotos?: boolean,
+    /** true = solo los rechazados (para revisarlos o devolverlos a la cola). */
+    rejected?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (rejected) params.append('rejected', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
     if (search) params.append('search', search);
     if (sortBy) params.append('sortBy', sortBy);
@@ -241,6 +251,11 @@ export class ValidationService {
   /** Descarta (soft-reject) el producto: lo marca rechazado, no otorga puntos al uploader. */
   static async reject(id: string, reason?: string): Promise<void> {
     await apiService.post(`${BASE}/${id}/reject`, reason ? { reason } : {});
+  }
+
+  /** Deshace el rechazo: el producto vuelve a la cola como pendiente. */
+  static async unreject(id: string): Promise<void> {
+    await apiService.post(`${BASE}/${id}/unreject`, {});
   }
 
   static async confirmIngredient(id: string, variantId: string): Promise<void> {
