@@ -409,7 +409,7 @@ export function ValidationWizardPage() {
                 <h3 style={{ marginTop: 0, color: 'var(--color-primary-dark)' }}>Listo para finalizar</h3>
                 <p style={{ color: 'var(--color-grey-600)' }}>
                   <strong>Completar</strong>: guarda los cambios pero el producto sigue pendiente en la cola.<br />
-                  <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). También da por validadas las señales de sus ingredientes (azúcar, sodio…). Le otorga puntos a quien lo cargó.<br />
+                  <strong>Completar y validar</strong>: guarda y marca el producto como validado (sale de la cola y pasa a usar las tablas estructuradas). Los ingredientes NO se validan acá: los que estén sin validar siguen así hasta que alguien les cargue restricciones y atributos en Ingredientes. Le otorga puntos a quien lo cargó.<br />
                   <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.<br />
                   <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee o lo busque tiene que sacar las fotos que tildes (portada, tabla o ingredientes), y cuando lleguen vuelve a la cola con ellas.
                 </p>
