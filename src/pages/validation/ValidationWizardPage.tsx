@@ -19,6 +19,7 @@ import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
 import { ScorePreviewPanel } from './ScorePreviewPanel';
 import { NovaPanel } from './NovaPanel';
+import { KcalPanel } from './KcalPanel';
 import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
@@ -405,6 +406,7 @@ export function ValidationWizardPage() {
                     value={meta.isUltraProcessed}
                     onSet={(v) => set('isUltraProcessed', v)}
                   />
+                  <KcalPanel detail={detail} />
                   <DecreePanel
                     detail={detail}
                     name={meta.name}
