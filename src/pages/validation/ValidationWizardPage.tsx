@@ -20,6 +20,7 @@ import { DecreePanel } from './DecreePanel';
 import { ScorePreviewPanel } from './ScorePreviewPanel';
 import { NovaPanel } from './NovaPanel';
 import { KcalPanel } from './KcalPanel';
+import { NAME_RULE_HINT, BRAND_RULE_HINT, checkName, normalizeBrand } from './nameRules';
 import { NOVA4_HINT } from '../../constants/nova';
 import './ValidationWizardPage.css';
 
@@ -287,13 +288,61 @@ export function ValidationWizardPage() {
                     <div style={{ flex: 1 }} className="vw-form-grid">
                       <div className="form-group form-group-full">
                         <Input label="Nombre" value={meta.name} onChange={(e) => set('name', e.target.value)} fullWidth />
+                        <small className="vw-rule-hint">{NAME_RULE_HINT}</small>
+                        {checkName(meta.name, meta.brand).map((iss) => (
+                          <small key={iss.text} className="vw-rule-warn">
+                            ⚠️ {iss.text}
+                            {iss.fix && <button type="button" className="nova-btn" onClick={() => set('name', iss.fix!)}>Aplicar</button>}
+                          </small>
+                        ))}
                       </div>
                       <div className="form-group">
                         <Input label="Marca" value={meta.brand} onChange={(e) => set('brand', e.target.value)} fullWidth />
+                        <small className="vw-rule-hint">{BRAND_RULE_HINT}</small>
+                        {meta.brand.trim() && normalizeBrand(meta.brand) !== meta.brand.trim() && (
+                          <small className="vw-rule-warn">
+                            ⚠️ ¿"{normalizeBrand(meta.brand)}"? (salvo que la marca se escriba así en el envase)
+                            <button type="button" className="nova-btn" onClick={() => set('brand', normalizeBrand(meta.brand))}>Aplicar</button>
+                          </small>
+                        )}
                       </div>
                       <div className="form-group">
                         <Input label="Código de barras" value={meta.barcode} onChange={(e) => set('barcode', e.target.value)} fullWidth />
                       </div>
+                      {(() => {
+                        // La portada no puede ser la foto que sacó el usuario (es privada, R41): avisar y ofrecer
+                        // las portadas que publican súper/marca por código de barras.
+                        const userCover = detail.product.labelSources?.userPhotos?.cover ?? null;
+                        const isUserPhoto = !!meta.image && (meta.image === userCover || meta.image.includes(`/products/${id}/cover`));
+                        const fronts = (detail.product.labelSources?.sources ?? [])
+                          .filter((s) => s.coverUrl && s.matchedByEan !== false)
+                          .slice(0, 3);
+                        if (!isUserPhoto && meta.image) return null;
+                        return (
+                          <div className="form-group form-group-full">
+                            <div className="vw-cover-warn">
+                              ⚠️ {meta.image ? 'La portada es la foto que sacó el usuario: cambiala por una oficial (súper o marca).' : 'Falta la portada: poné una oficial (súper o marca).'}
+                              {fronts.length > 0 && (
+                                <div className="vw-cover-options">
+                                  {fronts.map((s) => (
+                                    <button key={s.coverUrl!} type="button" className="vw-cover-option" onClick={() => set('image', s.coverUrl!)} title={`Usar la de ${s.store}`}>
+                                      <img src={s.coverUrl!} alt="" /><span>{s.store}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {fronts.length === 0 && (
+                                <span> Buscala por código de barras en el súper o la web de la marca y pegá la URL abajo.{' '}
+                                  <button type="button" className="nova-btn" disabled={busy}
+                                    onClick={async () => { setBusy(true); try { await ValidationService.aiSources(id); await loadDetail(); } catch { /* sin fuentes */ } finally { setBusy(false); } }}>
+                                    Buscar por código (súper/marca)
+                                  </button>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <div className="form-group form-group-full">
                         <Input label="o pegá una URL de imagen" value={meta.image} onChange={(e) => set('image', e.target.value)} placeholder="https://…" fullWidth />
                         {meta.image && !/^https:\/\/.+/.test(meta.image) && (
