@@ -331,7 +331,10 @@ export function ValidationWizardPage() {
                                   ))}
                                 </div>
                               )}
-                              {fronts.length === 0 && (
+                              {fronts.length === 0 && detail.product.labelSources?.fetchedAt && (
+                                <span> Ya se buscó por código y ningún súper ni marca la tiene: buscala a mano (web de la marca, Google Imágenes) y pegá la URL abajo.</span>
+                              )}
+                              {fronts.length === 0 && !detail.product.labelSources?.fetchedAt && (
                                 <span> Buscala por código de barras en el súper o la web de la marca y pegá la URL abajo.{' '}
                                   <button type="button" className="nova-btn" disabled={busy}
                                     onClick={async () => { setBusy(true); try { await ValidationService.aiSources(id); await loadDetail(); } catch { /* sin fuentes */ } finally { setBusy(false); } }}>
