@@ -52,6 +52,9 @@ export function checkName(name: string, brand: string): NameIssue[] {
   if (!/\d\s*(g|Kg|ml|L)\b/.test(fixedUnits)) out.push({ text: 'Falta el peso neto al final (ej. "500 g", "1 Kg", "1,5 L").' });
   else if (fixedUnits !== n) out.push({ text: `Unidades: "${fixedUnits}".`, fix: fixedUnits });
   const b = brand.trim();
-  if (b && !n.toLowerCase().includes(b.toLowerCase())) out.push({ text: `Falta la marca en el nombre ("${b}").` });
+  // Sin espacios, puntos ni mayúsculas ("Dr. Lemon" = "DR.LEMON"); las marcas de relleno no cuentan.
+  const bare = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const placeholder = /^(otras? marcas?|gen[eé]ric[oa]s?|sin marca|varios|pendiente)$/i.test(b);
+  if (b && !placeholder && !bare(n).includes(bare(b))) out.push({ text: `Falta la marca en el nombre ("${b}").` });
   return out;
 }
