@@ -24,6 +24,7 @@ const STORE_COLORS: Record<string, string> = {
   disco: '#ED1C24',
   devoto: '#0046AD',
   geant: '#E8520E',
+  adu: '#1E88E5',
 };
 
 export function PricesModal({ show, productId, productName, onClose }: Props) {

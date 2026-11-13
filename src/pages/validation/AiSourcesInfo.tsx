@@ -16,6 +16,7 @@ const STORE_LABELS: Record<string, string> = {
   disco: 'Disco',
   devoto: 'Devoto',
   geant: 'Géant',
+  adu: 'ADU Tienda',
   openfoodfacts: 'OpenFoodFacts',
   conaprole: 'Conaprole (sitio de la marca)',
   schneck: 'Schneck (sitio de la marca)',
