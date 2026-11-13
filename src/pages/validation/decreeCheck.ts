@@ -40,34 +40,40 @@ export interface DecreeResult {
   notes: string[];
 }
 
-interface NutritionRow { name: string; value: number | null; unit: string | null }
+export interface NutritionRow { name: string; value: number | null; unit: string | null }
 
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-const fmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString('es-UY', { maximumFractionDigits: 1 });
+export const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+export const fmt = (n: number) => (Math.round(n * 10) / 10).toLocaleString('es-UY', { maximumFractionDigits: 1 });
 
 // Ingredientes que cuentan como "agregado" (lista del manual, simplificada).
-const ADDED_SODIUM = /\bsal\b|sodio|sodic|salmuera|glutamato monosodico/;
+export const ADDED_SODIUM = /\bsal\b|sodio|sodic|salmuera|glutamato monosodico/;
 // "caramelo - ins 150" es un colorante, no azúcar.
 // Incluye ingredientes compuestos "que contengan agregado" (chocolate, galletas, mermeladas, coberturas).
-const ADDED_SUGAR = /azucar|jarabe|\bmiel\b|dextrosa|glucosa|fructosa|sacarosa|melaza|dulce de|\bcaramelo\b(?!.*ins)|chocolate|cobertura|mermelada|confitura|galleta|bizcocho|oblea|almibar|fondant|\bbanado/;
-const POLYOL = /maltitol|sorbitol|isomalt|xilitol|eritritol|manitol|lactitol|polidextrosa/;
+export const ADDED_SUGAR = /azucar|jarabe|\bmiel\b|dextrosa|glucosa|fructosa|sacarosa|melaza|dulce de|\bcaramelo\b(?!.*ins)|chocolate|cobertura|mermelada|confitura|galleta|bizcocho|oblea|almibar|fondant|\bbanado/;
+/** El colorante caramelo (INS 150) no es azúcar: "colorante caramelo - ins 150d | caramelo". */
+const CARAMEL_COLOR = /colorante|ins ?150|\be ?150/;
+/** ¿El ingrediente es un azúcar agregado? (no los polioles ni el colorante caramelo). */
+// Si es colorante caramelo, solo cuenta si ADEMÁS hay otro azúcar ("cobertura sabor caramelo (colorante…)" sí).
+export const isAddedSugarIng = (i: string) => ADDED_SUGAR.test(i) && !POLYOL.test(i)
+  && !(CARAMEL_COLOR.test(i) && /caramelo/.test(i) && !ADDED_SUGAR.test(i.replace(/caramelo/g, '')));
+export const POLYOL = /maltitol|sorbitol|isomalt|xilitol|eritritol|manitol|lactitol|polidextrosa/;
 // Crema de leche SÍ cuenta (también en lácteos). Compuestos con grasa agregada: chocolate, galletas, coberturas.
-const ADDED_FAT = /aceite|grasa|manteca|margarina|shortening|\bsebo\b|emulsion grasa|\bcrema\b|chocolate|cobertura|galleta|bizcocho|oblea/;
-const SWEETENER = /sucralosa|acesulfam|aspartam|sacarina|ciclamato|stevia|esteviol|neotamo|edulcorante/;
-const FRUIT = /manzana|banana|frutilla|durazno|\bpasas?\b|\buvas?\b|naranja|limon|\bperas?\b|anana|mango|\bfruta|arandano|ciruela|\bhigo|datil|\bcoco\b|frambuesa|\bmoras?\b|cereza|kiwi|maracuya|caju|tomate|zanahoria|zapallo|remolacha/;
-const NUTS_SEEDS = /\bnuez|nueces|almendra|\bmani\b|castana|avellana|pistacho|semilla|\bchia\b|sesamo|girasol|\blino\b/;
-const TO_PREPARE = /en polvo|para preparar|instantane|\bsopa|\bcaldo|gelatina|\bflan\b|refresco|polvo para|salsa blanca|\bpure\b/;
-const FLUID_MILK = /\bleche\b(?!.*polvo)/;
-const POWDER_MILK = /leche.*polvo/;
+export const ADDED_FAT = /aceite|grasa|manteca|margarina|shortening|\bsebo\b|emulsion grasa|\bcrema\b|chocolate|cobertura|galleta|bizcocho|oblea/;
+export const SWEETENER = /sucralosa|acesulfam|aspartam|sacarina|ciclamato|stevia|esteviol|neotamo|edulcorante/;
+export const FRUIT = /manzana|banana|frutilla|durazno|\bpasas?\b|\buvas?\b|naranja|limon|\bperas?\b|anana|mango|\bfruta|arandano|ciruela|\bhigo|datil|\bcoco\b|frambuesa|\bmoras?\b|cereza|kiwi|maracuya|caju|tomate|zanahoria|zapallo|remolacha/;
+export const NUTS_SEEDS = /\bnuez|nueces|almendra|\bmani\b|castana|avellana|pistacho|semilla|\bchia\b|sesamo|girasol|\blino\b/;
+export const TO_PREPARE = /en polvo|para preparar|instantane|\bsopa|\bcaldo|gelatina|\bflan\b|refresco|polvo para|salsa blanca|\bpure\b/;
+export const FLUID_MILK = /\bleche\b(?!.*polvo)/;
+export const POWDER_MILK = /leche.*polvo/;
 /** Valores declarados redondeados: ±5 % del límite no alcanza para decidir con la tabla. */
 const EDGE = 0.05;
 
-function findRow(rows: NutritionRow[], test: (n: string) => boolean): NutritionRow | undefined {
+export function findRow(rows: NutritionRow[], test: (n: string) => boolean): NutritionRow | undefined {
   return rows.find((r) => r.value != null && test(norm(r.name)));
 }
 
 /** Valor del nutriente en g (o mg para sodio, o kcal) por 100 g/ml. */
-function per100(row: NutritionRow | undefined, factor: number, target: 'g' | 'mg' | 'kcal'): number | null {
+export function per100(row: NutritionRow | undefined, factor: number, target: 'g' | 'mg' | 'kcal'): number | null {
   if (!row || row.value == null) return null;
   const u = norm(row.unit ?? target);
   let v = Number(row.value);
@@ -95,7 +101,7 @@ export function checkDecree(input: {
 }): DecreeResult {
   const ings = input.ingredients.map(norm);
   const has = (re: RegExp, list = ings) => list.some((i) => re.test(i));
-  const isAddedSugar = (i: string) => ADDED_SUGAR.test(i) && !POLYOL.test(i);
+  const isAddedSugar = isAddedSugarIng;
   const notes: string[] = [];
 
   const amount = input.servingSizeAmount != null && Number(input.servingSizeAmount) > 0 ? Number(input.servingSizeAmount) : null;

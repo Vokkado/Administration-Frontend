@@ -17,6 +17,8 @@ import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composit
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
+import { ArSealsPanel } from './ArSealsPanel';
+import type { ArSeal } from './arFrontCheck';
 import { ScorePreviewPanel } from './ScorePreviewPanel';
 import { NovaPanel } from './NovaPanel';
 import { KcalPanel } from './KcalPanel';
@@ -38,6 +40,8 @@ type Meta = {
   registrationName: string; registrationCode: string; legalName: string;
   alcoholGraduation: string; source: string; servingSizeAmount: string; servingSizeUnit: string;
   isUltraProcessed: boolean; isFatAlert: boolean; isSaturatedFatAlert: boolean; isSugarAlert: boolean; isSodiumAlert: boolean;
+  /** Sellos argentinos del envase (producto importado). arEnabled = el envase trae sellos argentinos. */
+  arEnabled: boolean; arSeals: ArSeal[];
 };
 
 const toMeta = (p: ValidationDetail['product']): Meta => ({
@@ -47,6 +51,7 @@ const toMeta = (p: ValidationDetail['product']): Meta => ({
   servingSizeAmount: p.servingSizeAmount != null ? String(p.servingSizeAmount) : '', servingSizeUnit: p.servingSizeUnit ?? '',
   isUltraProcessed: !!p.isUltraProcessed, isFatAlert: !!p.isFatAlert, isSaturatedFatAlert: !!p.isSaturatedFatAlert,
   isSugarAlert: !!p.isSugarAlert, isSodiumAlert: !!p.isSodiumAlert,
+  arEnabled: (p.frontSeals?.AR?.length ?? 0) > 0, arSeals: (p.frontSeals?.AR ?? []) as ArSeal[],
 });
 
 export function ValidationWizardPage() {
@@ -127,6 +132,9 @@ export function ValidationWizardPage() {
       servingSizeUnit: meta.servingSizeUnit, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
       isSaturatedFatAlert: meta.isSaturatedFatAlert, isSugarAlert: meta.isSugarAlert, isSodiumAlert: meta.isSodiumAlert,
       companyData: buildCompanyData(),
+      // Sellos argentinos del envase: siempre se manda el estado actual ([] = no trae), así destildar
+      // "El envase trae sellos argentinos" borra lo guardado antes en esta misma sesión.
+      frontSeals: { AR: meta.arEnabled ? meta.arSeals : [] },
     });
   };
 
@@ -445,7 +453,7 @@ export function ValidationWizardPage() {
                 </div>
 
                 <div className="form-group" style={{ marginTop: 8 }}>
-                  <label className="form-label">Octógonos / alertas</label>
+                  <label className="form-label">Octógonos de Uruguay (MSP) / alertas</label>
                   <div className="vw-checks">
                     <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
                     <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
@@ -466,6 +474,16 @@ export function ValidationWizardPage() {
                     servingSizeUnit={meta.servingSizeUnit}
                     values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
                     onSet={(k, v) => set(k, v)}
+                  />
+                  <ArSealsPanel
+                    detail={detail}
+                    name={meta.name}
+                    servingSizeAmount={meta.servingSizeAmount}
+                    servingSizeUnit={meta.servingSizeUnit}
+                    enabled={meta.arEnabled}
+                    onEnabled={(v) => set('arEnabled', v)}
+                    values={meta.arSeals}
+                    onChange={(v) => set('arSeals', v)}
                   />
                 </div>
               </div>
