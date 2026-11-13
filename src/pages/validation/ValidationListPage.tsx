@@ -53,6 +53,8 @@ export function ValidationListPage() {
   const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated'>('all');
   // Filtro por quién lo cargó (mail).
   const [uploader, setUploader] = useState('');
+  const [uploaderExact, setUploaderExact] = useState(false);
+  const pickUploader = (email: string, exact: boolean) => { setUploader(email); setUploaderExact(exact); setCurrentPage(1); };
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -67,8 +69,9 @@ export function ValidationListPage() {
         needsFilter === 'rejected',
         needsFilter === 'validated',
         uploader || undefined,
+        uploaderExact,
       ).then((r) => ({ data: r.items, total: r.total })),
-    [sort, needsFilter, uploader],
+    [sort, needsFilter, uploader, uploaderExact],
   );
   const { items, total, loading, currentPage, totalPages, setCurrentPage, searchTerm, setSearchTerm } =
     usePaginatedList<ValidationQueueItem>({ fetchFn });
@@ -94,7 +97,7 @@ export function ValidationListPage() {
           <strong>{p.name}</strong>
           {p.uploaderEmail && (
             <button type="button" className="vq-uploader" title="Ver solo los que cargó esta persona"
-              onClick={(e) => { e.stopPropagation(); setUploader(p.uploaderEmail as string); setCurrentPage(1); }}>
+              onClick={(e) => { e.stopPropagation(); pickUploader(p.uploaderEmail as string, true); }}>
               👤 {p.uploaderEmail}
             </button>
           )}
@@ -175,7 +178,7 @@ export function ValidationListPage() {
               <option value="rejected">🚫 Rechazados</option>
               <option value="validated">✅ Validados</option>
             </select>
-            <UploaderFilter value={uploader} onChange={(v) => { setUploader(v); setCurrentPage(1); }} />
+            <UploaderFilter value={uploader} exact={uploaderExact} onChange={pickUploader} />
             <div className="header-search">
               <SearchInput
                 value={searchTerm}

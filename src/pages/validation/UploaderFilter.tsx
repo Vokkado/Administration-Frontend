@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ValidationService, type UploaderSummary } from '../../services/validation.service';
 
-export function UploaderFilter({ value, onChange }: { value: string; onChange: (email: string) => void }) {
+export function UploaderFilter({ value, exact, onChange }: { value: string; exact: boolean; onChange: (email: string, exact: boolean) => void }) {
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<UploaderSummary[]>([]);
@@ -38,8 +38,8 @@ export function UploaderFilter({ value, onChange }: { value: string; onChange: (
   if (value) {
     return (
       <span className="uf-chip" title="Filtrando por quién lo cargó">
-        👤 {value}
-        <button type="button" aria-label="Quitar filtro" onClick={() => onChange('')}>✕</button>
+        👤 {exact ? value : `contiene "${value}"`}
+        <button type="button" aria-label="Quitar filtro" onClick={() => onChange('', false)}>✕</button>
       </span>
     );
   }
@@ -52,7 +52,7 @@ export function UploaderFilter({ value, onChange }: { value: string; onChange: (
         placeholder="👤 Cargado por (mail)…"
         onFocus={() => setOpen(true)}
         onChange={(e) => { setText(e.target.value); setOpen(true); }}
-        onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onChange(text.trim()); setOpen(false); setText(''); } }}
+        onKeyDown={(e) => { if (e.key === 'Enter' && text.trim()) { onChange(text.trim(), false); setOpen(false); setText(''); } }}
         aria-label="Filtrar por quién cargó el producto"
       />
       {open && (
@@ -65,7 +65,7 @@ export function UploaderFilter({ value, onChange }: { value: string; onChange: (
               type="button"
               key={u.userId}
               className="uf-item"
-              onClick={() => { onChange(u.email); setOpen(false); setText(''); }}
+              onClick={() => { onChange(u.email, true); setOpen(false); setText(''); }}
             >
               <span className="uf-email">{u.email}{u.name ? ` · ${u.name}` : ''}</span>
               <span className="uf-counts">{u.total} cargados · {u.pending} pendientes · {u.validated} validados</span>

@@ -257,9 +257,12 @@ export class ValidationService {
     validated?: boolean,
     /** Mail de quien lo cargó. */
     uploader?: string,
+    /** true = mail exacto (elegido de la lista o tocado en la cola). */
+    uploaderExact?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (uploader) params.append('uploader', uploader);
+    if (uploader && uploaderExact) params.append('uploaderExact', 'true');
     if (rejected) params.append('rejected', 'true');
     if (validated) params.append('validated', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));

@@ -175,7 +175,11 @@ export function ValidationWizardPage() {
     setError(null);
     try {
       await saveMeta();
-      if (validate) await ValidationService.approve(id, { notifyUploader: notify, notifyMessage: notifyMessage.trim() || undefined });
+      if (validate) {
+        const r = await ValidationService.approve(id, { notifyUploader: notify, notifyMessage: notifyMessage.trim() || undefined });
+        if (notify && r.notification === 'no_devices') window.alert('Validado ✓. No se pudo avisar: quien lo cargó no tiene las notificaciones activadas en su celular.');
+        else if (notify && r.notification === 'failed') window.alert('Validado ✓. No se pudo mandar el aviso (falló el envío); se reintenta la próxima vez que lo valides.');
+      }
       navigate('/validation');
     } catch {
       setError(validate
@@ -506,7 +510,7 @@ export function ValidationWizardPage() {
                   <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee o lo busque tiene que sacar las fotos que tildes (portada, tabla o ingredientes), y cuando lleguen vuelve a la cola con ellas.
                 </p>
                 <div className="vw-notify">
-                  {!detail.product.hasUploader ? (
+                  {detail.product.hasUploader === undefined ? null : !detail.product.hasUploader ? (
                     <span className="vw-notify-note">🔔 No lo cargó un usuario de la app: no hay a quién avisarle.</span>
                   ) : detail.product.approvalNotifiedAt ? (
                     <span className="vw-notify-note">🔔 Ya se le avisó a quien lo cargó ({new Date(detail.product.approvalNotifiedAt).toLocaleDateString('es-UY')}). No se vuelve a mandar.</span>
