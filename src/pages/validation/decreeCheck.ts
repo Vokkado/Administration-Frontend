@@ -51,9 +51,11 @@ export const ADDED_SODIUM = /\bsal\b|sodio|sodic|salmuera|glutamato monosodico/;
 // Incluye ingredientes compuestos "que contengan agregado" (chocolate, galletas, mermeladas, coberturas).
 export const ADDED_SUGAR = /azucar|jarabe|\bmiel\b|dextrosa|glucosa|fructosa|sacarosa|melaza|dulce de|\bcaramelo\b(?!.*ins)|chocolate|cobertura|mermelada|confitura|galleta|bizcocho|oblea|almibar|fondant|\bbanado/;
 /** El colorante caramelo (INS 150) no es azúcar: "colorante caramelo - ins 150d | caramelo". */
-const CARAMEL_COLOR = /colorante|ins ?150/;
+const CARAMEL_COLOR = /colorante|ins ?150|\be ?150/;
 /** ¿El ingrediente es un azúcar agregado? (no los polioles ni el colorante caramelo). */
-export const isAddedSugarIng = (i: string) => ADDED_SUGAR.test(i) && !POLYOL.test(i) && !(CARAMEL_COLOR.test(i) && /caramelo/.test(i) && !/azucar|jarabe|glucosa/.test(i));
+// Si es colorante caramelo, solo cuenta si ADEMÁS hay otro azúcar ("cobertura sabor caramelo (colorante…)" sí).
+export const isAddedSugarIng = (i: string) => ADDED_SUGAR.test(i) && !POLYOL.test(i)
+  && !(CARAMEL_COLOR.test(i) && /caramelo/.test(i) && !ADDED_SUGAR.test(i.replace(/caramelo/g, '')));
 export const POLYOL = /maltitol|sorbitol|isomalt|xilitol|eritritol|manitol|lactitol|polidextrosa/;
 // Crema de leche SÍ cuenta (también en lácteos). Compuestos con grasa agregada: chocolate, galletas, coberturas.
 export const ADDED_FAT = /aceite|grasa|manteca|margarina|shortening|\bsebo\b|emulsion grasa|\bcrema\b|chocolate|cobertura|galleta|bizcocho|oblea/;

@@ -132,10 +132,9 @@ export function ValidationWizardPage() {
       servingSizeUnit: meta.servingSizeUnit, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
       isSaturatedFatAlert: meta.isSaturatedFatAlert, isSugarAlert: meta.isSugarAlert, isSodiumAlert: meta.isSodiumAlert,
       companyData: buildCompanyData(),
-      // Sellos argentinos: solo se mandan si el envase los trae o si tenía y se sacaron.
-      ...(meta.arEnabled || (detail?.product.frontSeals?.AR?.length ?? 0) > 0
-        ? { frontSeals: { AR: meta.arEnabled ? meta.arSeals : [] } }
-        : {}),
+      // Sellos argentinos del envase: siempre se manda el estado actual ([] = no trae), así destildar
+      // "El envase trae sellos argentinos" borra lo guardado antes en esta misma sesión.
+      frontSeals: { AR: meta.arEnabled ? meta.arSeals : [] },
     });
   };
 

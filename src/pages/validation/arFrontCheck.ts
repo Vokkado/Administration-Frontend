@@ -57,8 +57,12 @@ function judge(v: number, limit: number): { status: DecreeStatus; sign: string; 
   return { status: edge ? 'probable' : 'ok', sign: '<', edge };
 }
 
-const CAFFEINE = /cafeina/;
+// "descafeinado" no lleva leyenda.
+const CAFFEINE = /(?<!des)cafeina/;
 const CAFFEINE_EXTRACT = /\bcafe\b|\bte\b|yerba|\bmate\b|guarana|\bcola\b/;
+// "sabor cola", "aroma de café": es un saborizante, no un extracto con cafeína.
+const FLAVOR_ONLY = /\b(sabor|aroma|aromatizante|saborizante)s?\b/;
+const DECAF = /descafeinad/;
 const pct = (n: number) => `${Math.round(n)} %`;
 
 export function checkArgentina(input: {
@@ -86,7 +90,7 @@ export function checkArgentina(input: {
   // Leyendas: dependen solo de los ingredientes.
   const sweetener = has(SWEETENER) || has(POLYOL);
   const caffeine = has(CAFFEINE);
-  const caffeineExtract = has(CAFFEINE_EXTRACT);
+  const caffeineExtract = ings.some((i) => CAFFEINE_EXTRACT.test(i) && !FLAVOR_ONLY.test(i) && !DECAF.test(i));
   const legends = () => {
     push('CONTAINS_SWEETENERS', sweetener ? 'exceso' : 'ok', sweetener
       ? 'Lleva un aditivo edulcorante en los ingredientes: va la leyenda, sin importar la cantidad.'
