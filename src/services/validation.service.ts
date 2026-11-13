@@ -5,7 +5,19 @@ import { apiService } from './api.service';
 
 export type LinkColor = 'green' | 'yellow' | 'red';
 
+/** Quien carga productos desde la app (filtro de la cola). */
+export interface UploaderSummary {
+  userId: string;
+  email: string;
+  name: string | null;
+  total: number;
+  pending: number;
+  validated: number;
+}
+
 export interface ValidationQueueItem {
+  /** Mail de quien lo cargó desde la app (null = importado o del equipo). */
+  uploaderEmail?: string | null;
   id: string;
   name: string;
   brand: string | null;
@@ -96,6 +108,10 @@ export interface ValidationProduct {
   isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
   /** Sellos frontales de otros países que trae el envase (hoy AR). Los de UY son los is_*_alert. */
   frontSeals?: Record<string, string[]> | null;
+  /** Lo cargó un usuario de la app (hay a quién avisarle al validar). */
+  hasUploader?: boolean;
+  /** Cuándo se le avisó que su producto fue validado (una sola vez). */
+  approvalNotifiedAt?: string | null;
   servingSizeAmount: number | null; servingSizeUnit: string | null;
   /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
   enrichmentSources: EnrichmentSourceSummary[] | null;
@@ -218,6 +234,14 @@ export interface CompanyOption { id: string; name: string }
 const BASE = '/products/validation';
 
 export class ValidationService {
+  /** Los que más productos cargaron (5) o, con search, los que coinciden por mail/nombre. */
+  static async topUploaders(search?: string): Promise<UploaderSummary[]> {
+    const params = new URLSearchParams({ limit: '5' });
+    if (search) params.append('search', search);
+    const res: any = await apiService.get(`${BASE}/uploaders?${params.toString()}`);
+    return res?.data?.data ?? res?.data ?? [];
+  }
+
   static async getQueue(
     limit = 30,
     offset = 0,
@@ -231,8 +255,14 @@ export class ValidationService {
     rejected?: boolean,
     /** true = los ya validados (quién y cuándo). */
     validated?: boolean,
+    /** Mail de quien lo cargó. */
+    uploader?: string,
+    /** true = mail exacto (elegido de la lista o tocado en la cola). */
+    uploaderExact?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (uploader) params.append('uploader', uploader);
+    if (uploader && uploaderExact) params.append('uploaderExact', 'true');
     if (rejected) params.append('rejected', 'true');
     if (validated) params.append('validated', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
@@ -278,8 +308,10 @@ export class ValidationService {
     return res.data;
   }
 
-  static async approve(id: string): Promise<void> {
-    await apiService.post(`${BASE}/${id}/approve`);
+  /** Valida. notifyUploader (por defecto true) le manda un push a quien lo cargó, una sola vez. */
+  static async approve(id: string, opts: { notifyUploader?: boolean; notifyMessage?: string } = {}): Promise<{ notification?: string }> {
+    const res: any = await apiService.post(`${BASE}/${id}/approve`, opts);
+    return res?.data?.data ?? res?.data ?? {};
   }
 
   /** Descarta (soft-reject) el producto: lo marca rechazado, no otorga puntos al uploader. */

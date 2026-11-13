@@ -3,6 +3,7 @@
  * de colores por producto. Clic en "Revisar" → wizard de validación paso a paso.
  */
 import { useCallback, useState } from 'react';
+import { UploaderFilter } from './UploaderFilter';
 import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
@@ -50,6 +51,10 @@ export function ValidationListPage() {
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
   // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
   const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated'>('all');
+  // Filtro por quién lo cargó (mail).
+  const [uploader, setUploader] = useState('');
+  const [uploaderExact, setUploaderExact] = useState(false);
+  const pickUploader = (email: string, exact: boolean) => { setUploader(email); setUploaderExact(exact); setCurrentPage(1); };
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -63,8 +68,10 @@ export function ValidationListPage() {
         needsFilter === 'all' || needsFilter === 'rejected' || needsFilter === 'validated' ? undefined : needsFilter === 'yes',
         needsFilter === 'rejected',
         needsFilter === 'validated',
+        uploader || undefined,
+        uploaderExact,
       ).then((r) => ({ data: r.items, total: r.total })),
-    [sort, needsFilter],
+    [sort, needsFilter, uploader, uploaderExact],
   );
   const { items, total, loading, currentPage, totalPages, setCurrentPage, searchTerm, setSearchTerm } =
     usePaginatedList<ValidationQueueItem>({ fetchFn });
@@ -88,6 +95,12 @@ export function ValidationListPage() {
       key: 'name', header: 'Producto', render: (p) => (
         <>
           <strong>{p.name}</strong>
+          {p.uploaderEmail && (
+            <button type="button" className="vq-uploader" title="Ver solo los que cargó esta persona"
+              onClick={(e) => { e.stopPropagation(); pickUploader(p.uploaderEmail as string, true); }}>
+              👤 {p.uploaderEmail}
+            </button>
+          )}
           {p.isRejected && (
             <Tooltip content={`Rechazado${p.rejectedAt ? ` el ${new Date(p.rejectedAt).toLocaleDateString('es-UY')}` : ''}.${p.rejectedReason ? ` Motivo: ${p.rejectedReason}` : ''} Entrá para volverlo a la cola.`}>
               <span className="vq-needs-photos vq-rejected">🚫 Rechazado{p.rejectedByEmail ? ` por ${p.rejectedByEmail.split('@')[0]}` : ''}</span>
@@ -165,6 +178,7 @@ export function ValidationListPage() {
               <option value="rejected">🚫 Rechazados</option>
               <option value="validated">✅ Validados</option>
             </select>
+            <UploaderFilter value={uploader} exact={uploaderExact} onChange={pickUploader} />
             <div className="header-search">
               <SearchInput
                 value={searchTerm}

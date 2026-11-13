@@ -658,3 +658,22 @@
 .vw-cover-option img { width: 64px; height: 64px; object-fit: contain; }
 .ar-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; }
 .dc-label input { margin-right: 4px; vertical-align: middle; }
+.vw-notify { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(46, 125, 50, 0.06); }
+.vw-notify-check { font-weight: 600; cursor: pointer; }
+.vw-notify-msg { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid #c8d3c8; resize: vertical; box-sizing: border-box; }
+.vw-notify-note { color: #6b7280; font-size: 13px; }
+.vw-notify-reset { background: none; border: none; padding: 0; color: var(--color-primary-dark, #2e7d32); text-decoration: underline; cursor: pointer; font-size: 13px; }
+/* Filtro "cargado por" (mail) */
+.uf { position: relative; }
+.uf-input { height: 38px; padding: 0 10px; border: 1px solid #d1d5db; border-radius: 8px; font: inherit; min-width: 220px; }
+.uf-menu { position: absolute; top: 42px; left: 0; z-index: 30; min-width: 320px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 6px; }
+.uf-head { font-size: 12px; color: #6b7280; padding: 4px 8px; }
+.uf-empty { font-size: 13px; color: #9ca3af; padding: 8px; }
+.uf-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; background: none; border: none; text-align: left; padding: 8px; border-radius: 8px; cursor: pointer; }
+.uf-item:hover { background: #f3f4f6; }
+.uf-email { font-weight: 600; font-size: 14px; color: #111827; }
+.uf-counts { font-size: 12px; color: #6b7280; }
+.uf-chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border-radius: 17px; background: #e8f5e9; color: #1b5e20; font-size: 13px; font-weight: 600; }
+.uf-chip button { background: none; border: none; cursor: pointer; color: #1b5e20; font-size: 13px; }
+.vq-uploader { display: block; margin-top: 2px; background: none; border: none; padding: 0; color: #6b7280; font-size: 12px; cursor: pointer; text-align: left; }
+.vq-uploader:hover { text-decoration: underline; }

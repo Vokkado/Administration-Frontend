@@ -17,6 +17,9 @@ import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composit
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
+
+/** Mismo texto por defecto que el Backend (ProductValidationService.DEFAULT_APPROVAL_MESSAGE). */
+const DEFAULT_APPROVAL_MESSAGE = 'Vokkado validó tu producto. ¡Gracias por ayudar a las personas a elegir mejor!';
 import { ArSealsPanel } from './ArSealsPanel';
 import type { ArSeal } from './arFrontCheck';
 import { ScorePreviewPanel } from './ScorePreviewPanel';
@@ -65,6 +68,9 @@ export function ValidationWizardPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  // Aviso a quien cargó el producto al "Completar y validar" (prendido por defecto, mensaje editable).
+  const [notify, setNotify] = useState(true);
+  const [notifyMessage, setNotifyMessage] = useState(DEFAULT_APPROVAL_MESSAGE);
   const [showReject, setShowReject] = useState(false);
   // "Falta información: pedir fotos" (paso Finalizar): se abre un recuadro con nota opcional.
   const [showNeedsPhotos, setShowNeedsPhotos] = useState(false);
@@ -169,7 +175,11 @@ export function ValidationWizardPage() {
     setError(null);
     try {
       await saveMeta();
-      if (validate) await ValidationService.approve(id);
+      if (validate) {
+        const r = await ValidationService.approve(id, { notifyUploader: notify, notifyMessage: notifyMessage.trim() || undefined });
+        if (notify && r.notification === 'no_devices') window.alert('Validado ✓. No se pudo avisar: quien lo cargó no tiene las notificaciones activadas en su celular.');
+        else if (notify && r.notification === 'failed') window.alert('Validado ✓. No se pudo mandar el aviso (falló el envío); se reintenta la próxima vez que lo valides.');
+      }
       navigate('/validation');
     } catch {
       setError(validate
@@ -499,6 +509,37 @@ export function ValidationWizardPage() {
                   <strong>Rechazar producto</strong> (arriba a la derecha, disponible en cualquier paso): el producto no sirve o está mal. Se marca rechazado (sale de la cola, conserva el registro) y NO otorga puntos.<br />
                   <strong>Falta información</strong>: ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Guarda lo hecho y lo marca como <em>info insuficiente</em>: el próximo usuario que lo escanee o lo busque tiene que sacar las fotos que tildes (portada, tabla o ingredientes), y cuando lleguen vuelve a la cola con ellas.
                 </p>
+                <div className="vw-notify">
+                  {detail.product.hasUploader === undefined ? null : !detail.product.hasUploader ? (
+                    <span className="vw-notify-note">🔔 No lo cargó un usuario de la app: no hay a quién avisarle.</span>
+                  ) : detail.product.approvalNotifiedAt ? (
+                    <span className="vw-notify-note">🔔 Ya se le avisó a quien lo cargó ({new Date(detail.product.approvalNotifiedAt).toLocaleDateString('es-UY')}). No se vuelve a mandar.</span>
+                  ) : (
+                    <>
+                      <label className="vw-notify-check">
+                        <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+                        {' '}🔔 Al validar, avisarle a quien lo cargó (una sola vez)
+                      </label>
+                      {notify && (
+                        <>
+                          <textarea
+                            className="vw-notify-msg"
+                            value={notifyMessage}
+                            maxLength={200}
+                            rows={2}
+                            onChange={(e) => setNotifyMessage(e.target.value)}
+                          />
+                          <span className="vw-notify-note">
+                            Título: "¡Tu producto fue validado!" · {notifyMessage.length}/200
+                            {notifyMessage !== DEFAULT_APPROVAL_MESSAGE && (
+                              <> · <button type="button" className="vw-notify-reset" onClick={() => setNotifyMessage(DEFAULT_APPROVAL_MESSAGE)}>volver al mensaje de siempre</button></>
+                            )}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
                 <div className="vw-finish-actions">
                   <Button variant="outline" onClick={openNeedsPhotos} disabled={busy}>📷 {detail.product.needsPhotos ? 'Editar lo que falta' : 'Falta información'}</Button>
                   <Button variant="outline" onClick={() => onComplete(false)} disabled={busy}>Completar</Button>
