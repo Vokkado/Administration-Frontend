@@ -658,3 +658,8 @@
 .vw-cover-option img { width: 64px; height: 64px; object-fit: contain; }
 .ar-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; }
 .dc-label input { margin-right: 4px; vertical-align: middle; }
+.vw-notify { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(46, 125, 50, 0.06); }
+.vw-notify-check { font-weight: 600; cursor: pointer; }
+.vw-notify-msg { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid #c8d3c8; resize: vertical; box-sizing: border-box; }
+.vw-notify-note { color: #6b7280; font-size: 13px; }
+.vw-notify-reset { background: none; border: none; padding: 0; color: var(--color-primary-dark, #2e7d32); text-decoration: underline; cursor: pointer; font-size: 13px; }

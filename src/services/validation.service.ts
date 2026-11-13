@@ -96,6 +96,10 @@ export interface ValidationProduct {
   isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
   /** Sellos frontales de otros países que trae el envase (hoy AR). Los de UY son los is_*_alert. */
   frontSeals?: Record<string, string[]> | null;
+  /** Lo cargó un usuario de la app (hay a quién avisarle al validar). */
+  hasUploader?: boolean;
+  /** Cuándo se le avisó que su producto fue validado (una sola vez). */
+  approvalNotifiedAt?: string | null;
   servingSizeAmount: number | null; servingSizeUnit: string | null;
   /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
   enrichmentSources: EnrichmentSourceSummary[] | null;
@@ -278,8 +282,10 @@ export class ValidationService {
     return res.data;
   }
 
-  static async approve(id: string): Promise<void> {
-    await apiService.post(`${BASE}/${id}/approve`);
+  /** Valida. notifyUploader (por defecto true) le manda un push a quien lo cargó, una sola vez. */
+  static async approve(id: string, opts: { notifyUploader?: boolean; notifyMessage?: string } = {}): Promise<{ notification?: string }> {
+    const res: any = await apiService.post(`${BASE}/${id}/approve`, opts);
+    return res?.data?.data ?? res?.data ?? {};
   }
 
   /** Descarta (soft-reject) el producto: lo marca rechazado, no otorga puntos al uploader. */
