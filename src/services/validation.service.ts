@@ -94,6 +94,8 @@ export interface ValidationProduct {
   legalName: string | null; alcoholGraduation: number | null; source: string | null;
   isUltraProcessed: boolean | null;
   isFatAlert: boolean | null; isSaturatedFatAlert: boolean | null; isSugarAlert: boolean | null; isSodiumAlert: boolean | null;
+  /** Sellos frontales de otros países que trae el envase (hoy AR). Los de UY son los is_*_alert. */
+  frontSeals?: Record<string, string[]> | null;
   servingSizeAmount: number | null; servingSizeUnit: string | null;
   /** null = no pasó por enriquecimiento IA (foto de portada solo, o cargado a mano). */
   enrichmentSources: EnrichmentSourceSummary[] | null;
