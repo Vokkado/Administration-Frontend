@@ -341,6 +341,12 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           placeholder="Buscar nutriente…"
           search={nutritionSearch}
           onPick={(p) => setNutritionDraft(p)} />}>
+        {/* R52 (APRENDIZAJE.md): "<1 g" no es un número; regla fija para que todos carguen igual. */}
+        <p className="vp-order-hint">
+          Si la etiqueta dice <strong>"&lt;1 g"</strong> (o "menos de…"): en proteínas, fibra, vitaminas y minerales
+          poné <strong>0</strong>; en azúcares, grasas y sodio poné <strong>el número</strong> (1 g). Así no damos
+          crédito de más ni escondemos algo malo.
+        </p>
         {/* El nutriente recién elegido entra como fila en edición, arriba de la lista: se carga
             mirando la etiqueta, sin un modal que la tape. */}
         {nutritionDraft && (
