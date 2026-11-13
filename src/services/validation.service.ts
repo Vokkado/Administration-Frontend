@@ -5,7 +5,19 @@ import { apiService } from './api.service';
 
 export type LinkColor = 'green' | 'yellow' | 'red';
 
+/** Quien carga productos desde la app (filtro de la cola). */
+export interface UploaderSummary {
+  userId: string;
+  email: string;
+  name: string | null;
+  total: number;
+  pending: number;
+  validated: number;
+}
+
 export interface ValidationQueueItem {
+  /** Mail de quien lo cargó desde la app (null = importado o del equipo). */
+  uploaderEmail?: string | null;
   id: string;
   name: string;
   brand: string | null;
@@ -222,6 +234,14 @@ export interface CompanyOption { id: string; name: string }
 const BASE = '/products/validation';
 
 export class ValidationService {
+  /** Los que más productos cargaron (5) o, con search, los que coinciden por mail/nombre. */
+  static async topUploaders(search?: string): Promise<UploaderSummary[]> {
+    const params = new URLSearchParams({ limit: '5' });
+    if (search) params.append('search', search);
+    const res: any = await apiService.get(`${BASE}/uploaders?${params.toString()}`);
+    return res?.data?.data ?? res?.data ?? [];
+  }
+
   static async getQueue(
     limit = 30,
     offset = 0,
@@ -235,8 +255,11 @@ export class ValidationService {
     rejected?: boolean,
     /** true = los ya validados (quién y cuándo). */
     validated?: boolean,
+    /** Mail de quien lo cargó. */
+    uploader?: string,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (uploader) params.append('uploader', uploader);
     if (rejected) params.append('rejected', 'true');
     if (validated) params.append('validated', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
