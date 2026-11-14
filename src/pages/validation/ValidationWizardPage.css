@@ -642,6 +642,10 @@
 .vw-needs-photos.vw-validated { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
 .vq-needs-photos.vq-validated { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 
+/* El envase no tiene esa parte (quien cargó salteó la foto, migración 293) */
+.vw-needs-photos.vw-skipped-photos { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+.vq-needs-photos.vq-skipped { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
+
 /* Chequeo NOVA (paso Más info, debajo de los tildes) */
 .nova-panel { margin-top: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.4; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; overflow-wrap: anywhere; }
 .nova-ok { background: #f0f7ee; border: 1px solid #cfe3c8; color: #2e5a1c; }

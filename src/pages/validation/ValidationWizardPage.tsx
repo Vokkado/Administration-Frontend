@@ -12,7 +12,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
-import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart } from '../../services/validation.service';
+import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart, SKIPPED_TO_PART, skippedPhotosText } from '../../services/validation.service';
 import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
@@ -87,6 +87,8 @@ export function ValidationWizardPage() {
     }
     setShowNeedsPhotos((v) => !v);
   };
+  // Partes que quien cargó salteó porque el envase no las tiene: no tiene sentido pedirlas.
+  const skippedParts: NeedsPhotoPart[] = (detail?.product.skippedLabelPhotos ?? []).map((s) => SKIPPED_TO_PART[s]);
   const toggleNeedsPart = (p: NeedsPhotoPart) => setNeedsParts((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
   const [error, setError] = useState<string | null>(null);
 
@@ -272,6 +274,15 @@ export function ValidationWizardPage() {
               {detail.product.rejectedReason && <div style={{ marginTop: 4 }}>Motivo: {detail.product.rejectedReason}</div>}
             </div>
             <Button variant="primary" size="small" onClick={onUnreject} disabled={busy}>↩ Volver a la cola</Button>
+          </div>
+        )}
+
+        {!!detail.product.skippedLabelPhotos?.length && (
+          <div className="vw-needs-photos vw-skipped-photos" role="note">
+            <div>
+              <strong>🚫📷 Sin {skippedPhotosText(detail.product.skippedLabelPhotos)} en el envase</strong> — quien lo cargó avisó en la app que el producto no la tiene (salteó esa foto). No es que falte: no pidas esa foto con "Falta información"
+              {detail.product.skippedLabelPhotos.includes('nutritionFacts') ? ' y, si no hay tabla en ninguna fuente, dejá la tabla vacía (té, especias, sal, agua… no la llevan)' : ''}.
+            </div>
           </div>
         )}
 
@@ -558,6 +569,7 @@ export function ValidationWizardPage() {
                         <label key={p} style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
                           <input type="checkbox" checked={needsParts.includes(p)} onChange={() => toggleNeedsPart(p)} />
                           {NEEDS_PHOTO_LABELS[p][0].toUpperCase() + NEEDS_PHOTO_LABELS[p].slice(1)}
+                          {skippedParts.includes(p) && <span style={{ fontSize: 12, color: 'var(--color-warning, #b45309)' }}>(el envase no la tiene, según quien lo cargó)</span>}
                         </label>
                       ))}
                     </div>

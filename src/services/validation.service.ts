@@ -31,6 +31,8 @@ export interface ValidationQueueItem {
   needsPhotos?: boolean;
   needsPhotosNote?: string | null;
   needsPhotosParts?: NeedsPhotoPart[] | null;
+  /** Fotos que quien cargó salteó en la app porque el envase NO tiene esa parte. */
+  skippedLabelPhotos?: SkippedLabelPhoto[] | null;
   /** Rechazado: solo aparece con el filtro "Rechazados". */
   isRejected?: boolean;
   rejectedAt?: string | null;
@@ -123,6 +125,8 @@ export interface ValidationProduct {
   needsPhotosNote?: string | null;
   needsPhotosAt?: string | null;
   needsPhotosParts?: NeedsPhotoPart[] | null;
+  /** Fotos que quien cargó salteó en la app porque el envase NO tiene esa parte. */
+  skippedLabelPhotos?: SkippedLabelPhoto[] | null;
   isRejected?: boolean;
   rejectedAt?: string | null;
   rejectedReason?: string | null;
@@ -144,6 +148,17 @@ export function needsPhotosShort(parts?: NeedsPhotoPart[] | null): string {
 export function needsPhotosText(parts?: NeedsPhotoPart[] | null): string {
   const list = (parts?.length ? parts : (['cover', 'nutrition', 'ingredients'] as NeedsPhotoPart[])).map((p) => NEEDS_PHOTO_LABELS[p]);
   return list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} e ${list[list.length - 1]}`;
+}
+
+/** Fotos que se pueden saltear en la app ("este producto no tiene…"). */
+export type SkippedLabelPhoto = 'ingredients' | 'nutritionFacts';
+/** El NeedsPhotoPart que corresponde a cada foto salteada. */
+export const SKIPPED_TO_PART: Record<SkippedLabelPhoto, NeedsPhotoPart> = { ingredients: 'ingredients', nutritionFacts: 'nutrition' };
+/** "tabla nutricional", "lista de ingredientes y tabla nutricional"… */
+export function skippedPhotosText(skipped?: SkippedLabelPhoto[] | null): string {
+  const label: Record<SkippedLabelPhoto, string> = { ingredients: 'lista de ingredientes', nutritionFacts: 'tabla nutricional' };
+  const list = (skipped ?? []).map((s) => label[s]).filter(Boolean);
+  return list.join(' ni ');
 }
 
 export interface LabelSource {

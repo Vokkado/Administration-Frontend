@@ -10,7 +10,7 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
 import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
-import { ValidationService, needsPhotosText, needsPhotosShort, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
+import { ValidationService, needsPhotosText, needsPhotosShort, skippedPhotosText, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
 import { COLORS } from './composition';
 import './ValidationWizardPage.css';
 
@@ -109,6 +109,11 @@ export function ValidationListPage() {
           {needsFilter === 'validated' && (
             <Tooltip content={validatedByText(p.validatedByEmail, p.validatedAt)}>
               <span className="vq-needs-photos vq-validated">✅ {p.validatedByEmail ? p.validatedByEmail.split('@')[0] : 'sin registro'}{p.validatedAt ? ` · ${new Date(p.validatedAt).toLocaleDateString('es-UY')}` : ''}</span>
+            </Tooltip>
+          )}
+          {!!p.skippedLabelPhotos?.length && (
+            <Tooltip content={`Quien lo cargó avisó que el envase no tiene ${skippedPhotosText(p.skippedLabelPhotos)} (salteó esa foto en la app).`}>
+              <span className="vq-needs-photos vq-skipped">🚫 Sin {p.skippedLabelPhotos.map((s) => (s === 'nutritionFacts' ? 'tabla' : 'lista')).join(' ni ')} en el envase</span>
             </Tooltip>
           )}
           {p.needsPhotos && (
