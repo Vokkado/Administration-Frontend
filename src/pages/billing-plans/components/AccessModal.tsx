@@ -3,7 +3,7 @@ import { Button, Modal } from '../../../components/ui';
 import { getApiMessage } from '../../../services/apiError';
 import { endOfDayMontevideo } from '../hooks/useNutritionists';
 import { FREE_PLAN_CODE, type AccessImpact, type BillingPlan, type NutritionistRow } from '../types';
-import { formatDate, paidLabel, patientsLabel, sourceLabel } from './accessFormat';
+import { formatDate, montevideoDay, montevideoDayPlusDays, montevideoDayPlusMonths, paidLabel, patientsLabel, sourceLabel } from './accessFormat';
 
 type Action = 'grant' | 'extend' | 'revoke';
 type Duration = 'until' | 'indefinite';
@@ -16,17 +16,13 @@ interface AccessModalProps {
   onExtend: (accessId: string, endsAt: string | null, note: string) => Promise<AccessImpact>;
   onRevoke: (accessId: string, note: string) => Promise<AccessImpact>;
   /** Terminó bien: el mensaje de éxito y lo que el backend avisa (suscripciones que no se tocaron). */
-  onDone: (message: string, impact: AccessImpact) => void;
+  onDone: (message: string, impact: AccessImpact, action: 'grant' | 'extend' | 'revoke') => void;
+  /** Falló (p. ej. otro admin ya lo cambió): recargar la lista. */
+  onFailed: () => void;
 }
 
-/** Hoy + N meses, como "AAAA-MM-DD" (para el campo de fecha). */
-function monthsFromToday(months: number): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
-}
-
-const today = () => new Date().toISOString().slice(0, 10);
+/** El primer día que se puede elegir como fin: mañana en Montevideo. */
+const tomorrow = () => montevideoDayPlusDays(1);
 
 /** Más pacientes = mejor; null = sin límite. */
 function morePatients(a: number | null, b: number | null): boolean {
@@ -39,27 +35,37 @@ function morePatients(a: number | null, b: number | null): boolean {
  * Dar un acceso de Vokkado (un plan sin cobrar, con fecha de fin o indefinido), cambiar su fecha de fin o
  * revocarlo. Uno vigente por nutricionista: dar otro reemplaza al actual. El motivo queda en el historial.
  */
-export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, onDone }: AccessModalProps) {
+export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, onDone, onFailed }: AccessModalProps) {
   const [action, setAction] = useState<Action>('grant');
   const [planCode, setPlanCode] = useState('');
   const [duration, setDuration] = useState<Duration>('until');
-  const [endDate, setEndDate] = useState(monthsFromToday(1));
+  const [endDate, setEndDate] = useState(montevideoDayPlusMonths(1));
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const grantable = useMemo(() => plans.filter((p) => p.isActive && p.code !== FREE_PLAN_CODE), [plans]);
 
-  // Cada vez que se abre para otra persona arranca de cero.
+  // Cada vez que se abre para otra persona arranca de cero (solo al cambiar de fila: si los planes se
+  // recargan con el modal abierto, no se borra lo escrito).
+  const rowKey = row ? `${row.userId}:${row.access?.id ?? ''}` : '';
   useEffect(() => {
     if (!row) return;
     setAction(row.access ? 'extend' : 'grant');
-    setPlanCode(row.access?.planCode ?? grantable[0]?.code ?? '');
+    const current = row.access && grantable.some((p) => p.code === row.access!.planCode) ? row.access.planCode : null;
+    setPlanCode(current ?? grantable[0]?.code ?? '');
     setDuration(row.access && row.access.endsAt === null ? 'indefinite' : 'until');
-    setEndDate(row.access?.endsAt ? row.access.endsAt.slice(0, 10) : monthsFromToday(1));
+    // El fin viene en UTC (31 dic 23:59 en Uruguay = 1 ene en UTC): se muestra el día de Montevideo.
+    setEndDate(row.access?.endsAt ? montevideoDay(row.access.endsAt) : montevideoDayPlusMonths(1));
     setNote('');
     setError('');
-  }, [row, grantable]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowKey]);
+
+  // Si los planes llegan después de abrir, se elige el primero.
+  useEffect(() => {
+    if (!planCode && grantable[0]) setPlanCode(grantable[0].code);
+  }, [planCode, grantable]);
 
   if (!row) return null;
   const who = row.name ?? row.email ?? 'este nutricionista';
@@ -67,7 +73,7 @@ export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, 
   const paid = row.paidSubscription && ['active', 'past_due'].includes(row.paidSubscription.status) ? row.paidSubscription : null;
   const paidPlan = paid ? plans.find((p) => p.code === paid.planCode) ?? null : null;
   const endsAt = duration === 'indefinite' ? null : endOfDayMontevideo(endDate);
-  const dateInvalid = action !== 'revoke' && duration === 'until' && (!endDate || endDate <= today());
+  const dateInvalid = action !== 'revoke' && duration === 'until' && (!endDate || endDate < tomorrow());
   const noteMissing = action !== 'revoke' && !note.trim();
 
   async function submit(e: React.FormEvent) {
@@ -78,16 +84,18 @@ export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, 
     try {
       if (action === 'grant') {
         const impact = await onGrant(row.userId, planCode, endsAt, note.trim());
-        onDone(`Acceso a ${chosen?.name ?? planCode} dado a ${who}${endsAt ? ` hasta el ${formatDate(endsAt)}` : ', sin fecha de fin'}.`, impact);
+        onDone(`Acceso a ${chosen?.name ?? planCode} dado a ${who}${endsAt ? ` hasta el ${formatDate(endsAt)}` : ', sin fecha de fin'}.`, impact, 'grant');
       } else if (action === 'extend') {
         const impact = await onExtend(row.access!.id, endsAt, note.trim());
-        onDone(`El acceso de ${who} ahora ${endsAt ? `termina el ${formatDate(endsAt)}` : 'no tiene fecha de fin'}.`, impact);
+        onDone(`El acceso de ${who} ahora ${endsAt ? `termina el ${formatDate(endsAt)}` : 'no tiene fecha de fin'}.`, impact, 'extend');
       } else {
         const impact = await onRevoke(row.access!.id, note.trim());
-        onDone(`Se revocó el acceso de ${who}.`, impact);
+        onDone(`Se revocó el acceso de ${who}.`, impact, 'revoke');
       }
     } catch (err) {
       setError(getApiMessage(err, 'No se pudo guardar el cambio'));
+      // Puede que otro admin lo haya cambiado: la lista se actualiza para que no quede vieja.
+      onFailed();
     } finally {
       setSaving(false);
     }
@@ -107,20 +115,26 @@ export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, 
               type="date"
               className="input access-date"
               value={endDate}
-              min={today()}
+              min={tomorrow()}
               onChange={(e) => setEndDate(e.target.value)}
               aria-label="Último día del acceso"
+              aria-invalid={dateInvalid}
+              aria-describedby={dateInvalid ? 'access-date-error' : undefined}
             />
             <div className="access-quick">
               {[1, 3, 6, 12].map((m) => (
-                <button key={m} type="button" className="access-quick-btn" onClick={() => setEndDate(monthsFromToday(m))}>
+                <button key={m} type="button" className="access-quick-btn" onClick={() => setEndDate(montevideoDayPlusMonths(m))}>
                   {m === 1 ? '1 mes' : m === 12 ? '1 año' : `${m} meses`}
                 </button>
               ))}
             </div>
           </div>
         )}
-        {duration === 'until' && dateInvalid && <p className="access-field-error">Elegí una fecha a partir de mañana.</p>}
+        {duration === 'until' && dateInvalid && (
+          <p id="access-date-error" className="access-field-error">
+            Elegí una fecha a partir de mañana.
+          </p>
+        )}
         <label className="plan-check-inline">
           <input type="radio" name="duration" checked={duration === 'indefinite'} onChange={() => setDuration('indefinite')} />
           Indefinido (acceso gratis)
@@ -230,9 +244,11 @@ export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, 
             <p className="plan-note plan-note-warning">
               Paga {paid.planName}
               {paid.status === 'past_due' ? ' (con un cobro pendiente)' : ''}: el acceso no cancela su suscripción, se le sigue cobrando.
-              {chosen && paidPlan && !morePatients(chosen.maxPatients, paidPlan.maxPatients)
-                ? ` Mientras pague ${paid.planName}, este acceso no le cambia nada: rige si cancela.`
-                : ' Si el acceso le da lo mismo o más, pensá si corresponde pedirle que cancele.'}
+              {chosen && paidPlan
+                ? morePatients(chosen.maxPatients, paidPlan.maxPatients)
+                  ? ' El acceso le da más que lo que paga: pensá si corresponde pedirle que cancele.'
+                  : ` Mientras pague ${paid.planName}, este acceso no le cambia nada: rige si cancela.`
+                : ''}
             </p>
           )}
           {action === 'grant' && row.previousAccesses > 0 && (

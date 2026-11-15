@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DataTable, FilterButtonGroup, NotificationBanner, Pagination, SearchInput, StatusBadge } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import { PAGE_SIZE, useNutritionists } from '../hooks/useNutritionists';
@@ -77,7 +77,7 @@ const columns: DataTableColumn<NutritionistRow>[] = [
 ];
 
 /** Avisos del backend que el admin tiene que leer (no desaparecen solos). */
-function impactNotes(impact: AccessImpact): string[] {
+function impactNotes(impact: AccessImpact, action: 'grant' | 'extend' | 'revoke'): string[] {
   const notes: string[] = [];
   if (impact.deferredSubscription) {
     notes.push(
@@ -85,7 +85,11 @@ function impactNotes(impact: AccessImpact): string[] {
     );
   }
   if (impact.paidSubscription) {
-    notes.push(`Su suscripción a ${impact.paidSubscription.planName} se sigue cobrando: el acceso no la cancela.`);
+    notes.push(
+      action === 'revoke'
+        ? `Sigue con su suscripción a ${impact.paidSubscription.planName}, que se le cobra como siempre.`
+        : `Su suscripción a ${impact.paidSubscription.planName} se sigue cobrando: el acceso no la cancela.`
+    );
   }
   return notes;
 }
@@ -101,16 +105,22 @@ export function NutritionistsTab({ plans }: { plans: BillingPlan[] }) {
   const [editing, setEditing] = useState<NutritionistRow | null>(null);
   const [success, setSuccess] = useState('');
   const [notes, setNotes] = useState<string[]>([]);
-  const { rows, total, loading, error, grant, extend, revoke } = useNutritionists(filters, page);
+  // Después de un cambio la página actual puede quedar vacía (p. ej. revocar el único de la última): se va a la última.
+  const { rows, total, loading, error, grant, extend, revoke, refresh } = useNutritionists(filters, page, setPage);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (successTimer.current) clearTimeout(successTimer.current);
+  }, []);
 
-  // La búsqueda espera a que se deje de escribir.
+  // La búsqueda espera a que se deje de escribir (y solo vuelve a la primera página si cambió).
   useEffect(() => {
+    if (searchText === filters.search) return;
     const t = setTimeout(() => {
-      setFilters((f) => (f.search === searchText ? f : { ...f, search: searchText }));
+      setFilters((f) => ({ ...f, search: searchText }));
       setPage(1);
     }, 350);
     return () => clearTimeout(t);
-  }, [searchText]);
+  }, [searchText, filters.search]);
 
   const setFilter = (changes: Partial<NutritionistFilters>) => {
     setFilters((f) => ({ ...f, ...changes }));
@@ -196,12 +206,14 @@ export function NutritionistsTab({ plans }: { plans: BillingPlan[] }) {
         onGrant={grant}
         onExtend={extend}
         onRevoke={revoke}
-        onDone={(message, impact) => {
+        onDone={(message, impact, action) => {
           setEditing(null);
           setSuccess(message);
-          setNotes(impactNotes(impact));
-          setTimeout(() => setSuccess(''), 4000);
+          setNotes(impactNotes(impact, action));
+          if (successTimer.current) clearTimeout(successTimer.current);
+          successTimer.current = setTimeout(() => setSuccess(''), 4000);
         }}
+        onFailed={() => void refresh()}
       />
     </>
   );

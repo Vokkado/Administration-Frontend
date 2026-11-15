@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiService } from '../../../services/api.service';
 import { getApiMessage } from '../../../services/apiError';
 import type { AccessImpact, NutritionistFilters, NutritionistRow } from '../types';
@@ -22,13 +22,17 @@ export function endOfDayMontevideo(date: string): string {
  * Pestaña "Nutricionistas" de Planes: qué rige para cada uno y los accesos de Vokkado (dar, extender,
  * revocar). Después de cada cambio se recarga la página actual.
  */
-export function useNutritionists(filters: NutritionistFilters, page: number) {
+export function useNutritionists(filters: NutritionistFilters, page: number, onPageOutOfRange?: (lastPage: number) => void) {
   const [rows, setRows] = useState<NutritionistRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Solo vale la respuesta del último pedido: con filtros o páginas cambiados rápido, una respuesta vieja
+  // que llega tarde no pisa a la nueva.
+  const latest = useRef(0);
 
   const fetchRows = useCallback(async () => {
+    const id = ++latest.current;
     setLoading(true);
     setError('');
     try {
@@ -38,14 +42,23 @@ export function useNutritionists(filters: NutritionistFilters, page: number) {
       if (filters.planCode) params.planCode = filters.planCode;
       if (filters.expiringWithinDays) params.expiringWithinDays = filters.expiringWithinDays;
       const response = await apiService.get<ApiResponse<{ items: NutritionistRow[]; total: number }>>('/admin/billing/nutritionists', { params });
-      setRows(response.data.items ?? []);
-      setTotal(response.data.total ?? 0);
+      if (id !== latest.current) return;
+      const items = response.data.items ?? [];
+      const count = response.data.total ?? 0;
+      const lastPage = Math.max(1, Math.ceil(count / PAGE_SIZE));
+      if (items.length === 0 && page > lastPage && onPageOutOfRange) {
+        onPageOutOfRange(lastPage);
+        return;
+      }
+      setRows(items);
+      setTotal(count);
     } catch (err) {
+      if (id !== latest.current) return;
       setError(getApiMessage(err, 'No se pudo cargar la lista de nutricionistas'));
     } finally {
-      setLoading(false);
+      if (id === latest.current) setLoading(false);
     }
-  }, [filters.search, filters.source, filters.planCode, filters.expiringWithinDays, page]);
+  }, [filters.search, filters.source, filters.planCode, filters.expiringWithinDays, page, onPageOutOfRange]);
 
   useEffect(() => {
     fetchRows();
