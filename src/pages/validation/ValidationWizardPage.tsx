@@ -593,6 +593,7 @@ export function ValidationWizardPage() {
                 <AiSourcesInfo
                   sources={detail.product.enrichmentSources}
                   labelSources={detail.product.labelSources}
+                  brand={detail.product.brand}
                   productId={id}
                   onChanged={loadDetail}
                 />

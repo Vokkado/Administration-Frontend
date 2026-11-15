@@ -36,11 +36,22 @@ interface AiSourcesInfoProps {
   sources: EnrichmentSourceSummary[] | null | undefined;
   /** Fotos y textos guardados de cada fuente. */
   labelSources?: LabelSources | null;
+  /** Marca del producto: una fuente "solo por nombre" de otra marca es seguro otro producto. */
+  brand?: string | null;
   productId: string;
   onChanged: () => void;
 }
 
-export function AiSourcesInfo({ sources, labelSources, productId, onChanged }: AiSourcesInfoProps) {
+/** Sin tildes, minúsculas y solo letras/números (para comparar marcas). */
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+/** ¿El nombre del súper nombra la marca? (alguna palabra de 3+ letras de la marca). */
+function mentionsBrand(name: string | null | undefined, brand: string | null | undefined): boolean {
+  if (!brand || !name) return true; // sin datos para comparar: no se descarta
+  const n = ` ${norm(name)} `;
+  return norm(brand).split(' ').filter((w) => w.length >= 3).some((w) => n.includes(` ${w} `) || n.includes(w));
+}
+
+export function AiSourcesInfo({ sources, labelSources, brand, productId, onChanged }: AiSourcesInfoProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchSources = async () => {
@@ -52,17 +63,40 @@ export function AiSourcesInfo({ sources, labelSources, productId, onChanged }: A
 
   return (
     <div className="vw-ai-sources">
-      <LabelSourcesView labelSources={labelSources} loading={loading} error={error} onFetch={fetchSources} />
+      <LabelSourcesView labelSources={labelSources} brand={brand} loading={loading} error={error} onFetch={fetchSources} />
       {sources && sources.length > 0 && <EnrichmentSummary sources={sources} />}
     </div>
   );
 }
 
 /** Fotos (miniaturas que se abren en grande) y texto de cada fuente. */
-function LabelSourcesView({ labelSources, loading, error, onFetch }: {
-  labelSources?: LabelSources | null; loading: boolean; error: string | null; onFetch: () => void;
+function LabelSourcesView({ labelSources, brand, loading, error, onFetch }: {
+  labelSources?: LabelSources | null; brand?: string | null; loading: boolean; error: string | null; onFetch: () => void;
 }) {
   const [zoom, setZoom] = useState<string | null>(null);
+  // Las que el súper encontró SOLO por nombre pueden ser otro producto (Mantequilla de maní DaColônia →
+  // El Dorado devolvió "Terra Verde"). Las de otra marca no se muestran; las demás van plegadas aparte.
+  const all = labelSources?.sources ?? [];
+  const isNameOnly = (s: (typeof all)[number]) => s.store !== 'openfoodfacts' && s.matchedByEan === false;
+  const trusted = all.filter((s) => !isNameOnly(s));
+  const nameOnly = all.filter((s) => isNameOnly(s) && mentionsBrand(s.name, brand));
+  const otherBrand = all.filter((s) => isNameOnly(s) && !mentionsBrand(s.name, brand)).length;
+  const card = (s: (typeof all)[number], i: number) => (
+    <SourceCard
+      key={`${s.store}-${i}`}
+      title={storeLabel(s.store)}
+      url={s.url}
+      images={[
+        ...(s.coverUrl ? [{ url: s.coverUrl, label: 'Portada' }] : []),
+        ...s.labelImageUrls.map((u, k) => ({ url: u, label: `Etiqueta ${k + 1}` })),
+      ]}
+      ingredientsText={s.ingredientsText}
+      nutritionText={s.nutritionText}
+      productName={s.name}
+      match={s.store === 'openfoodfacts' || s.matchedByEan === undefined ? undefined : s.matchedByEan ? 'ean' : 'name'}
+      onZoom={setZoom}
+    />
+  );
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -81,23 +115,21 @@ function LabelSourcesView({ labelSources, loading, error, onFetch }: {
       {labelSources && (
         <>
           <p className="vw-ai-sources-hint">Buscado el {new Date(labelSources.fetchedAt).toLocaleString('es-UY')}. Tocá una foto para verla grande.</p>
-          {labelSources.sources.map((s, i) => (
-            <SourceCard
-              key={`${s.store}-${i}`}
-              title={storeLabel(s.store)}
-              url={s.url}
-              images={[
-                ...(s.coverUrl ? [{ url: s.coverUrl, label: 'Portada' }] : []),
-                ...s.labelImageUrls.map((u, k) => ({ url: u, label: `Etiqueta ${k + 1}` })),
-              ]}
-              ingredientsText={s.ingredientsText}
-              nutritionText={s.nutritionText}
-              productName={s.name}
-              match={s.store === 'openfoodfacts' || s.matchedByEan === undefined ? undefined : s.matchedByEan ? 'ean' : 'name'}
-              onZoom={setZoom}
-            />
-          ))}
-          {labelSources.sources.length === 0 && (
+          {trusted.map(card)}
+          {nameOnly.length > 0 && (
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 13, color: '#b45309' }}>
+                {nameOnly.length === 1 ? '1 parecido' : `${nameOnly.length} parecidos`} solo por nombre (pueden ser otro producto, otra versión o tamaño)
+              </summary>
+              {nameOnly.map(card)}
+            </details>
+          )}
+          {otherBrand > 0 && (
+            <p className="vw-ai-sources-hint">
+              {otherBrand === 1 ? 'Se descartó 1 resultado' : `Se descartaron ${otherBrand} resultados`} de otra marca (el súper no tenía este código de barras).
+            </p>
+          )}
+          {trusted.length === 0 && nameOnly.length === 0 && (
             <p className="vw-ai-sources-hint">No se encontró nada en los súper ni en el sitio de la marca.</p>
           )}
         </>
