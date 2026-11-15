@@ -30,6 +30,8 @@ interface ProductIngredientsSectionProps {
   onIngredientToggle: (variantId: string) => void;
   /** Nuevo orden completo de las elegidas visibles (posición = índice + 1). */
   onIngredientsReorder: (orderedIds: string[]) => void;
+  /** Cambia una variante elegida por otra, en la misma posición. */
+  onIngredientReplace: (oldId: string, newId: string) => void;
   /** Vuelve a pedir el catálogo tras crear o editar una variante. */
   onVariantsChanged: () => Promise<void> | void;
 }
@@ -101,6 +103,7 @@ export function ProductIngredientsSection({
   onChange,
   onIngredientToggle,
   onIngredientsReorder,
+  onIngredientReplace,
   onVariantsChanged,
 }: ProductIngredientsSectionProps) {
   // Arrastre: `armedId` habilita el drag de esa fila al apretar el asa; `dropIndex` es el
@@ -116,11 +119,37 @@ export function ProductIngredientsSection({
   // null = cerrado | { id: null } = crear | { id } = editar esa variante.
   const [editor, setEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
   const [creatingIngredient, setCreatingIngredient] = useState(false);
+  // Variante elegida que se está reemplazando: mientras está activo, el catálogo de la
+  // derecha elige la nueva en vez de agregar.
+  const [replacingRaw, setReplacingId] = useState<string | null>(null);
+  // Si la fila en reemplazo se quitó del producto, el modo queda sin efecto.
+  const replacingId = replacingRaw && selectedIngredients.has(replacingRaw) ? replacingRaw : null;
+  const replacing = replacingId
+    ? ingredientVariants.find((v) => String(v.id) === replacingId) ?? null
+    : null;
 
-  /** Tras guardar: refresca el catálogo y, si es nueva, la agrega al producto. */
+  const startReplace = (id: string) => {
+    setReplacingId(replacingId === id ? null : id);
+    setSearchIngredient('');
+    setCurrentPageIngredients(1);
+  };
+
+  const replaceWith = (newId: string) => {
+    if (!replacingId) return;
+    onIngredientReplace(replacingId, newId);
+    setReplacingId(null);
+    setMovedId(newId);
+  };
+
+  /**
+   * Tras guardar: refresca el catálogo y, si es nueva, la agrega al producto (o, si se
+   * estaba reemplazando, ocupa el lugar de la reemplazada).
+   */
   const handleSaved = async (saved: { id: string; name: string }, isNew: boolean) => {
     await onVariantsChanged();
-    if (isNew && saved.id) onIngredientToggle(saved.id);
+    if (!isNew || !saved.id) return;
+    if (replacingId) replaceWith(String(saved.id));
+    else onIngredientToggle(saved.id);
   };
 
   /**
@@ -142,9 +171,18 @@ export function ProductIngredientsSection({
       return posA !== posB ? posA - posB : a.name.localeCompare(b.name);
     });
 
+  // Reemplazando: primero las otras variantes del mismo ingrediente (lo más probable).
+  const isSibling = (v: IngredientVariant) =>
+    !!replacing && v.ingredientId === replacing.ingredientId && String(v.id) !== replacingId;
   const options = ingredientVariants
     .filter((v) => matchesSearch(v.name, searchIngredient))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      if (replacing) {
+        const diff = Number(isSibling(b)) - Number(isSibling(a));
+        if (diff !== 0) return diff;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
   const totalPages = Math.ceil(options.length / ITEMS_PER_PAGE);
   const startIndex = (currentPageIngredients - 1) * ITEMS_PER_PAGE;
@@ -246,6 +284,7 @@ export function ProductIngredientsSection({
                     movedId === id && 'is-moved',
                     showDropAt === index && 'drop-before',
                     showDropAt === selected.length && index === selected.length - 1 && 'drop-after',
+                    replacingId === id && 'is-replacing',
                   ].filter(Boolean).join(' ');
 
                   return (
@@ -304,6 +343,19 @@ export function ProductIngredientsSection({
 
                     <button
                       type="button"
+                      className={`mp-edit mp-swap${replacingId === id ? ' is-active' : ''}`}
+                      title={replacingId === id
+                        ? 'Cancelar el reemplazo'
+                        : 'Cambiar por otra variante (queda en la misma posición)'}
+                      aria-label={`Cambiar ${variant.name} por otra variante`}
+                      aria-pressed={replacingId === id}
+                      onClick={() => startReplace(id)}
+                    >
+                      ⇄
+                    </button>
+
+                    <button
+                      type="button"
                       className="mp-remove"
                       title="Quitar del producto"
                       aria-label={`Quitar ${variant.name}`}
@@ -321,18 +373,37 @@ export function ProductIngredientsSection({
           {/* ── Catálogo ───────────────────────────────────────────────── */}
           <section className="mp-panel">
             <header className="mp-panel-head">
-              <span className="mp-panel-title">Agregar ingrediente</span>
+              <span className="mp-panel-title">
+                {replacing ? 'Reemplazar ingrediente' : 'Agregar ingrediente'}
+              </span>
               <div className="mp-head-actions">
                 {/* El ingrediente es la entidad base; la variante es lo que se vincula al
-                    producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+                    producto. Por eso van los dos, y crear un ingrediente encadena su variante.
+                    Reemplazando, la variante nueva arranca con el ingrediente de la reemplazada. */}
                 <button type="button" className="mp-new" onClick={() => setCreatingIngredient(true)}>
                   + Ingrediente
                 </button>
-                <button type="button" className="mp-new" onClick={() => setEditor({ id: null })}>
+                <button
+                  type="button"
+                  className="mp-new"
+                  onClick={() => setEditor({ id: null, ingredientId: replacing?.ingredientId })}
+                >
                   + Variante
                 </button>
               </div>
             </header>
+
+            {replacing && (
+              <div className="mp-replace-banner">
+                <span>
+                  Elegí la variante que va en lugar de <strong>{replacing.name}</strong>.
+                  Mantiene su posición.
+                </span>
+                <button type="button" className="mp-replace-cancel" onClick={() => setReplacingId(null)}>
+                  Cancelar
+                </button>
+              </div>
+            )}
 
             <Input
               type="text"
@@ -353,7 +424,24 @@ export function ProductIngredientsSection({
             ) : (
               <>
                 <div className="mp-options">
-                  {paginatedOptions.map((variant) => (
+                  {paginatedOptions.map((variant) => replacing ? (
+                    // Modo reemplazo: cada fila es un botón; las que ya están en el
+                    // producto (incluida la reemplazada) no se pueden elegir.
+                    <button
+                      key={variant.id}
+                      type="button"
+                      className={`mp-option mp-option-replace${isSibling(variant) ? ' is-sibling' : ''}`}
+                      disabled={selectedIngredients.has(String(variant.id))}
+                      title={selectedIngredients.has(String(variant.id))
+                        ? 'Ya está en el producto'
+                        : `Usar ${variant.name}`}
+                      onClick={() => replaceWith(String(variant.id))}
+                    >
+                      <span className="mp-swap-icon" aria-hidden="true">⇄</span>
+                      <span className="mp-name" title={variant.name}>{variant.name}</span>
+                      {isSibling(variant) && <span className="mp-sibling-tag">mismo ingrediente</span>}
+                    </button>
+                  ) : (
                     <label
                       key={variant.id}
                       className={`mp-option${selectedIngredients.has(String(variant.id)) ? ' is-selected' : ''}`}

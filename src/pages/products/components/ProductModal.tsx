@@ -245,6 +245,13 @@ export function ProductModal({
     commitIngredientOrder(order.includes(id) ? order.filter(x => x !== id) : [...order, id]);
   };
 
+  /** Cambia una variante por otra conservando su posición. */
+  const handleIngredientReplace = (oldId: string, newId: string) => {
+    const order = currentIngredientOrder();
+    if (order.includes(newId)) return;
+    commitIngredientOrder(order.map(id => (id === oldId ? newId : id)));
+  };
+
   /**
    * Recibe el nuevo orden de la lista visible. Si hay elegidas que todavía no están en el
    * catálogo cargado (no se muestran), se conservan al final en su orden previo.
@@ -364,6 +371,7 @@ export function ProductModal({
                 onChange={onChange}
                 onIngredientToggle={handleIngredientToggle}
                 onIngredientsReorder={handleIngredientsReorder}
+                onIngredientReplace={handleIngredientReplace}
                 onVariantsChanged={loadIngredientVariants}
               />
             )}

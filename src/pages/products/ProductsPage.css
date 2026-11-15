@@ -933,6 +933,81 @@
     font-weight: 600;
   }
 
+  /* ── Reemplazar una variante elegida ─────────────────────────────────── */
+  .mp-swap.is-active,
+  .mp-swap.is-active:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .mp-selected-item.is-replacing {
+    background: rgba(91, 136, 6, 0.16);
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+
+  .mp-replace-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(91, 136, 6, 0.1);
+    border: 1px dashed var(--color-primary);
+    font-size: 13px;
+    color: var(--color-grey-800);
+  }
+
+  .mp-replace-banner > span { flex: 1; min-width: 0; }
+
+  .mp-replace-cancel {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--color-grey-300);
+    border-radius: 6px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--color-grey-700);
+    cursor: pointer;
+  }
+
+  .mp-replace-cancel:hover { border-color: var(--color-grey-400); }
+
+  /* En modo reemplazo las opciones son <button>: se les saca el estilo nativo. */
+  .modal-picker .mp-option-replace {
+    width: 100%;
+    border: none;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .modal-picker .mp-option-replace:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: none;
+  }
+
+  .mp-option-replace .mp-swap-icon {
+    flex-shrink: 0;
+    width: 17px;
+    text-align: center;
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .mp-option-replace .mp-name { flex: 1; }
+
+  .mp-sibling-tag {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(91, 136, 6, 0.12);
+    font-size: 11px;
+    color: var(--color-primary-dark);
+  }
+
   .modal-picker .mp-option input[type="checkbox"] {
     width: 17px;
     height: 17px;
