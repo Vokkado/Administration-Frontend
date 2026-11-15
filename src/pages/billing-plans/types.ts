@@ -7,7 +7,6 @@ export interface BillingPlan {
   priceAmount: number;
   currency: string;
   billingInterval: 'month';
-  features: string[];
   /** Visible en la web de nutricionistas para contratar. Los internos (beta, promos) se asignan como concesión. */
   isPublic: boolean;
   isActive: boolean;
@@ -35,7 +34,6 @@ export interface PlanFormData {
   maxPatients: string;
   priceAmount: string;
   currency: string;
-  features: string; // una por línea
   isPublic: boolean;
   isActive: boolean;
   sortOrder: string;

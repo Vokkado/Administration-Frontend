@@ -130,17 +130,6 @@ export function PlanModal({ show, editingPlan, formData, error, loading = false,
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Características (una por línea)</label>
-            <textarea
-              className="textarea"
-              placeholder={'Agenda y recordatorios\nHistoria clínica completa'}
-              value={formData.features}
-              onChange={(e) => onChange({ features: e.target.value })}
-              rows={4}
-            />
-          </div>
-
           <div className="plan-checks">
             <label className="plan-check">
               <input

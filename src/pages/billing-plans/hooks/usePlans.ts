@@ -16,7 +16,6 @@ export function toPayload(form: PlanFormData) {
     maxPatients: form.unlimited ? null : Number(form.maxPatients),
     priceAmount: Number(form.priceAmount),
     currency: form.currency,
-    features: form.features.split('\n').map((f) => f.trim()).filter(Boolean),
     isPublic: form.isPublic,
     isActive: form.isActive,
     sortOrder: Number(form.sortOrder || 0),

@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   maxPatients: 'Pacientes activos',
   priceAmount: 'Precio',
   currency: 'Moneda',
+  // Ya no existe (un plan solo define el límite de pacientes); queda para leer cambios viejos.
   features: 'Características',
   isPublic: 'Contratable',
   isActive: 'Activo',
@@ -31,6 +32,8 @@ function show(value: unknown): string {
 /** Solo los campos que cambiaron, con el valor anterior y el nuevo. */
 function diff(change: PlanChange): { field: string; before: string; after: string }[] {
   return Object.keys(LABELS)
+    // Solo los campos que el cambio registró (los viejos traen "features"; los nuevos no).
+    .filter((key) => key in change.after || (change.before !== null && key in change.before))
     .filter((key) => change.action === 'create' || JSON.stringify(change.before?.[key]) !== JSON.stringify(change.after[key]))
     .map((key) => ({ field: LABELS[key], before: show(change.before?.[key]), after: show(change.after[key]) }));
 }
