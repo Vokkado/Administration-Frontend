@@ -543,7 +543,7 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         <dt>✕ Quitar</dt>
         <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
         <dt>Validar ingrediente</dt>
-        <dd>Solo en las filas rojas: guarda el puntaje y la toxicidad que revisaste, y da por aprobada la ficha que inventó la IA.</dd>
+        <dd>Solo en ingredientes sin validar (debajo del nombre): abre el panel de puntaje y toxicidad. Al validar se guardan los valores que revisaste y la ficha queda aprobada.</dd>
       </dl>
 
       <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
@@ -626,6 +626,8 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
+  // El panel de puntaje/toxicidad ocupa mucho: arranca cerrado y se abre con el botón.
+  const [reviewing, setReviewing] = useState(false);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
@@ -655,6 +657,20 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
             <TierBadge tier={ing.matchTier} />
           </div>
           <IngredientAutoAttributes attributes={ing.autoAttributes} onEdit={onEditVariant} />
+          {/* Ingrediente sin validar: queda la marca a la vista, pero el panel se abre a pedido. */}
+          {!ing.ingredientInspected && (
+            <button
+              type="button"
+              className={`vp-ai-toggle${ing.color === 'red' ? '' : ' vp-ai-toggle--pending'}${reviewing ? ' is-open' : ''}`}
+              onClick={() => setReviewing((r) => !r)}
+              aria-expanded={reviewing}
+              title={reviewing ? 'Ocultar puntaje y toxicidad' : 'Revisar puntaje y toxicidad para validarlo'}
+            >
+              <span className="vp-ai-toggle-tag">{ing.color === 'red' ? 'Creado por la IA' : 'Sin validar'}</span>
+              {reviewing ? 'Ocultar' : 'Validar ingrediente'}
+              <span className="vp-ai-toggle-caret" aria-hidden>▾</span>
+            </button>
+          )}
         </div>
         <div className="vp-row-actions">
           {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
@@ -664,7 +680,7 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
       </div>
 
       {/* Ingrediente sin validar: si lo creó la IA (rojo) o si ya existía y nadie lo revisó (amarillo). */}
-      {!ing.ingredientInspected && (
+      {!ing.ingredientInspected && reviewing && (
         <div className={`vp-ai-panel ${ing.color === 'red' ? '' : 'vp-ai-panel--pending'}`}>
           <div className="vp-ai-head">
             {ing.color === 'red' ? (

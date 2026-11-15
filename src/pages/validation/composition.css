@@ -441,6 +441,51 @@
   background: #f59e0b;
 }
 
+/* Botón que abre/cierra el panel de validación (arranca cerrado). */
+.vp-ai-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.vp-ai-toggle:hover { background: #fef2f2; border-color: #fca5a5; }
+
+.vp-ai-toggle-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vp-ai-toggle-caret {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.vp-ai-toggle.is-open .vp-ai-toggle-caret { transform: rotate(180deg); }
+
+/* Amarillo: ya existía pero nadie lo validó. */
+.vp-ai-toggle--pending { border-color: #fde68a; color: #b45309; }
+.vp-ai-toggle--pending:hover { background: #fffbeb; border-color: #fcd34d; }
+.vp-ai-toggle--pending .vp-ai-toggle-tag { background: #f59e0b; }
+
 .vp-ai-head {
   display: flex;
   align-items: center;
