@@ -222,43 +222,37 @@ export function ProductModal({
   };
 
   // ── Ingredient handlers ──
-  const handleIngredientToggle = (variantId: string) => {
-    const newSelected = new Set(selectedIngredients);
-    const newPositions = { ...ingredientPositions };
-    const id = String(variantId);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-      delete newPositions[id];
-    } else {
-      newSelected.add(id);
-      const maxPos = Object.values(newPositions).length > 0 ? Math.max(...Object.values(newPositions)) : 0;
-      newPositions[id] = maxPos + 1;
-    }
-    setSelectedIngredients(newSelected);
+  /** Guarda el orden dado como posiciones 1..N, sin huecos ni repetidos. */
+  const commitIngredientOrder = (orderedIds: string[]) => {
+    const newPositions: Record<string, number> = {};
+    orderedIds.forEach((id, index) => { newPositions[id] = index + 1; });
+    setSelectedIngredients(new Set(orderedIds));
     setIngredientPositions(newPositions);
     onChange({
-      ingredientVariants: Array.from(newSelected).map(vid => ({
-        ingredientVariantId: String(vid),
-        position: newPositions[vid] ?? 1,
-      })),
+      ingredientVariants: orderedIds.map(id => ({ ingredientVariantId: id, position: newPositions[id] })),
     });
   };
 
-  const handleIngredientPositionChange = (variantId: string, position: number) => {
-    if (Number.isNaN(position)) {
-      const newPositions = { ...ingredientPositions };
-      delete newPositions[variantId];
-      setIngredientPositions(newPositions);
-      return;
-    }
-    const newPositions = { ...ingredientPositions, [variantId]: position };
-    setIngredientPositions(newPositions);
-    onChange({
-      ingredientVariants: Array.from(selectedIngredients).map(id => ({
-        ingredientVariantId: String(id),
-        position: newPositions[id] ?? 1,
-      })),
-    });
+  /** Ids elegidos en su orden actual (por posición; los que no tienen número, al final). */
+  const currentIngredientOrder = () =>
+    Array.from(selectedIngredients).sort(
+      (a, b) => (ingredientPositions[a] ?? Infinity) - (ingredientPositions[b] ?? Infinity),
+    );
+
+  const handleIngredientToggle = (variantId: string) => {
+    const id = String(variantId);
+    const order = currentIngredientOrder();
+    commitIngredientOrder(order.includes(id) ? order.filter(x => x !== id) : [...order, id]);
+  };
+
+  /**
+   * Recibe el nuevo orden de la lista visible. Si hay elegidas que todavía no están en el
+   * catálogo cargado (no se muestran), se conservan al final en su orden previo.
+   */
+  const handleIngredientsReorder = (orderedIds: string[]) => {
+    const visible = new Set(orderedIds);
+    const hidden = currentIngredientOrder().filter(id => !visible.has(id));
+    commitIngredientOrder([...orderedIds, ...hidden]);
   };
 
   // ── Allergen handlers ──
@@ -369,7 +363,7 @@ export function ProductModal({
                 ingredientPositions={ingredientPositions}
                 onChange={onChange}
                 onIngredientToggle={handleIngredientToggle}
-                onIngredientPositionChange={handleIngredientPositionChange}
+                onIngredientsReorder={handleIngredientsReorder}
                 onVariantsChanged={loadIngredientVariants}
               />
             )}
