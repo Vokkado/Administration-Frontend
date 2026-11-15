@@ -4,7 +4,7 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { Button, Modal, AttributeBadge, Tooltip } from '../../components/ui';
+import { Button, Modal, AttributeBadge, Tooltip, PositionInput } from '../../components/ui';
 import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
 import {
   ValidationService,
@@ -158,20 +158,63 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
   // Orden de la etiqueta. Se muestra al instante (optimista) y se guarda en el backend;
   // si falla, vuelve al orden que vino del servidor.
+  //
+  // Formas de mover (las mismas que en el modal de producto):
+  //  - Arrastrar desde el asa ⠿. La fila solo es `draggable` mientras se aprieta el asa,
+  //    porque si lo fuera siempre no se podría seleccionar texto en sus campos.
+  //  - Escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta).
+  //  - Flechas para subir/bajar de a uno.
+  // Después de moverse, la fila se resalta y se lleva a la vista.
   const [ordered, setOrdered] = useState(detail.ingredients);
   useEffect(() => setOrdered(detail.ingredients), [detail.ingredients]);
+  const [armedId, setArmedId] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [overIndex, setOverIndex] = useState<number | null>(null);
-  const endDrag = () => { setDragIndex(null); setOverIndex(null); };
+  // Hueco de inserción (0..N) donde caería la fila arrastrada.
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [movedId, setMovedId] = useState<string | null>(null);
+  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const endDrag = () => { setArmedId(null); setDragIndex(null); setDropIndex(null); };
+
+  // Si se suelta el mouse sin llegar a arrastrar, la fila deja de ser draggable.
+  useEffect(() => {
+    if (!armedId) return;
+    const disarm = () => setArmedId(null);
+    window.addEventListener('mouseup', disarm);
+    return () => window.removeEventListener('mouseup', disarm);
+  }, [armedId]);
+
+  useEffect(() => {
+    if (!movedId) return;
+    rowRefs.current[movedId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const t = setTimeout(() => setMovedId(null), 1200);
+    return () => clearTimeout(t);
+  }, [movedId]);
+
+  /** Mueve la fila `from` al índice `to` (0-based) del orden final. */
   const move = (from: number, to: number) => {
     if (busy || from === to || to < 0 || to >= ordered.length) return;
     const next = [...ordered];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     setOrdered(next);
+    setMovedId(moved.variantId);
     run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
       .catch(() => setOrdered(detail.ingredients));
   };
+
+  const handleDrop = () => {
+    if (dragIndex !== null && dropIndex !== null) {
+      // Sacar la fila corre una posición los huecos que están debajo de ella.
+      move(dragIndex, dropIndex > dragIndex ? dropIndex - 1 : dropIndex);
+    }
+    endDrag();
+  };
+
+  // Indicador solo si soltar ahí cambia algo (los huecos pegados a la fila no la mueven).
+  const showDropAt =
+    dragIndex !== null && dropIndex !== null && dropIndex !== dragIndex && dropIndex !== dragIndex + 1
+      ? dropIndex
+      : null;
 
   /** Editar solo refresca; una variante recién creada además se vincula al producto. */
   const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
@@ -235,25 +278,51 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
         {ordered.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {ordered.length > 1 && (
           <p className="vp-order-hint">
-            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde el número o usá las flechas.
+            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
           </p>
         )}
         {ordered.map((ing, idx) => (
           <div
             key={ing.variantId}
-            className={`vp-order-row${dragIndex === idx ? ' is-dragging' : ''}${overIndex === idx && dragIndex !== null && dragIndex !== idx ? ' is-over' : ''}`}
+            ref={(el) => { rowRefs.current[ing.variantId] = el; }}
+            className={[
+              'vp-order-row',
+              dragIndex === idx && 'is-dragging',
+              movedId === ing.variantId && 'is-moved',
+              showDropAt === idx && 'drop-before',
+              showDropAt === ordered.length && idx === ordered.length - 1 && 'drop-after',
+            ].filter(Boolean).join(' ')}
+            draggable={!busy && armedId === ing.variantId}
+            onDragStart={(e) => {
+              setDragIndex(idx);
+              e.dataTransfer.effectAllowed = 'move';
+              // Firefox no inicia el drag si no hay datos.
+              e.dataTransfer.setData('text/plain', ing.variantId);
+            }}
+            onDragEnd={endDrag}
             onDragOver={(e) => {
               if (dragIndex === null) return;
               e.preventDefault();
               e.dataTransfer.dropEffect = 'move';
-              if (overIndex !== idx) setOverIndex(idx);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const next = idx + (e.clientY > rect.top + rect.height / 2 ? 1 : 0);
+              if (next !== dropIndex) setDropIndex(next);
             }}
             onDrop={(e) => {
+              if (dragIndex === null) return;
               e.preventDefault();
-              if (dragIndex !== null) move(dragIndex, idx);
-              endDrag();
+              handleDrop();
             }}
           >
+            <span
+              className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
+              title="Arrastrar para cambiar el orden"
+              aria-hidden="true"
+              onMouseDown={() => { if (!busy) setArmedId(ing.variantId); }}
+              onMouseUp={() => setArmedId(null)}
+            >
+              ⠿
+            </span>
             <div className="vp-order-handle">
               <button
                 type="button"
@@ -265,22 +334,14 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
               >
                 <Chevron dir="up" />
               </button>
-              {/* Solo el número arrastra: así no se pisa con los campos y botones de la fila. */}
-              <span
+              <PositionInput
                 className="vp-order-num"
-                draggable={!busy}
-                onDragStart={(e) => {
-                  setDragIndex(idx);
-                  e.dataTransfer.effectAllowed = 'move';
-                  e.dataTransfer.setData('text/plain', ing.variantId);
-                  const row = (e.currentTarget as HTMLElement).closest('.vp-order-row');
-                  if (row) e.dataTransfer.setDragImage(row, 24, 24);
-                }}
-                onDragEnd={endDrag}
-                title="Posición en la etiqueta. Arrastrá para moverlo."
-              >
-                {idx + 1}
-              </span>
+                value={idx + 1}
+                max={ordered.length}
+                name={ing.variantName}
+                disabled={busy}
+                onCommit={(pos) => move(idx, pos - 1)}
+              />
               <button
                 type="button"
                 className={`vp-order-arrow${idx === ordered.length - 1 ? ' is-edge' : ''}`}

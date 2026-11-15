@@ -250,17 +250,53 @@
 }
 
 .vp-order-row {
+  position: relative;
   display: flex;
   align-items: stretch;
   gap: 8px;
   border-radius: 12px;
-  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+  transition: opacity 0.15s ease, box-shadow 0.4s ease;
 }
 
 .vp-order-row.is-dragging { opacity: 0.45; }
 
-/* Dónde va a caer: una línea del color de la marca arriba de la fila destino. */
-.vp-order-row.is-over { box-shadow: 0 -3px 0 0 var(--color-primary); }
+/* Recién movida (por número, flecha o arrastre): destello para ubicarla. */
+.vp-order-row.is-moved { box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.35); }
+
+/* Dónde va a caer: una línea del color de la marca en el hueco (arriba o abajo). */
+.vp-order-row.drop-before::before,
+.vp-order-row.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  pointer-events: none;
+}
+
+.vp-order-row.drop-before::before { top: -6px; }
+.vp-order-row.drop-after::after { bottom: -6px; }
+
+/* Asa de arrastre: la única parte de la fila que inicia el drag. */
+.vp-order-grip {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 1px;
+  color: var(--color-grey-300);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.vp-order-row:hover .vp-order-grip { color: var(--color-grey-500); }
+.vp-order-grip:hover { color: var(--color-primary) !important; }
+.vp-order-grip:active { cursor: grabbing; }
+.vp-order-grip.is-disabled { cursor: default; opacity: 0.5; }
 
 /* Discreto a propósito: no tiene que competir con los números de los pasos del wizard. */
 .vp-order-handle {
@@ -270,24 +306,36 @@
   justify-content: center;
   gap: 0;
   flex-shrink: 0;
-  width: 22px;
+  width: 30px;
 }
 
+/* Posición editable: parece texto hasta que se pasa el mouse o se enfoca. */
 .vp-order-num {
-  min-width: 20px;
+  width: 28px;
   padding: 1px 0;
+  border: 1px solid transparent;
   border-radius: 4px;
+  background: transparent;
   text-align: center;
   color: var(--color-grey-500);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  cursor: grab;
-  user-select: none;
+  cursor: text;
 }
 
-.vp-order-num:hover { background: var(--color-grey-100); color: var(--color-grey-700); }
-.vp-order-num:active { cursor: grabbing; }
+.vp-order-num:hover:not(:disabled) { border-color: var(--color-grey-300); color: var(--color-grey-700); }
+
+.vp-order-num:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: #fff;
+  color: var(--color-grey-800);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.12);
+}
+
+.vp-order-num:disabled { cursor: default; }
 
 .vp-order-arrow {
   display: inline-flex;

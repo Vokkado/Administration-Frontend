@@ -15,7 +15,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { ProductFormData, IngredientVariant } from './types';
-import { Input, Pagination } from '../../../../components/ui';
+import { Input, Pagination, PositionInput } from '../../../../components/ui';
 import { matchesSearch } from '../../../../utils/search';
 import { VariantEditorModal } from './VariantEditorModal';
 import { IngredientEditorModal } from './IngredientEditorModal';
@@ -37,62 +37,6 @@ interface ProductIngredientsSectionProps {
 }
 
 const ITEMS_PER_PAGE = 10;
-
-/**
- * Input de posición con borrador local. Mientras tiene el foco muestra lo que se escribe
- * sin tocar el orden; al confirmar avisa el número (acotado a 1..max).
- */
-function PositionInput({
-  value,
-  max,
-  name,
-  onCommit,
-}: {
-  value: number;
-  max: number;
-  name: string;
-  onCommit: (position: number) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const cancelRef = useRef(false);
-
-  const handleBlur = () => {
-    const raw = draft;
-    setDraft(null);
-    if (cancelRef.current) {
-      cancelRef.current = false;
-      return;
-    }
-    if (raw === null || raw === '') return;
-    const n = Math.min(Math.max(parseInt(raw, 10), 1), max);
-    if (!Number.isNaN(n) && n !== value) onCommit(n);
-  };
-
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      aria-label={`Posición de ${name}`}
-      value={draft ?? String(value)}
-      onFocus={(e) => e.target.select()}
-      onChange={(e) => {
-        if (/^\d*$/.test(e.target.value)) setDraft(e.target.value);
-      }}
-      onBlur={handleBlur}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          e.currentTarget.blur();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          e.stopPropagation();
-          cancelRef.current = true;
-          e.currentTarget.blur();
-        }
-      }}
-    />
-  );
-}
 
 export function ProductIngredientsSection({
   formData,

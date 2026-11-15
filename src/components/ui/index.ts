@@ -19,6 +19,7 @@ export { Modal } from './Modal';
 export { NotificationBanner } from './NotificationBanner';
 export { PageHeader } from './PageHeader';
 export { Pagination } from './Pagination';
+export { PositionInput } from './PositionInput';
 export { ScanHeatmapMap } from './ScanHeatmapMap';
 export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
