@@ -245,3 +245,178 @@
     }
   }
 }
+
+/* Pestañas Planes / Nutricionistas (mismo estilo que las de Legal). */
+:where(.page-billing-plans) {
+  .billing-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--color-border-light);
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .billing-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+
+  .billing-tab:hover,
+  .billing-tab.active {
+    color: var(--color-primary);
+  }
+
+  .billing-tab.active {
+    border-bottom-color: var(--color-primary);
+  }
+
+  /* Pestaña Nutricionistas */
+  .access-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 20px;
+    margin-bottom: 16px;
+  }
+
+  .access-plan-filter {
+    min-width: 160px;
+  }
+
+  .access-over {
+    color: var(--color-danger, #b3261e);
+    font-weight: 600;
+  }
+
+  .access-impact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .access-impact p {
+    margin: 0;
+  }
+
+  .access-impact .history-btn {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .plan-note-warning {
+    background: #fdf0d8;
+    color: #6b4a12;
+  }
+
+  /* Modal de acceso */
+  .access-summary {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+    font-size: 14px;
+  }
+
+  .access-summary > div {
+    display: contents;
+  }
+
+  .access-summary dt {
+    color: #8a7a66;
+  }
+
+  .access-summary dd {
+    margin: 0;
+  }
+
+  .access-note {
+    display: block;
+    color: #8a7a66;
+    font-style: italic;
+  }
+
+  .access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .access-duration {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .access-duration legend {
+    font-weight: 600;
+    margin-bottom: 4px;
+    padding: 0;
+  }
+
+  .access-duration .plan-check-inline {
+    height: auto;
+  }
+
+  .access-date-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-left: 24px;
+  }
+
+  .access-date {
+    max-width: 200px;
+  }
+
+  .access-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .access-quick-btn {
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #eadfd0;
+    background: #fff;
+    color: #6b5435;
+    cursor: pointer;
+  }
+
+  .access-quick-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .access-field-error {
+    margin: 0 0 0 24px;
+    font-size: 13px;
+    color: var(--color-danger, #b3261e);
+  }
+
+  @media (max-width: 640px) {
+    .access-summary {
+      grid-template-columns: 1fr;
+    }
+  }
+}

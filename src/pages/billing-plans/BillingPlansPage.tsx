@@ -6,6 +6,7 @@ import { getApiMessage } from '../../services/apiError';
 import { PlanHistoryModal } from './components/PlanHistoryModal';
 import { PlanModal } from './components/PlanModal';
 import { PlanTable } from './components/PlanTable';
+import { NutritionistsTab } from './components/NutritionistsTab';
 import { usePlans } from './hooks/usePlans';
 import type { BillingPlan, PlanFormData } from './types';
 import './BillingPlansPage.css';
@@ -41,9 +42,13 @@ function toForm(plan: BillingPlan): PlanFormData {
 /**
  * Catálogo de planes de la web de nutricionistas. Los cambios valen para contrataciones nuevas:
  * cada suscripción existente conserva el precio y el límite con que se contrató. Los planes no se
- * borran (los referencian suscripciones): se desactivan.
+ * borran (los referencian suscripciones): se desactivan. La pestaña "Nutricionistas" muestra qué rige
+ * para cada uno y gestiona los accesos de Vokkado (pruebas y accesos gratis).
  */
+type Tab = 'plans' | 'nutritionists';
+
 export function BillingPlansPage() {
+  const [tab, setTab] = useState<Tab>('plans');
   const { plans, loading, error, setError, createPlan, updatePlan, fetchChanges } = usePlans();
   const crud = useCRUDActions();
 
@@ -103,16 +108,43 @@ export function BillingPlansPage() {
         countLabel="planes"
         countLabelSingular="plan"
         actions={
-          <Button variant="primary" onClick={openCreateModal}>
-            + Nuevo plan
-          </Button>
+          tab === 'plans' ? (
+            <Button variant="primary" onClick={openCreateModal}>
+              + Nuevo plan
+            </Button>
+          ) : undefined
         }
       />
 
-      <NotificationBanner type="success" message={crud.successMessage} />
-      {!showModal && <NotificationBanner type="error" message={error} />}
+      <div className="billing-tabs" role="tablist" aria-label="Planes">
+        {(
+          [
+            ['plans', 'Planes'],
+            ['nutritionists', 'Nutricionistas'],
+          ] as [Tab, string][]
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            className={`billing-tab ${tab === key ? 'active' : ''}`}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      <PlanTable plans={plans} loading={loading} onEdit={openEditModal} onHistory={setHistoryPlan} />
+      {tab === 'plans' ? (
+        <>
+          <NotificationBanner type="success" message={crud.successMessage} />
+          {!showModal && <NotificationBanner type="error" message={error} />}
+          <PlanTable plans={plans} loading={loading} onEdit={openEditModal} onHistory={setHistoryPlan} />
+        </>
+      ) : (
+        <NutritionistsTab plans={plans} />
+      )}
 
       <PlanModal
         show={showModal}
