@@ -154,11 +154,12 @@ export function NutritionistsTab({ plans }: { plans: BillingPlan[] }) {
             { value: '30', label: 'En 30 días' },
           ]}
         />
-        <div className="input-wrapper access-plan-filter">
-          <label className="input-label" htmlFor="access-plan-filter">
+        {/* Misma etiqueta y alto que los grupos de botones de al lado. */}
+        <div className="filter-button-group access-plan-filter">
+          <label className="filter-group-label" htmlFor="access-plan-filter">
             Plan
           </label>
-          <select id="access-plan-filter" className="input plan-select" value={filters.planCode} onChange={(e) => setFilter({ planCode: e.target.value })}>
+          <select id="access-plan-filter" className="access-filter-select" value={filters.planCode} onChange={(e) => setFilter({ planCode: e.target.value })}>
             <option value="">Todos</option>
             {plans.map((p) => (
               <option key={p.code} value={p.code}>

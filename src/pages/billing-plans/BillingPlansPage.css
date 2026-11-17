@@ -289,8 +289,36 @@
     margin-bottom: 16px;
   }
 
+  /* Los grupos traen un margen abajo (para apilarlos): acá van en fila, alineados por la base. */
+  .access-filters .filter-button-group {
+    margin-bottom: 0;
+  }
+
   .access-plan-filter {
     min-width: 160px;
+  }
+
+  /* Como un botón de filtro: mismo alto, borde, radio y letra. */
+  .access-filter-select {
+    width: 100%;
+    /* El alto de un .filter-btn (texto + 10px de padding arriba y abajo + borde): el select nativo suma espacio propio. */
+    height: calc(1.2em + 24px);
+    padding: 0 36px 0 16px;
+    border: 2px solid var(--color-border-light);
+    border-radius: 10px;
+    background: var(--color-white);
+    color: #555;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+  }
+
+  .access-filter-select:hover,
+  .access-filter-select:focus-visible {
+    border-color: var(--color-primary);
+    outline: none;
   }
 
   .access-over {
