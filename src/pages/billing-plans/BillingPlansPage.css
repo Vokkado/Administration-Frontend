@@ -451,6 +451,40 @@
 
 /* Pestaña Cupones */
 :where(.page-billing-plans) {
+  /* Nuevo cupón: formulario en pestañas */
+  .coupon-form-tabs {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 4px 24px 0;
+  }
+
+  .coupon-form-tabs .billing-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 18px;
+  }
+
+  /* Algo obligatorio sin completar en esa pestaña. */
+  .coupon-tab-missing {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #d97706;
+  }
+
+  /* Mismo alto en todas las pestañas: el modal no salta al cambiar. */
+  .coupon-form-panel {
+    min-height: 420px;
+    padding-top: 20px;
+  }
+
+  .coupon-amount-row,
+  .coupon-generate-row,
+  .coupon-usage-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .coupon-toolbar {
     display: flex;
     justify-content: flex-end;
@@ -506,8 +540,23 @@
   }
 
   @media (max-width: 640px) {
-    .coupon-add-codes {
+    .coupon-add-codes,
+    .coupon-amount-row,
+    .coupon-generate-row,
+    .coupon-usage-row {
       grid-template-columns: 1fr;
+    }
+
+    .coupon-form-tabs {
+      padding: 4px 16px 0;
+    }
+
+    .coupon-form-tabs .billing-tab {
+      padding: 10px 12px;
+    }
+
+    .coupon-form-panel {
+      min-height: 0;
     }
   }
 }

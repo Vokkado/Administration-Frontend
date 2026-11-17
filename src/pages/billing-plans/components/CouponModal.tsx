@@ -33,12 +33,25 @@ const EMPTY: CouponFormData = {
 /** Mínimo que cobra Mercado Pago en UYU: el precio con descuento no puede quedar por debajo. */
 const MIN_CHARGE = 15;
 
+/** El mismo formato que el campo "Código": 3 a 40 letras, números o guiones, sin empezar con guion. */
+const CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{2,39}$/;
+
+type Section = 'discount' | 'plans' | 'codes' | 'usage';
+const SECTIONS: [Section, string][] = [
+  ['discount', 'Descuento'],
+  ['plans', 'Planes'],
+  ['codes', 'Códigos'],
+  ['usage', 'Uso'],
+];
+
 /**
  * Crear un cupón: porcentaje durante N meses (o para siempre) o meses gratis, para los planes elegidos,
- * con un código compartido o un lote de códigos únicos (escritos o generados).
+ * con un código compartido o un lote de códigos únicos (escritos o generados). El formulario va en
+ * pestañas; la que tiene algo obligatorio sin completar se marca.
  */
 export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps) {
   const [form, setForm] = useState<CouponFormData>(EMPTY);
+  const [section, setSection] = useState<Section>('discount');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const set = (changes: Partial<CouponFormData>) => setForm((f) => ({ ...f, ...changes }));
@@ -56,18 +69,29 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
       : [];
   const uniqueCount =
     form.uniqueCodes.split(/[\n,;]+/).map((c) => c.trim()).filter(Boolean).length + (Number(form.generateCount) || 0);
-  const invalid =
-    !form.name.trim() ||
-    form.planCodes.length === 0 ||
-    (form.kind === 'percent' && !(percent > 0 && percent < 100)) ||
-    (!(form.kind === 'percent' && form.forever) && !(Number(form.durationMonths) >= 1)) ||
-    (form.codeMode === 'shared' ? !form.sharedCode.trim() : uniqueCount === 0) ||
-    belowMinimum.length > 0;
+
+  // Solo se ve la pestaña abierta: lo que falta en cada una se marca en su título.
+  const incomplete: Record<Section, boolean> = {
+    discount:
+      !form.name.trim() ||
+      (form.kind === 'percent' && !(percent > 0 && percent < 100)) ||
+      (!(form.kind === 'percent' && form.forever) && !(Number(form.durationMonths) >= 1)),
+    plans: form.planCodes.length === 0 || belowMinimum.length > 0,
+    codes: form.codeMode === 'shared' ? !CODE_PATTERN.test(form.sharedCode.trim()) : uniqueCount === 0,
+    usage: false,
+  };
+  const invalid = Object.values(incomplete).some(Boolean);
+  const sectionIndex = SECTIONS.findIndex(([key]) => key === section);
+
+  function reset() {
+    setForm(EMPTY);
+    setSection('discount');
+    setError('');
+  }
 
   function close() {
     if (saving) return;
-    setForm(EMPTY);
-    setError('');
+    reset();
     onClose();
   }
 
@@ -78,7 +102,7 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
     setError('');
     try {
       await onCreate(form);
-      setForm(EMPTY);
+      reset();
       onClose();
     } catch (err) {
       setError(getApiMessage(err, 'No se pudo crear el cupón'));
@@ -88,198 +112,242 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
   }
 
   return (
-    <Modal show={show} title="Nuevo cupón" onClose={close} error={error}>
+    <Modal show={show} title="Nuevo cupón" onClose={close} error={error} maxWidth="760px">
       <form className="modal-form plan-modal-form" onSubmit={submit}>
-        <div className="plan-modal-body">
-          <Input
-            type="text"
-            label="Nombre (interno) *"
-            placeholder="Ej: Lanzamiento Pro"
-            value={form.name}
-            onChange={(e) => set({ name: e.target.value })}
-            maxLength={80}
-            required
-            fullWidth
-          />
+        <div className="billing-tabs coupon-form-tabs" role="tablist" aria-label="Secciones del cupón">
+          {SECTIONS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              id={`coupon-tab-${key}`}
+              aria-selected={section === key}
+              aria-controls="coupon-form-panel"
+              className={`billing-tab ${section === key ? 'active' : ''}`}
+              onClick={() => setSection(key)}
+            >
+              {label}
+              {incomplete[key] && <span className="coupon-tab-missing" title="Falta completar" aria-label="(falta completar)" />}
+            </button>
+          ))}
+        </div>
 
-          <fieldset className="access-duration">
-            <legend>Tipo</legend>
-            <label className="plan-check-inline">
-              <input type="radio" name="kind" checked={form.kind === 'percent'} onChange={() => set({ kind: 'percent' })} />
-              Porcentaje de descuento
-            </label>
-            <label className="plan-check-inline">
-              <input type="radio" name="kind" checked={form.kind === 'free_months'} onChange={() => set({ kind: 'free_months', forever: false })} />
-              Meses gratis
-            </label>
-          </fieldset>
-
-          <div className="plan-row">
-            {form.kind === 'percent' && (
+        <div className="plan-modal-body coupon-form-panel" id="coupon-form-panel" role="tabpanel" aria-labelledby={`coupon-tab-${section}`}>
+          {section === 'discount' && (
+            <>
               <Input
-                type="number"
-                label="Descuento (%) *"
-                min={0.01}
-                max={99.99}
-                step="0.01"
-                value={form.percentOff}
-                onChange={(e) => set({ percentOff: e.target.value })}
+                type="text"
+                label="Nombre (interno) *"
+                placeholder="Ej: Lanzamiento Pro"
+                value={form.name}
+                onChange={(e) => set({ name: e.target.value })}
+                maxLength={80}
                 required
                 fullWidth
               />
-            )}
-            <div>
-              <Input
-                type="number"
-                label={form.kind === 'percent' ? 'Durante (meses)' : 'Meses gratis *'}
-                min={1}
-                max={36}
-                step="1"
-                value={form.forever ? '' : form.durationMonths}
-                onChange={(e) => set({ durationMonths: e.target.value })}
-                disabled={form.kind === 'percent' && form.forever}
-                required={!(form.kind === 'percent' && form.forever)}
-                fullWidth
-              />
-              {form.kind === 'percent' && (
+
+              <fieldset className="access-duration">
+                <legend>Tipo</legend>
                 <label className="plan-check-inline">
-                  <input type="checkbox" checked={form.forever} onChange={(e) => set({ forever: e.target.checked })} />
-                  Para siempre
+                  <input type="radio" name="kind" checked={form.kind === 'percent'} onChange={() => set({ kind: 'percent' })} />
+                  Porcentaje de descuento
                 </label>
-              )}
-            </div>
-          </div>
-          <p className="plan-note">Queda: {preview}. Un mes es un cobro mensual.</p>
+                <label className="plan-check-inline">
+                  <input
+                    type="radio"
+                    name="kind"
+                    checked={form.kind === 'free_months'}
+                    onChange={() => set({ kind: 'free_months', forever: false })}
+                  />
+                  Meses gratis
+                </label>
+              </fieldset>
 
-          <fieldset className="access-duration">
-            <legend>Planes en los que vale *</legend>
-            {contractable.map((p) => (
-              <label key={p.code} className="plan-check-inline">
-                <input
-                  type="checkbox"
-                  checked={form.planCodes.includes(p.code)}
-                  onChange={(e) =>
-                    set({ planCodes: e.target.checked ? [...form.planCodes, p.code] : form.planCodes.filter((c) => c !== p.code) })
-                  }
-                />
-                {p.name} ({formatPrice(p.priceAmount, p.currency)}
-                {form.kind === 'percent' && percent > 0 && percent < 100
-                  ? ` → ${formatPrice(Math.round(p.priceAmount * (100 - percent)) / 100, p.currency)}`
-                  : ''}
-                )
-              </label>
-            ))}
-          </fieldset>
-          {belowMinimum.length > 0 && (
-            <p className="plan-note plan-note-warning" role="alert">
-              Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(MIN_CHARGE, 'UYU')}, que es lo
-              mínimo que cobra Mercado Pago. Para un mes sin cobrar, usá meses gratis.
-            </p>
-          )}
-
-          <fieldset className="access-duration">
-            <legend>Códigos</legend>
-            <label className="plan-check-inline">
-              <input type="radio" name="codeMode" checked={form.codeMode === 'shared'} onChange={() => set({ codeMode: 'shared' })} />
-              Un código para todos
-            </label>
-            <label className="plan-check-inline">
-              <input type="radio" name="codeMode" checked={form.codeMode === 'unique'} onChange={() => set({ codeMode: 'unique' })} />
-              Códigos únicos (cada uno se usa una vez)
-            </label>
-          </fieldset>
-          {form.codeMode === 'shared' ? (
-            <Input
-              type="text"
-              label="Código *"
-              placeholder="Ej: PRO20"
-              value={form.sharedCode}
-              onChange={(e) => set({ sharedCode: e.target.value.toUpperCase() })}
-              pattern="[A-Za-z0-9][A-Za-z0-9-]{2,39}"
-              title="De 3 a 40 letras, números o guiones"
-              maxLength={40}
-              required
-              fullWidth
-            />
-          ) : (
-            <>
-              <div className="form-group">
-                <label htmlFor="coupon-codes">Escritos (uno por línea, opcional)</label>
-                <textarea
-                  id="coupon-codes"
-                  className="textarea"
-                  rows={3}
-                  placeholder={'VIP-ANA\nVIP-BRUNO'}
-                  value={form.uniqueCodes}
-                  onChange={(e) => set({ uniqueCodes: e.target.value.toUpperCase() })}
-                />
+              <div className="plan-row coupon-amount-row">
+                {form.kind === 'percent' && (
+                  <Input
+                    type="number"
+                    label="Descuento (%) *"
+                    min={0.01}
+                    max={99.99}
+                    step="0.01"
+                    value={form.percentOff}
+                    onChange={(e) => set({ percentOff: e.target.value })}
+                    required
+                    fullWidth
+                  />
+                )}
+                <div>
+                  <Input
+                    type="number"
+                    label={form.kind === 'percent' ? 'Durante (meses)' : 'Meses gratis *'}
+                    min={1}
+                    max={36}
+                    step="1"
+                    value={form.forever ? '' : form.durationMonths}
+                    onChange={(e) => set({ durationMonths: e.target.value })}
+                    disabled={form.kind === 'percent' && form.forever}
+                    required={!(form.kind === 'percent' && form.forever)}
+                    fullWidth
+                  />
+                  {form.kind === 'percent' && (
+                    <label className="plan-check-inline">
+                      <input type="checkbox" checked={form.forever} onChange={(e) => set({ forever: e.target.checked })} />
+                      Para siempre
+                    </label>
+                  )}
+                </div>
               </div>
-              <div className="plan-row">
-                <Input
-                  type="number"
-                  label="Generar al azar"
-                  min={0}
-                  max={1000}
-                  step="1"
-                  placeholder="Cantidad"
-                  value={form.generateCount}
-                  onChange={(e) => set({ generateCount: e.target.value })}
-                  fullWidth
-                />
-                <Input
-                  type="text"
-                  label="Prefijo"
-                  placeholder="Ej: VIP"
-                  value={form.generatePrefix}
-                  onChange={(e) => set({ generatePrefix: e.target.value.toUpperCase() })}
-                  maxLength={12}
-                  fullWidth
-                />
-              </div>
-              <p className="plan-note">{uniqueCount} código(s) en total. Después de crearlo los podés descargar.</p>
+              <p className="plan-note">Queda: {preview}. Un mes es un cobro mensual.</p>
             </>
           )}
 
-          <div className="plan-row">
-            <Input
-              type="date"
-              label="Vence (último día para usarlo)"
-              value={form.validUntil}
-              onChange={(e) => set({ validUntil: e.target.value })}
-              fullWidth
-            />
-            <Input
-              type="number"
-              label="Usos en total"
-              min={1}
-              step="1"
-              placeholder="Sin límite"
-              value={form.maxRedemptions}
-              onChange={(e) => set({ maxRedemptions: e.target.value })}
-              fullWidth
-            />
-          </div>
-          {form.maxRedemptions === '1' && <p className="plan-note">Se muestra como código de un solo uso.</p>}
+          {section === 'plans' && (
+            <>
+              <fieldset className="access-duration">
+                <legend>Planes en los que vale *</legend>
+                {contractable.map((p) => (
+                  <label key={p.code} className="plan-check-inline">
+                    <input
+                      type="checkbox"
+                      checked={form.planCodes.includes(p.code)}
+                      onChange={(e) =>
+                        set({ planCodes: e.target.checked ? [...form.planCodes, p.code] : form.planCodes.filter((c) => c !== p.code) })
+                      }
+                    />
+                    {p.name} ({formatPrice(p.priceAmount, p.currency)}
+                    {form.kind === 'percent' && percent > 0 && percent < 100
+                      ? ` → ${formatPrice(Math.round(p.priceAmount * (100 - percent)) / 100, p.currency)}`
+                      : ''}
+                    )
+                  </label>
+                ))}
+              </fieldset>
+              {belowMinimum.length > 0 && (
+                <p className="plan-note plan-note-warning" role="alert">
+                  Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(MIN_CHARGE, 'UYU')}, que es
+                  lo mínimo que cobra Mercado Pago. Para un mes sin cobrar, usá meses gratis.
+                </p>
+              )}
+            </>
+          )}
 
-          <div className="plan-checks">
-            <label className="plan-check">
-              <input type="checkbox" checked={form.oncePerAccount} onChange={(e) => set({ oncePerAccount: e.target.checked })} />
-              Un uso por cuenta
-              <span className="plan-check-hint">Cada nutricionista lo puede usar una sola vez.</span>
-            </label>
-            <label className="plan-check">
-              <input type="checkbox" checked={form.isActive} onChange={(e) => set({ isActive: e.target.checked })} />
-              Activo
-              <span className="plan-check-hint">Uno inactivo no se puede usar (se puede activar después).</span>
-            </label>
-          </div>
+          {section === 'codes' && (
+            <>
+              <fieldset className="access-duration">
+                <legend>Códigos</legend>
+                <label className="plan-check-inline">
+                  <input type="radio" name="codeMode" checked={form.codeMode === 'shared'} onChange={() => set({ codeMode: 'shared' })} />
+                  Un código para todos
+                </label>
+                <label className="plan-check-inline">
+                  <input type="radio" name="codeMode" checked={form.codeMode === 'unique'} onChange={() => set({ codeMode: 'unique' })} />
+                  Códigos únicos (cada uno se usa una vez)
+                </label>
+              </fieldset>
+              {form.codeMode === 'shared' ? (
+                <Input
+                  type="text"
+                  label="Código *"
+                  placeholder="Ej: PRO20"
+                  value={form.sharedCode}
+                  onChange={(e) => set({ sharedCode: e.target.value.toUpperCase() })}
+                  pattern="[A-Za-z0-9][A-Za-z0-9-]{2,39}"
+                  title="De 3 a 40 letras, números o guiones"
+                  maxLength={40}
+                  required
+                  fullWidth
+                />
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="coupon-codes">Escritos (uno por línea, opcional)</label>
+                    <textarea
+                      id="coupon-codes"
+                      className="textarea"
+                      rows={4}
+                      placeholder={'VIP-ANA\nVIP-BRUNO'}
+                      value={form.uniqueCodes}
+                      onChange={(e) => set({ uniqueCodes: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+                  <div className="plan-row coupon-generate-row">
+                    <Input
+                      type="number"
+                      label="Generar al azar"
+                      min={0}
+                      max={1000}
+                      step="1"
+                      placeholder="Cantidad"
+                      value={form.generateCount}
+                      onChange={(e) => set({ generateCount: e.target.value })}
+                      fullWidth
+                    />
+                    <Input
+                      type="text"
+                      label="Prefijo"
+                      placeholder="Ej: VIP"
+                      value={form.generatePrefix}
+                      onChange={(e) => set({ generatePrefix: e.target.value.toUpperCase() })}
+                      maxLength={12}
+                      fullWidth
+                    />
+                  </div>
+                  <p className="plan-note">{uniqueCount} código(s) en total. Después de crearlo los podés descargar.</p>
+                </>
+              )}
+            </>
+          )}
+
+          {section === 'usage' && (
+            <>
+              <div className="plan-row coupon-usage-row">
+                <Input
+                  type="date"
+                  label="Vence (último día para usarlo)"
+                  value={form.validUntil}
+                  onChange={(e) => set({ validUntil: e.target.value })}
+                  fullWidth
+                />
+                <Input
+                  type="number"
+                  label="Usos en total"
+                  min={1}
+                  step="1"
+                  placeholder="Sin límite"
+                  value={form.maxRedemptions}
+                  onChange={(e) => set({ maxRedemptions: e.target.value })}
+                  fullWidth
+                />
+              </div>
+              {form.maxRedemptions === '1' && <p className="plan-note">Se muestra como código de un solo uso.</p>}
+
+              <div className="plan-checks">
+                <label className="plan-check">
+                  <input type="checkbox" checked={form.oncePerAccount} onChange={(e) => set({ oncePerAccount: e.target.checked })} />
+                  Un uso por cuenta
+                  <span className="plan-check-hint">Cada nutricionista lo puede usar una sola vez.</span>
+                </label>
+                <label className="plan-check">
+                  <input type="checkbox" checked={form.isActive} onChange={(e) => set({ isActive: e.target.checked })} />
+                  Activo
+                  <span className="plan-check-hint">Uno inactivo no se puede usar (se puede activar después).</span>
+                </label>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="modal-actions plan-modal-actions">
           <Button type="button" variant="secondary" onClick={close} disabled={saving}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" disabled={saving || invalid}>
+          {sectionIndex < SECTIONS.length - 1 && (
+            <Button type="button" variant="secondary" onClick={() => setSection(SECTIONS[sectionIndex + 1][0])} disabled={saving}>
+              Siguiente
+            </Button>
+          )}
+          <Button type="submit" variant="primary" disabled={saving || invalid} title={invalid ? 'Completá las pestañas marcadas' : undefined}>
             {saving ? 'Creando...' : 'Crear cupón'}
           </Button>
         </div>
