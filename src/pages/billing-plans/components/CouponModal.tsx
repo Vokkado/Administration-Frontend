@@ -4,6 +4,8 @@ import { getApiMessage } from '../../../services/apiError';
 import { FREE_PLAN_CODE, type BillingPlan, type CouponFormData } from '../types';
 import { formatPrice } from './PlanTable';
 import { couponTerms } from './couponFormat';
+import { ModalTabs } from './ModalTabs';
+import { modalTabPanelProps, nextTab } from './modalTabHelpers';
 
 interface CouponModalProps {
   show: boolean;
@@ -37,12 +39,6 @@ const MIN_CHARGE = 15;
 const CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{2,39}$/;
 
 type Section = 'discount' | 'plans' | 'codes' | 'usage';
-const SECTIONS: [Section, string][] = [
-  ['discount', 'Descuento'],
-  ['plans', 'Planes'],
-  ['codes', 'Códigos'],
-  ['usage', 'Uso'],
-];
 
 /**
  * Crear un cupón: porcentaje durante N meses (o para siempre) o meses gratis, para los planes elegidos,
@@ -68,7 +64,10 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
       ? contractable.filter((p) => form.planCodes.includes(p.code) && Math.round(p.priceAmount * (100 - percent)) / 100 < MIN_CHARGE)
       : [];
   const uniqueCount =
-    form.uniqueCodes.split(/[\n,;]+/).map((c) => c.trim()).filter(Boolean).length + (Number(form.generateCount) || 0);
+    form.uniqueCodes
+      .split(/[\n,;]+/)
+      .map((c) => c.trim())
+      .filter(Boolean).length + (Number(form.generateCount) || 0);
 
   // Solo se ve la pestaña abierta: lo que falta en cada una se marca en su título.
   const incomplete: Record<Section, boolean> = {
@@ -81,7 +80,17 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
     usage: false,
   };
   const invalid = Object.values(incomplete).some(Boolean);
-  const sectionIndex = SECTIONS.findIndex(([key]) => key === section);
+  const tabs = [
+    {
+      key: 'discount' as const,
+      label: 'Descuento',
+      missing: incomplete.discount,
+    },
+    { key: 'plans' as const, label: 'Planes', missing: incomplete.plans },
+    { key: 'codes' as const, label: 'Códigos', missing: incomplete.codes },
+    { key: 'usage' as const, label: 'Uso' },
+  ];
+  const next = nextTab<Section>(tabs, section);
 
   function reset() {
     setForm(EMPTY);
@@ -114,25 +123,9 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
   return (
     <Modal show={show} title="Nuevo cupón" onClose={close} error={error} maxWidth="760px">
       <form className="modal-form plan-modal-form" onSubmit={submit}>
-        <div className="billing-tabs coupon-form-tabs" role="tablist" aria-label="Secciones del cupón">
-          {SECTIONS.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              id={`coupon-tab-${key}`}
-              aria-selected={section === key}
-              aria-controls="coupon-form-panel"
-              className={`billing-tab ${section === key ? 'active' : ''}`}
-              onClick={() => setSection(key)}
-            >
-              {label}
-              {incomplete[key] && <span className="coupon-tab-missing" title="Falta completar" aria-label="(falta completar)" />}
-            </button>
-          ))}
-        </div>
+        <ModalTabs tabs={tabs} active={section} onChange={setSection} label="Secciones del cupón" idPrefix="coupon-form" />
 
-        <div className="plan-modal-body coupon-form-panel" id="coupon-form-panel" role="tabpanel" aria-labelledby={`coupon-tab-${section}`}>
+        <div className="plan-modal-body modal-tab-panel" {...modalTabPanelProps('coupon-form', section)}>
           {section === 'discount' && (
             <>
               <Input
@@ -212,7 +205,9 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
                       type="checkbox"
                       checked={form.planCodes.includes(p.code)}
                       onChange={(e) =>
-                        set({ planCodes: e.target.checked ? [...form.planCodes, p.code] : form.planCodes.filter((c) => c !== p.code) })
+                        set({
+                          planCodes: e.target.checked ? [...form.planCodes, p.code] : form.planCodes.filter((c) => c !== p.code),
+                        })
                       }
                     />
                     {p.name} ({formatPrice(p.priceAmount, p.currency)}
@@ -225,8 +220,8 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
               </fieldset>
               {belowMinimum.length > 0 && (
                 <p className="plan-note plan-note-warning" role="alert">
-                  Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(MIN_CHARGE, 'UYU')}, que es
-                  lo mínimo que cobra Mercado Pago. Para un mes sin cobrar, usá meses gratis.
+                  Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(MIN_CHARGE, 'UYU')},
+                  que es lo mínimo que cobra Mercado Pago. Para un mes sin cobrar, usá meses gratis.
                 </p>
               )}
             </>
@@ -342,12 +337,17 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
           <Button type="button" variant="secondary" onClick={close} disabled={saving}>
             Cancelar
           </Button>
-          {sectionIndex < SECTIONS.length - 1 && (
-            <Button type="button" variant="secondary" onClick={() => setSection(SECTIONS[sectionIndex + 1][0])} disabled={saving}>
+          {next && (
+            <Button type="button" variant="secondary" onClick={() => setSection(next)} disabled={saving}>
               Siguiente
             </Button>
           )}
-          <Button type="submit" variant="primary" disabled={saving || invalid} title={invalid ? 'Completá las pestañas marcadas' : undefined}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={saving || invalid}
+            title={invalid ? 'Completá las pestañas marcadas' : undefined}
+          >
             {saving ? 'Creando...' : 'Crear cupón'}
           </Button>
         </div>

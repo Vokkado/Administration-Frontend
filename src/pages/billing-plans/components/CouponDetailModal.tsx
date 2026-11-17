@@ -5,6 +5,10 @@ import { endOfDayMontevideo } from '../hooks/useNutritionists';
 import type { BillingPlan, Coupon, CouponDetail } from '../types';
 import { formatDate, montevideoDay } from './accessFormat';
 import { couponState, couponTerms, downloadCodesCsv, planNames, redemptionStatusLabel } from './couponFormat';
+import { ModalTabs } from './ModalTabs';
+import { modalTabPanelProps } from './modalTabHelpers';
+
+type Section = 'summary' | 'codes' | 'redemptions';
 
 interface CouponDetailModalProps {
   coupon: Coupon | null;
@@ -18,7 +22,8 @@ interface CouponDetailModalProps {
 /**
  * Un cupón: condiciones, códigos (con sus usos, descargables) y canjes. Se puede cambiar el nombre, el
  * vencimiento, el límite de usos, "un uso por cuenta" y activarlo/desactivarlo; el descuento y la duración
- * no (si ya se canjeó: crear otro cupón). A uno de códigos únicos se le agregan códigos.
+ * no (si ya se canjeó: crear otro cupón). A uno de códigos únicos se le agregan códigos. Va en pestañas:
+ * resumen (con lo editable), códigos y canjes.
  */
 export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddCodes, onClose }: CouponDetailModalProps) {
   const [detail, setDetail] = useState<CouponDetail | null>(null);
@@ -27,6 +32,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
   const [saving, setSaving] = useState(false);
   const [edit, setEdit] = useState({ name: '', validUntil: '', maxRedemptions: '', oncePerAccount: true });
   const [more, setMore] = useState({ count: '', prefix: '' });
+  const [section, setSection] = useState<Section>('summary');
   // El cupón que se está mostrando: una respuesta de otro (abierto antes) se descarta.
   const currentId = useRef<string | null>(null);
 
@@ -60,6 +66,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
       return;
     }
     setDetail(null);
+    setSection('summary');
     void load(coupon.id, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon?.id]);
@@ -91,160 +98,198 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
     if (Object.keys(changes).length === 0) return;
     void run(() => onUpdate(c.id, changes), true);
   };
-  const state = couponState({ ...c, redemptions: detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions });
+  const usedCount = detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions ?? 0;
+  const state = couponState({ ...c, redemptions: usedCount });
+  const tabs = [
+    { key: 'summary' as const, label: 'Resumen' },
+    { key: 'codes' as const, label: `Códigos (${detail?.codes.length ?? c.codes ?? 0})` },
+    { key: 'redemptions' as const, label: `Canjes (${detail?.redemptions.length ?? c.redemptions ?? 0})` },
+  ];
 
   return (
-    <Modal show={coupon !== null} title={`Cupón: ${c.name}`} onClose={onClose} error={error}>
-      <div className="plan-modal-body coupon-detail">
+    <Modal show={coupon !== null} title={`Cupón: ${c.name}`} onClose={onClose} error={error} maxWidth="760px">
+      <ModalTabs tabs={tabs} active={section} onChange={setSection} label="Secciones del cupón" idPrefix="coupon-detail" />
+      <div className="plan-modal-body coupon-detail modal-tab-panel" {...modalTabPanelProps('coupon-detail', section)}>
         {loading && !detail && <LoadingSpinner />}
-        <dl className="access-summary">
-          <div>
-            <dt>Descuento</dt>
-            <dd>{couponTerms(c)}</dd>
-          </div>
-          <div>
-            <dt>Planes</dt>
-            <dd>{planNames(c.planCodes, plans)}</dd>
-          </div>
-          <div>
-            <dt>Estado</dt>
-            <dd>
-              <StatusBadge variant={state.variant}>{state.label}</StatusBadge>
-            </dd>
-          </div>
-          <div>
-            <dt>Usos</dt>
-            <dd>
-              {detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions ?? 0}
-              {c.maxRedemptions !== null ? ` de ${c.maxRedemptions}` : ''}
-              {c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
-            </dd>
-          </div>
-        </dl>
+        {section === 'summary' && (
+          <>
+            <dl className="access-summary">
+              <div>
+                <dt>Descuento</dt>
+                <dd>{couponTerms(c)}</dd>
+              </div>
+              <div>
+                <dt>Planes</dt>
+                <dd>{planNames(c.planCodes, plans)}</dd>
+              </div>
+              <div>
+                <dt>Estado</dt>
+                <dd>
+                  <StatusBadge variant={state.variant}>{state.label}</StatusBadge>
+                </dd>
+              </div>
+              <div>
+                <dt>Usos</dt>
+                <dd>
+                  {usedCount}
+                  {c.maxRedemptions !== null ? ` de ${c.maxRedemptions}` : ''}
+                  {c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
+                </dd>
+              </div>
+            </dl>
 
-        <div className="form-group">
-          <label htmlFor="coupon-name">Nombre</label>
-          <input id="coupon-name" className="input" value={edit.name} maxLength={80} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
-        </div>
-        <div className="plan-row">
-          <div className="form-group">
-            <label htmlFor="coupon-until">Vence</label>
-            <input id="coupon-until" type="date" className="input" value={edit.validUntil} onChange={(e) => setEdit({ ...edit, validUntil: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="coupon-max">Usos en total</label>
-            <input
-              id="coupon-max"
-              type="number"
-              min={1}
-              className="input"
-              placeholder="Sin límite"
-              value={edit.maxRedemptions}
-              onChange={(e) => setEdit({ ...edit, maxRedemptions: e.target.value })}
-            />
-          </div>
-        </div>
-        <label className="plan-check-inline">
-          <input type="checkbox" checked={edit.oncePerAccount} onChange={(e) => setEdit({ ...edit, oncePerAccount: e.target.checked })} />
-          Un uso por cuenta
-        </label>
-        <div className="modal-actions">
-          <Button type="button" variant={c.isActive ? 'secondary' : 'primary'} disabled={saving} onClick={() => run(() => onUpdate(c.id, { isActive: !c.isActive }))}>
-            {c.isActive ? 'Desactivar' : 'Activar'}
-          </Button>
-          <Button type="button" variant="primary" disabled={saving || !edit.name.trim()} onClick={saveEdits}>
-            {saving ? 'Guardando...' : 'Guardar cambios'}
-          </Button>
-        </div>
-
-        <section aria-labelledby="coupon-codes-title">
-          <div className="coupon-section-head">
-            <h4 id="coupon-codes-title">Códigos ({detail?.codes.length ?? c.codes ?? 0})</h4>
-            {detail && detail.codes.length > 0 && (
-              <button type="button" className="history-btn" onClick={() => downloadCodesCsv(c.name, detail.codes)}>
-                Descargar CSV
-              </button>
-            )}
-          </div>
-          {detail && (
-            <ul className="coupon-codes">
-              {detail.codes.slice(0, 200).map((k) => (
-                <li key={k.id}>
-                  <code>{k.code}</code>
-                  <span className="plan-code">{k.redemptions === 0 ? 'sin usar' : `${k.redemptions} uso(s)`}</span>
-                </li>
-              ))}
-              {detail.codes.length > 200 && <li className="plan-code">… y {detail.codes.length - 200} más (están en el CSV)</li>}
-            </ul>
-          )}
-          {c.codeMode === 'unique' && (
-            <div className="coupon-add-codes">
+            <div className="form-group">
+              <label htmlFor="coupon-name">Nombre</label>
               <input
-                type="number"
-                min={1}
-                max={1000}
+                id="coupon-name"
                 className="input"
-                placeholder="Cantidad"
-                aria-label="Cuántos códigos generar"
-                value={more.count}
-                onChange={(e) => setMore({ ...more, count: e.target.value })}
+                value={edit.name}
+                maxLength={80}
+                onChange={(e) => setEdit({ ...edit, name: e.target.value })}
               />
+            </div>
+            <div className="plan-row coupon-usage-row">
+              <div className="form-group">
+                <label htmlFor="coupon-until">Vence</label>
+                <input
+                  id="coupon-until"
+                  type="date"
+                  className="input"
+                  value={edit.validUntil}
+                  onChange={(e) => setEdit({ ...edit, validUntil: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="coupon-max">Usos en total</label>
+                <input
+                  id="coupon-max"
+                  type="number"
+                  min={1}
+                  className="input"
+                  placeholder="Sin límite"
+                  value={edit.maxRedemptions}
+                  onChange={(e) => setEdit({ ...edit, maxRedemptions: e.target.value })}
+                />
+              </div>
+            </div>
+            <label className="plan-check-inline">
               <input
-                className="input"
-                placeholder="Prefijo"
-                aria-label="Prefijo de los códigos"
-                maxLength={12}
-                value={more.prefix}
-                onChange={(e) => setMore({ ...more, prefix: e.target.value.toUpperCase() })}
+                type="checkbox"
+                checked={edit.oncePerAccount}
+                onChange={(e) => setEdit({ ...edit, oncePerAccount: e.target.checked })}
               />
+              Un uso por cuenta
+            </label>
+            <div className="modal-actions">
               <Button
                 type="button"
-                variant="secondary"
-                disabled={saving || !(Number(more.count) >= 1)}
-                onClick={() =>
-                  run(async () => {
-                    await onAddCodes(c.id, [], { count: Number(more.count), prefix: more.prefix.trim() });
-                    setMore({ count: '', prefix: '' });
-                  })
-                }
+                variant={c.isActive ? 'secondary' : 'primary'}
+                disabled={saving}
+                onClick={() => run(() => onUpdate(c.id, { isActive: !c.isActive }))}
               >
-                Generar más
+                {c.isActive ? 'Desactivar' : 'Activar'}
+              </Button>
+              <Button type="button" variant="primary" disabled={saving || !edit.name.trim()} onClick={saveEdits}>
+                {saving ? 'Guardando...' : 'Guardar cambios'}
               </Button>
             </div>
-          )}
-        </section>
+          </>
+        )}
 
-        <section aria-labelledby="coupon-redemptions-title">
-          <h4 id="coupon-redemptions-title">Canjes</h4>
-          {detail && detail.redemptions.length === 0 && <p className="plan-history-empty">Todavía nadie lo usó.</p>}
-          {detail && detail.redemptions.length > 0 && (
-            <table className="dt-table coupon-redemptions">
-              <thead>
-                <tr>
-                  <th>Quién</th>
-                  <th>Código</th>
-                  <th>Estado</th>
-                  <th>Fecha</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.redemptions.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.redeemedByEmail ?? '—'}</td>
-                    <td>
-                      <code>{r.code}</code>
-                    </td>
-                    <td>
-                      {redemptionStatusLabel(r)}
-                      {r.kind === 'percent' && r.status !== 'void' && r.discountedCharges > 0 ? ` · ${r.discountedCharges} cobro(s)` : ''}
-                    </td>
-                    <td>{formatDate(r.createdAt)}</td>
-                  </tr>
+        {section === 'codes' && (
+          <section aria-label="Códigos">
+            <div className="coupon-section-head">
+              <h4>{c.codeMode === 'unique' ? 'Códigos únicos (cada uno se usa una vez)' : 'Código para todos'}</h4>
+              {detail && detail.codes.length > 0 && (
+                <button type="button" className="history-btn" onClick={() => downloadCodesCsv(c.name, detail.codes)}>
+                  Descargar CSV
+                </button>
+              )}
+            </div>
+            {detail && (
+              <ul className="coupon-codes">
+                {detail.codes.slice(0, 200).map((k) => (
+                  <li key={k.id}>
+                    <code>{k.code}</code>
+                    <span className="plan-code">{k.redemptions === 0 ? 'sin usar' : `${k.redemptions} uso(s)`}</span>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+                {detail.codes.length > 200 && <li className="plan-code">… y {detail.codes.length - 200} más (están en el CSV)</li>}
+              </ul>
+            )}
+            {c.codeMode === 'unique' && (
+              <div className="coupon-add-codes">
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  className="input"
+                  placeholder="Cantidad"
+                  aria-label="Cuántos códigos generar"
+                  value={more.count}
+                  onChange={(e) => setMore({ ...more, count: e.target.value })}
+                />
+                <input
+                  className="input"
+                  placeholder="Prefijo"
+                  aria-label="Prefijo de los códigos"
+                  maxLength={12}
+                  value={more.prefix}
+                  onChange={(e) => setMore({ ...more, prefix: e.target.value.toUpperCase() })}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={saving || !(Number(more.count) >= 1)}
+                  onClick={() =>
+                    run(async () => {
+                      await onAddCodes(c.id, [], {
+                        count: Number(more.count),
+                        prefix: more.prefix.trim(),
+                      });
+                      setMore({ count: '', prefix: '' });
+                    })
+                  }
+                >
+                  Generar más
+                </Button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {section === 'redemptions' && (
+          <section aria-label="Canjes">
+            {detail && detail.redemptions.length === 0 && <p className="plan-history-empty">Todavía nadie lo usó.</p>}
+            {detail && detail.redemptions.length > 0 && (
+              <table className="dt-table coupon-redemptions">
+                <thead>
+                  <tr>
+                    <th>Quién</th>
+                    <th>Código</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detail.redemptions.map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.redeemedByEmail ?? '—'}</td>
+                      <td>
+                        <code>{r.code}</code>
+                      </td>
+                      <td>
+                        {redemptionStatusLabel(r)}
+                        {r.kind === 'percent' && r.status !== 'void' && r.discountedCharges > 0 ? ` · ${r.discountedCharges} cobro(s)` : ''}
+                      </td>
+                      <td>{formatDate(r.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        )}
       </div>
     </Modal>
   );

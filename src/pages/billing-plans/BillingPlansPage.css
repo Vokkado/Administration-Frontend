@@ -451,14 +451,14 @@
 
 /* Pestaña Cupones */
 :where(.page-billing-plans) {
-  /* Nuevo cupón: formulario en pestañas */
-  .coupon-form-tabs {
+  /* Modales en pestañas (plan, nuevo cupón, detalle del cupón): ver ModalTabs. */
+  .modal-form-tabs {
     flex-shrink: 0;
     margin: 0;
     padding: 4px 24px 0;
   }
 
-  .coupon-form-tabs .billing-tab {
+  .modal-form-tabs .billing-tab {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -466,7 +466,7 @@
   }
 
   /* Algo obligatorio sin completar en esa pestaña. */
-  .coupon-tab-missing {
+  .modal-tab-missing {
     width: 7px;
     height: 7px;
     border-radius: 50%;
@@ -474,15 +474,21 @@
   }
 
   /* Mismo alto en todas las pestañas: el modal no salta al cambiar. */
-  .coupon-form-panel {
+  .modal-tab-panel {
     min-height: 420px;
     padding-top: 20px;
   }
 
   .coupon-amount-row,
   .coupon-generate-row,
-  .coupon-usage-row {
+  .coupon-usage-row,
+  .plan-pair-row {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* En su pestaña, la lista de códigos usa el alto del panel (que ya scrollea). */
+  .modal-tab-panel .coupon-codes {
+    max-height: none;
   }
 
   .coupon-toolbar {
@@ -543,19 +549,20 @@
     .coupon-add-codes,
     .coupon-amount-row,
     .coupon-generate-row,
-    .coupon-usage-row {
+    .coupon-usage-row,
+    .plan-pair-row {
       grid-template-columns: 1fr;
     }
 
-    .coupon-form-tabs {
+    .modal-form-tabs {
       padding: 4px 16px 0;
     }
 
-    .coupon-form-tabs .billing-tab {
+    .modal-form-tabs .billing-tab {
       padding: 10px 12px;
     }
 
-    .coupon-form-panel {
+    .modal-tab-panel {
       min-height: 0;
     }
   }
