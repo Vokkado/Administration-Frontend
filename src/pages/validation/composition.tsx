@@ -6,6 +6,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Button, Modal, AttributeBadge, Tooltip, PositionInput } from '../../components/ui';
 import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
+import { useSortableList } from '../../hooks/useSortableList';
 import {
   ValidationService,
   type ValidationDetail,
@@ -141,6 +142,93 @@ function Chevron({ dir }: { dir: 'up' | 'down' }) {
   );
 }
 
+/**
+ * Orden visual de la tabla nutricional por producto (ids en orden). Vive en memoria: dura
+ * mientras no se recargue la página, aunque se cambie de paso o de producto en el wizard.
+ */
+const nutritionOrderCache = new Map<string, string[]>();
+
+/** `list` ordenada según `order` (ids); lo que no está en `order` va al final en su orden original. */
+function applyOrder<T>(list: T[], order: string[], getId: (item: T) => string): T[] {
+  if (order.length === 0) return list;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return list
+    .map((item, i) => ({ item, key: rank.get(getId(item)) ?? order.length + i }))
+    .sort((a, b) => a.key - b.key)
+    .map((x) => x.item);
+}
+
+/** Copia de `list` con el ítem `from` movido al índice `to`. */
+function reorder<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+/**
+ * Fila de una lista ordenable como la etiqueta (ingredientes, tabla nutricional). Tres formas
+ * de moverla, las mismas que en el modal de producto:
+ *  - arrastrar desde el asa ⠿ (solo el asa inicia el drag, para no pisar los campos de la fila);
+ *  - escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta);
+ *  - flechas para subir/bajar de a uno.
+ * Después de moverse, la fila se resalta y se lleva a la vista.
+ */
+function SortableRow<T>({ sortable, item, index, count, name, busy, children }: {
+  sortable: ReturnType<typeof useSortableList<T>>;
+  item: T;
+  index: number;
+  count: number;
+  name: string;
+  busy: boolean;
+  children: React.ReactNode;
+}) {
+  const { className, ...row } = sortable.rowProps(item, index);
+  return (
+    <div {...row} className={`vp-order-row ${className}`}>
+      <span
+        className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
+        title="Arrastrar para cambiar el orden"
+        aria-hidden="true"
+        {...sortable.gripProps(item)}
+      >
+        ⠿
+      </span>
+      <div className="vp-order-handle">
+        <button
+          type="button"
+          className={`vp-order-arrow${index === 0 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index - 1)}
+          disabled={busy || index === 0}
+          aria-label={`Subir ${name}`}
+          title="Subir"
+        >
+          <Chevron dir="up" />
+        </button>
+        <PositionInput
+          className="vp-order-num"
+          value={index + 1}
+          max={count}
+          name={name}
+          disabled={busy}
+          onCommit={(pos) => sortable.move(index, pos - 1)}
+        />
+        <button
+          type="button"
+          className={`vp-order-arrow${index === count - 1 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index + 1)}
+          disabled={busy || index === count - 1}
+          aria-label={`Bajar ${name}`}
+          title="Bajar"
+        >
+          <Chevron dir="down" />
+        </button>
+      </div>
+      <div className="vp-order-body">{children}</div>
+    </div>
+  );
+}
+
 export function CompositionStep({ productId, detail, busy, setBusy, onChanged }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
 }) {
@@ -156,65 +244,38 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   // Nutriente elegido en el buscador y todavía sin valor (fila en edición arriba de la lista).
   const [nutritionDraft, setNutritionDraft] = useState<Picked | null>(null);
 
-  // Orden de la etiqueta. Se muestra al instante (optimista) y se guarda en el backend;
-  // si falla, vuelve al orden que vino del servidor.
-  //
-  // Formas de mover (las mismas que en el modal de producto):
-  //  - Arrastrar desde el asa ⠿. La fila solo es `draggable` mientras se aprieta el asa,
-  //    porque si lo fuera siempre no se podría seleccionar texto en sus campos.
-  //  - Escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta).
-  //  - Flechas para subir/bajar de a uno.
-  // Después de moverse, la fila se resalta y se lleva a la vista.
+  // Orden de la etiqueta (ingredientes y tabla nutricional). Se muestra al instante
+  // (optimista) y se guarda en el backend; si falla, vuelve al orden que vino del servidor.
+  // Cómo se mueve (arrastre desde ⠿, posición escrita, flechas): ver `SortableRow`.
   const [ordered, setOrdered] = useState(detail.ingredients);
   useEffect(() => setOrdered(detail.ingredients), [detail.ingredients]);
-  const [armedId, setArmedId] = useState<string | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  // Hueco de inserción (0..N) donde caería la fila arrastrada.
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
-  const [movedId, setMovedId] = useState<string | null>(null);
-  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const endDrag = () => { setArmedId(null); setDragIndex(null); setDropIndex(null); };
+  const ingredientsSortable = useSortableList({
+    items: ordered,
+    getId: (i) => i.variantId,
+    disabled: busy,
+    onMove: (from, to) => {
+      const next = reorder(ordered, from, to);
+      setOrdered(next);
+      run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
+        .catch(() => setOrdered(detail.ingredients));
+    },
+  });
 
-  // Si se suelta el mouse sin llegar a arrastrar, la fila deja de ser draggable.
-  useEffect(() => {
-    if (!armedId) return;
-    const disarm = () => setArmedId(null);
-    window.addEventListener('mouseup', disarm);
-    return () => window.removeEventListener('mouseup', disarm);
-  }, [armedId]);
-
-  useEffect(() => {
-    if (!movedId) return;
-    rowRefs.current[movedId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    const t = setTimeout(() => setMovedId(null), 1200);
-    return () => clearTimeout(t);
-  }, [movedId]);
-
-  /** Mueve la fila `from` al índice `to` (0-based) del orden final. */
-  const move = (from: number, to: number) => {
-    if (busy || from === to || to < 0 || to >= ordered.length) return;
-    const next = [...ordered];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    setOrdered(next);
-    setMovedId(moved.variantId);
-    run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
-      .catch(() => setOrdered(detail.ingredients));
+  // Tabla nutricional: el orden es SOLO visual (no se guarda en el backend). Se recuerda por
+  // producto mientras no se recargue la página, y se aplica sobre lo que venga del servidor:
+  // lo nuevo va al final y lo quitado desaparece.
+  const [nutritionOrder, setNutritionOrderState] = useState<string[]>(() => nutritionOrderCache.get(productId) ?? []);
+  const setNutritionOrder = (ids: string[]) => {
+    nutritionOrderCache.set(productId, ids);
+    setNutritionOrderState(ids);
   };
-
-  const handleDrop = () => {
-    if (dragIndex !== null && dropIndex !== null) {
-      // Sacar la fila corre una posición los huecos que están debajo de ella.
-      move(dragIndex, dropIndex > dragIndex ? dropIndex - 1 : dropIndex);
-    }
-    endDrag();
-  };
-
-  // Indicador solo si soltar ahí cambia algo (los huecos pegados a la fila no la mueven).
-  const showDropAt =
-    dragIndex !== null && dropIndex !== null && dropIndex !== dragIndex && dropIndex !== dragIndex + 1
-      ? dropIndex
-      : null;
+  const nutrition = applyOrder(detail.nutrition, nutritionOrder, (n) => n.nutritionFactId);
+  const nutritionSortable = useSortableList({
+    items: nutrition,
+    getId: (n) => n.nutritionFactId,
+    disabled: busy,
+    onMove: (from, to) => setNutritionOrder(reorder(nutrition, from, to).map((n) => n.nutritionFactId)),
+  });
 
   /** Editar solo refresca; una variante recién creada además se vincula al producto. */
   const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
@@ -282,89 +343,25 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           </p>
         )}
         {ordered.map((ing, idx) => (
-          <div
+          <SortableRow
             key={ing.variantId}
-            ref={(el) => { rowRefs.current[ing.variantId] = el; }}
-            className={[
-              'vp-order-row',
-              dragIndex === idx && 'is-dragging',
-              movedId === ing.variantId && 'is-moved',
-              showDropAt === idx && 'drop-before',
-              showDropAt === ordered.length && idx === ordered.length - 1 && 'drop-after',
-            ].filter(Boolean).join(' ')}
-            draggable={!busy && armedId === ing.variantId}
-            onDragStart={(e) => {
-              setDragIndex(idx);
-              e.dataTransfer.effectAllowed = 'move';
-              // Firefox no inicia el drag si no hay datos.
-              e.dataTransfer.setData('text/plain', ing.variantId);
-            }}
-            onDragEnd={endDrag}
-            onDragOver={(e) => {
-              if (dragIndex === null) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-              const rect = e.currentTarget.getBoundingClientRect();
-              const next = idx + (e.clientY > rect.top + rect.height / 2 ? 1 : 0);
-              if (next !== dropIndex) setDropIndex(next);
-            }}
-            onDrop={(e) => {
-              if (dragIndex === null) return;
-              e.preventDefault();
-              handleDrop();
-            }}
+            sortable={ingredientsSortable}
+            item={ing}
+            index={idx}
+            count={ordered.length}
+            name={ing.variantName}
+            busy={busy}
           >
-            <span
-              className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
-              title="Arrastrar para cambiar el orden"
-              aria-hidden="true"
-              onMouseDown={() => { if (!busy) setArmedId(ing.variantId); }}
-              onMouseUp={() => setArmedId(null)}
-            >
-              ⠿
-            </span>
-            <div className="vp-order-handle">
-              <button
-                type="button"
-                className={`vp-order-arrow${idx === 0 ? ' is-edge' : ''}`}
-                onClick={() => move(idx, idx - 1)}
-                disabled={busy || idx === 0}
-                aria-label={`Subir ${ing.variantName}`}
-                title="Subir"
-              >
-                <Chevron dir="up" />
-              </button>
-              <PositionInput
-                className="vp-order-num"
-                value={idx + 1}
-                max={ordered.length}
-                name={ing.variantName}
-                disabled={busy}
-                onCommit={(pos) => move(idx, pos - 1)}
-              />
-              <button
-                type="button"
-                className={`vp-order-arrow${idx === ordered.length - 1 ? ' is-edge' : ''}`}
-                onClick={() => move(idx, idx + 1)}
-                disabled={busy || idx === ordered.length - 1}
-                aria-label={`Bajar ${ing.variantName}`}
-                title="Bajar"
-              >
-                <Chevron dir="down" />
-              </button>
-            </div>
-            <div className="vp-order-body">
-              <IngredientRow
-                productId={productId}
-                ing={ing}
-                busy={busy}
-                setBusy={setBusy}
-                onChanged={onChanged}
-                onEditVariant={() => setVariantEditor({ id: ing.variantId })}
-                onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
-              />
-            </div>
-          </div>
+            <IngredientRow
+              productId={productId}
+              ing={ing}
+              busy={busy}
+              setBusy={setBusy}
+              onChanged={onChanged}
+              onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+              onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+            />
+          </SortableRow>
         ))}
       </Section>
 
@@ -426,9 +423,24 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             />
           </div>
         )}
-        {detail.nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
-        {detail.nutrition.map((n) => (
-          <NutritionRow key={n.nutritionFactId} productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+        {nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
+        {nutrition.length > 1 && (
+          <p className="vp-order-hint">
+            Ordenalas como en la etiqueta: arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
+          </p>
+        )}
+        {nutrition.map((n, idx) => (
+          <SortableRow
+            key={n.nutritionFactId}
+            sortable={nutritionSortable}
+            item={n}
+            index={idx}
+            count={nutrition.length}
+            name={n.name}
+            busy={busy}
+          >
+            <NutritionRow productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          </SortableRow>
         ))}
       </Section>
     </>
