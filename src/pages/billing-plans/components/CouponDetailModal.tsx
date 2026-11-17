@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, LoadingSpinner, Modal, StatusBadge } from '../../../components/ui';
 import { getApiMessage } from '../../../services/apiError';
 import { endOfDayMontevideo } from '../hooks/useNutritionists';
@@ -27,45 +27,53 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
   const [saving, setSaving] = useState(false);
   const [edit, setEdit] = useState({ name: '', validUntil: '', maxRedemptions: '', oncePerAccount: true });
   const [more, setMore] = useState({ count: '', prefix: '' });
+  // El cupón que se está mostrando: una respuesta de otro (abierto antes) se descarta.
+  const currentId = useRef<string | null>(null);
 
-  const load = async (id: string) => {
+  const editsFrom = (c: Coupon) => ({
+    name: c.name,
+    validUntil: c.validUntil ? montevideoDay(c.validUntil) : '',
+    maxRedemptions: c.maxRedemptions === null ? '' : String(c.maxRedemptions),
+    oncePerAccount: c.oncePerAccount,
+  });
+
+  /** Recarga el detalle. Los campos editables se pisan solo al abrirlo o después de guardarlos. */
+  const load = async (id: string, resetEdits: boolean) => {
     setLoading(true);
     setError('');
     try {
       const d = await fetchDetail(id);
+      if (currentId.current !== id) return;
       setDetail(d);
-      setEdit({
-        name: d.coupon.name,
-        validUntil: d.coupon.validUntil ? montevideoDay(d.coupon.validUntil) : '',
-        maxRedemptions: d.coupon.maxRedemptions === null ? '' : String(d.coupon.maxRedemptions),
-        oncePerAccount: d.coupon.oncePerAccount,
-      });
+      if (resetEdits) setEdit(editsFrom(d.coupon));
     } catch (err) {
-      setError(getApiMessage(err, 'No se pudo cargar el cupón'));
+      if (currentId.current === id) setError(getApiMessage(err, 'No se pudo cargar el cupón'));
     } finally {
-      setLoading(false);
+      if (currentId.current === id) setLoading(false);
     }
   };
 
   useEffect(() => {
+    currentId.current = coupon?.id ?? null;
     if (!coupon) {
       setDetail(null);
       return;
     }
-    void load(coupon.id);
+    setDetail(null);
+    void load(coupon.id, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon?.id]);
 
   if (!coupon) return null;
   const c = detail?.coupon ?? coupon;
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: () => Promise<unknown>, resetEdits = false) {
     if (saving) return;
     setSaving(true);
     setError('');
     try {
       await action();
-      await load(c.id);
+      await load(c.id, resetEdits);
     } catch (err) {
       setError(getApiMessage(err, 'No se pudo guardar el cambio'));
     } finally {
@@ -73,15 +81,16 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
     }
   }
 
-  const saveEdits = () =>
-    run(() =>
-      onUpdate(c.id, {
-        name: edit.name.trim(),
-        validUntil: edit.validUntil ? endOfDayMontevideo(edit.validUntil) : null,
-        maxRedemptions: edit.maxRedemptions ? Number(edit.maxRedemptions) : null,
-        oncePerAccount: edit.oncePerAccount,
-      })
-    );
+  const saveEdits = () => {
+    const before = editsFrom(c);
+    const changes: Record<string, unknown> = {};
+    if (edit.name.trim() !== before.name) changes.name = edit.name.trim();
+    if (edit.validUntil !== before.validUntil) changes.validUntil = edit.validUntil ? endOfDayMontevideo(edit.validUntil) : null;
+    if (edit.maxRedemptions !== before.maxRedemptions) changes.maxRedemptions = edit.maxRedemptions ? Number(edit.maxRedemptions) : null;
+    if (edit.oncePerAccount !== before.oncePerAccount) changes.oncePerAccount = edit.oncePerAccount;
+    if (Object.keys(changes).length === 0) return;
+    void run(() => onUpdate(c.id, changes), true);
+  };
   const state = couponState({ ...c, redemptions: detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions });
 
   return (
