@@ -23,7 +23,7 @@ export function CouponsTab({ plans }: { plans: BillingPlan[] }) {
           <span className="plan-name">{c.name}</span>
           <span className="plan-code">
             {c.codeMode === 'shared' ? (c.firstCode ?? '') : `${c.codes ?? 0} códigos únicos`}
-            {c.maxRedemptions === 1 ? ' · un solo uso' : ''}
+            {c.codeMode === 'shared' && c.maxRedemptions === 1 ? ' · un solo uso' : ''}
           </span>
         </div>
       ),

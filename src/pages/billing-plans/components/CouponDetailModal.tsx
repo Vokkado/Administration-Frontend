@@ -102,6 +102,8 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
   };
   const usedCount = detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions ?? 0;
   const state = couponState({ ...c, redemptions: usedCount });
+  const codeCount = detail?.codes.length ?? c.codes ?? 0;
+  const editLimit = Number(edit.maxRedemptions) >= 1 ? Number(edit.maxRedemptions) : null;
   const tabs = [
     { key: 'summary' as const, label: 'Resumen' },
     { key: 'codes' as const, label: `Códigos (${detail?.codes.length ?? c.codes ?? 0})` },
@@ -134,7 +136,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                 <dd>
                   {usedCount}
                   {c.maxRedemptions !== null ? ` de ${c.maxRedemptions}` : ''}
-                  {c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
+                  {c.codeMode === 'shared' && c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
                 </dd>
               </div>
             </dl>
@@ -161,7 +163,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="coupon-max">Usos en total</label>
+                <label htmlFor="coupon-max">{c.codeMode === 'unique' ? 'Usos en total (todos los códigos)' : 'Usos en total'}</label>
                 <input
                   id="coupon-max"
                   type="number"
@@ -173,6 +175,12 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                 />
               </div>
             </div>
+            {c.codeMode === 'unique' && editLimit !== null && editLimit < codeCount && (
+              <p className="plan-note plan-note-warning" role="status">
+                Hay {codeCount} códigos pero el límite es {editLimit}: después de {editLimit === 1 ? '1 uso' : `${editLimit} usos`} el cupón queda
+                agotado y los demás códigos ya no sirven. Para que se puedan usar todos, dejá "Usos en total" vacío.
+              </p>
+            )}
             <label className="plan-check-inline">
               <input
                 type="checkbox"
