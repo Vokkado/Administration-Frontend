@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, LoadingSpinner, Modal, StatusBadge } from '../../../components/ui';
+import { Button, Modal, StatusBadge } from '../../../components/ui';
 import { getApiMessage } from '../../../services/apiError';
 import { endOfDayMontevideo } from '../hooks/useNutritionists';
 import type { BillingPlan, Coupon, CouponDetail } from '../types';
@@ -67,6 +67,8 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
     }
     setDetail(null);
     setSection('summary');
+    // Mientras llega el detalle, los campos muestran lo del listado (no los del cupón abierto antes).
+    setEdit(editsFrom(coupon));
     void load(coupon.id, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupon?.id]);
@@ -110,7 +112,6 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
     <Modal show={coupon !== null} title={`Cupón: ${c.name}`} onClose={onClose} error={error} maxWidth="760px">
       <ModalTabs tabs={tabs} active={section} onChange={setSection} label="Secciones del cupón" idPrefix="coupon-detail" />
       <div className="plan-modal-body coupon-detail modal-tab-panel" {...modalTabPanelProps('coupon-detail', section)}>
-        {loading && !detail && <LoadingSpinner />}
         {section === 'summary' && (
           <>
             <dl className="access-summary">
@@ -206,6 +207,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                 </button>
               )}
             </div>
+            {!detail && loading && <p className="plan-history-empty">Cargando códigos…</p>}
             {detail && (
               <ul className="coupon-codes">
                 {detail.codes.slice(0, 200).map((k) => (
@@ -260,6 +262,7 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
 
         {section === 'redemptions' && (
           <section aria-label="Canjes">
+            {!detail && loading && <p className="plan-history-empty">Cargando canjes…</p>}
             {detail && detail.redemptions.length === 0 && <p className="plan-history-empty">Todavía nadie lo usó.</p>}
             {detail && detail.redemptions.length > 0 && (
               <table className="dt-table coupon-redemptions">
