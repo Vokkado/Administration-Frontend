@@ -95,3 +95,73 @@ export interface NutritionistFilters {
   planCode: string;
   expiringWithinDays: '' | '7' | '30';
 }
+
+// ─── Cupones ───
+export type CouponKind = 'percent' | 'free_months';
+export type CouponCodeMode = 'shared' | 'unique';
+
+export interface Coupon {
+  id: string;
+  name: string;
+  kind: CouponKind;
+  percentOff: number | null;
+  /** percent: cobros con descuento (null = para siempre). free_months: meses gratis. */
+  durationMonths: number | null;
+  planCodes: string[];
+  codeMode: CouponCodeMode;
+  validUntil: string | null;
+  maxRedemptions: number | null;
+  oncePerAccount: boolean;
+  isActive: boolean;
+  createdAt: string;
+  /** Del listado: canjes (sin anulados), cantidad de códigos y el primero (el compartido). */
+  redemptions?: number;
+  codes?: number;
+  firstCode?: string | null;
+}
+
+export interface CouponCode {
+  id: string;
+  code: string;
+  createdAt: string;
+  redemptions: number;
+}
+
+export interface CouponRedemption {
+  id: string;
+  code: string;
+  redeemedByEmail: string | null;
+  status: 'active' | 'completed' | 'lost' | 'void';
+  kind: CouponKind;
+  percentOff: number | null;
+  durationMonths: number | null;
+  discountedCharges: number;
+  freeUntil: string | null;
+  endReason: string | null;
+  createdAt: string;
+}
+
+export interface CouponDetail {
+  coupon: Coupon;
+  codes: CouponCode[];
+  redemptions: CouponRedemption[];
+}
+
+/** Formulario de alta (texto en los números para poder dejarlos vacíos mientras se escribe). */
+export interface CouponFormData {
+  name: string;
+  kind: CouponKind;
+  percentOff: string;
+  forever: boolean;
+  durationMonths: string;
+  planCodes: string[];
+  codeMode: CouponCodeMode;
+  sharedCode: string;
+  uniqueCodes: string; // uno por línea
+  generateCount: string;
+  generatePrefix: string;
+  validUntil: string; // AAAA-MM-DD
+  maxRedemptions: string;
+  oncePerAccount: boolean;
+  isActive: boolean;
+}

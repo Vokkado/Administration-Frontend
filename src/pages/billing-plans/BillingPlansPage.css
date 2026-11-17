@@ -420,3 +420,66 @@
     }
   }
 }
+
+/* Pestaña Cupones */
+:where(.page-billing-plans) {
+  .coupon-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .coupon-detail h4 {
+    margin: 8px 0;
+    font-size: 15px;
+  }
+
+  .coupon-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .coupon-section-head .history-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .coupon-codes {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+
+  .coupon-codes li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .coupon-add-codes {
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .coupon-redemptions {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    .coupon-add-codes {
+      grid-template-columns: 1fr;
+    }
+  }
+}

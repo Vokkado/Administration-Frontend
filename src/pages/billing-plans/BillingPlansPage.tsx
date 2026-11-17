@@ -7,6 +7,7 @@ import { PlanHistoryModal } from './components/PlanHistoryModal';
 import { PlanModal } from './components/PlanModal';
 import { PlanTable } from './components/PlanTable';
 import { NutritionistsTab } from './components/NutritionistsTab';
+import { CouponsTab } from './components/CouponsTab';
 import { usePlans } from './hooks/usePlans';
 import type { BillingPlan, PlanFormData } from './types';
 import './BillingPlansPage.css';
@@ -45,7 +46,7 @@ function toForm(plan: BillingPlan): PlanFormData {
  * borran (los referencian suscripciones): se desactivan. La pestaña "Nutricionistas" muestra qué rige
  * para cada uno y gestiona los accesos de Vokkado (pruebas y accesos gratis).
  */
-type Tab = 'plans' | 'nutritionists';
+type Tab = 'plans' | 'nutritionists' | 'coupons';
 
 export function BillingPlansPage() {
   const [tab, setTab] = useState<Tab>('plans');
@@ -121,6 +122,7 @@ export function BillingPlansPage() {
           [
             ['plans', 'Planes'],
             ['nutritionists', 'Nutricionistas'],
+            ['coupons', 'Cupones'],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -142,8 +144,10 @@ export function BillingPlansPage() {
           {!showModal && <NotificationBanner type="error" message={error} />}
           <PlanTable plans={plans} loading={loading} onEdit={openEditModal} onHistory={setHistoryPlan} />
         </>
-      ) : (
+      ) : tab === 'nutritionists' ? (
         <NutritionistsTab plans={plans} />
+      ) : (
+        <CouponsTab plans={plans} />
       )}
 
       <PlanModal
