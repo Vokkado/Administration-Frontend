@@ -14,11 +14,17 @@ export function planNames(codes: string[], plans: BillingPlan[]): string {
   return codes.map((code) => plans.find((p) => p.code === code)?.name ?? code).join(', ');
 }
 
+/** Usos posibles: con códigos únicos, uno por código; con el compartido, su límite (null = sin límite). */
+export function couponCapacity(c: Coupon): number | null {
+  return c.codeMode === 'unique' ? (c.codes ?? 0) : c.maxRedemptions;
+}
+
 /** Estado para mostrar: inactivo, vencido, agotado o activo. */
 export function couponState(c: Coupon): { label: string; variant: 'active' | 'inactive' | 'pending' } {
   if (!c.isActive) return { label: 'Inactivo', variant: 'inactive' };
   if (c.validUntil && new Date(c.validUntil).getTime() <= Date.now()) return { label: `Venció el ${formatDate(c.validUntil)}`, variant: 'inactive' };
-  if (c.maxRedemptions !== null && (c.redemptions ?? 0) >= c.maxRedemptions) return { label: 'Agotado', variant: 'pending' };
+  const capacity = couponCapacity(c);
+  if (capacity !== null && (c.redemptions ?? 0) >= capacity) return { label: 'Agotado', variant: 'pending' };
   return { label: 'Activo', variant: 'active' };
 }
 

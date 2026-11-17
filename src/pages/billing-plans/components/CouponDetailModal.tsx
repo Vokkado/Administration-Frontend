@@ -4,7 +4,7 @@ import { getApiMessage } from '../../../services/apiError';
 import { endOfDayMontevideo } from '../hooks/useNutritionists';
 import type { BillingPlan, Coupon, CouponDetail } from '../types';
 import { formatDate, montevideoDay } from './accessFormat';
-import { couponState, couponTerms, downloadCodesCsv, planNames, redemptionStatusLabel } from './couponFormat';
+import { couponCapacity, couponState, couponTerms, downloadCodesCsv, planNames, redemptionStatusLabel } from './couponFormat';
 import { ModalTabs } from './ModalTabs';
 import { modalTabPanelProps } from './modalTabHelpers';
 
@@ -101,12 +101,13 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
     void run(() => onUpdate(c.id, changes), true);
   };
   const usedCount = detail?.redemptions.filter((r) => r.status !== 'void').length ?? c.redemptions ?? 0;
-  const state = couponState({ ...c, redemptions: usedCount });
   const codeCount = detail?.codes.length ?? c.codes ?? 0;
-  const editLimit = Number(edit.maxRedemptions) >= 1 ? Number(edit.maxRedemptions) : null;
+  const counted = { ...c, redemptions: usedCount, codes: codeCount };
+  const state = couponState(counted);
+  const capacity = couponCapacity(counted);
   const tabs = [
     { key: 'summary' as const, label: 'Resumen' },
-    { key: 'codes' as const, label: `Códigos (${detail?.codes.length ?? c.codes ?? 0})` },
+    { key: 'codes' as const, label: `Códigos (${codeCount})` },
     { key: 'redemptions' as const, label: `Canjes (${detail?.redemptions.length ?? c.redemptions ?? 0})` },
   ];
 
@@ -135,8 +136,8 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                 <dt>Usos</dt>
                 <dd>
                   {usedCount}
-                  {c.maxRedemptions !== null ? ` de ${c.maxRedemptions}` : ''}
-                  {c.codeMode === 'shared' && c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
+                  {capacity !== null ? ` de ${capacity}` : ''}
+                  {c.codeMode === 'unique' ? ' · uno por código' : c.maxRedemptions === 1 ? ' · código de un solo uso' : ''}
                 </dd>
               </div>
             </dl>
@@ -162,23 +163,24 @@ export function CouponDetailModal({ coupon, plans, fetchDetail, onUpdate, onAddC
                   onChange={(e) => setEdit({ ...edit, validUntil: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="coupon-max">{c.codeMode === 'unique' ? 'Usos en total (todos los códigos)' : 'Usos en total'}</label>
-                <input
-                  id="coupon-max"
-                  type="number"
-                  min={1}
-                  className="input"
-                  placeholder="Sin límite"
-                  value={edit.maxRedemptions}
-                  onChange={(e) => setEdit({ ...edit, maxRedemptions: e.target.value })}
-                />
-              </div>
+              {c.codeMode === 'shared' && (
+                <div className="form-group">
+                  <label htmlFor="coupon-max">Usos en total</label>
+                  <input
+                    id="coupon-max"
+                    type="number"
+                    min={1}
+                    className="input"
+                    placeholder="Sin límite"
+                    value={edit.maxRedemptions}
+                    onChange={(e) => setEdit({ ...edit, maxRedemptions: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
-            {c.codeMode === 'unique' && editLimit !== null && editLimit < codeCount && (
-              <p className="plan-note plan-note-warning" role="status">
-                Hay {codeCount} códigos pero el límite es {editLimit}: después de {editLimit === 1 ? '1 uso' : `${editLimit} usos`} el cupón queda
-                agotado y los demás códigos ya no sirven. Para que se puedan usar todos, dejá "Usos en total" vacío.
+            {c.codeMode === 'unique' && (
+              <p className="plan-note">
+                Cada código se usa una vez: los usos del cupón son sus códigos. Para más usos, generá más códigos en la pestaña Códigos.
               </p>
             )}
             <label className="plan-check-inline">

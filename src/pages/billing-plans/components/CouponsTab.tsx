@@ -6,7 +6,7 @@ import type { BillingPlan, Coupon } from '../types';
 import { formatDate } from './accessFormat';
 import { CouponDetailModal } from './CouponDetailModal';
 import { CouponModal } from './CouponModal';
-import { couponState, couponTerms, planNames } from './couponFormat';
+import { couponCapacity, couponState, couponTerms, planNames } from './couponFormat';
 
 /** Pestaña "Cupones" de Planes: los cupones de descuento, crearlos y ver cada uno. */
 export function CouponsTab({ plans }: { plans: BillingPlan[] }) {
@@ -33,7 +33,10 @@ export function CouponsTab({ plans }: { plans: BillingPlan[] }) {
     {
       key: 'uses',
       header: 'Usos',
-      render: (c) => `${c.redemptions ?? 0}${c.maxRedemptions !== null ? ` / ${c.maxRedemptions}` : ''}`,
+      render: (c) => {
+        const capacity = couponCapacity(c);
+        return `${c.redemptions ?? 0}${capacity !== null ? ` / ${capacity}` : ''}`;
+      },
     },
     {
       key: 'state',

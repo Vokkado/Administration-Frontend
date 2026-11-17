@@ -23,7 +23,8 @@ export function toCouponPayload(form: CouponFormData) {
     codes: written.map((c) => c.trim()).filter(Boolean),
     generate: form.codeMode === 'unique' && Number(form.generateCount) > 0 ? { count: Number(form.generateCount), prefix: form.generatePrefix.trim() } : null,
     validUntil: form.validUntil ? endOfDayMontevideo(form.validUntil) : null,
-    maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
+    // Con códigos únicos los usos son los códigos: no hay límite aparte.
+    maxRedemptions: form.codeMode === 'shared' && form.maxRedemptions ? Number(form.maxRedemptions) : null,
     oncePerAccount: form.oncePerAccount,
     isActive: form.isActive,
   };

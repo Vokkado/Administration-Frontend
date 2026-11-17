@@ -80,7 +80,6 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
     usage: false,
   };
   const invalid = Object.values(incomplete).some(Boolean);
-  const limit = Number(form.maxRedemptions) >= 1 ? Number(form.maxRedemptions) : null;
   const tabs = [
     {
       key: 'discount' as const,
@@ -305,29 +304,26 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
                   onChange={(e) => set({ validUntil: e.target.value })}
                   fullWidth
                 />
-                <Input
-                  type="number"
-                  label={form.codeMode === 'unique' ? 'Usos en total (todos los códigos)' : 'Usos en total'}
-                  min={1}
-                  step="1"
-                  placeholder="Sin límite"
-                  value={form.maxRedemptions}
-                  onChange={(e) => set({ maxRedemptions: e.target.value })}
-                  fullWidth
-                />
+                {form.codeMode === 'shared' && (
+                  <Input
+                    type="number"
+                    label="Usos en total"
+                    min={1}
+                    step="1"
+                    placeholder="Sin límite"
+                    value={form.maxRedemptions}
+                    onChange={(e) => set({ maxRedemptions: e.target.value })}
+                    fullWidth
+                  />
+                )}
               </div>
               {form.codeMode === 'shared' && form.maxRedemptions === '1' && <p className="plan-note">Se muestra como código de un solo uso.</p>}
-              {form.codeMode === 'unique' &&
-                (limit !== null && limit < uniqueCount ? (
-                  <p className="plan-note plan-note-warning" role="alert">
-                    Hay {uniqueCount} códigos pero el límite es {limit}: después de {limit === 1 ? '1 uso' : `${limit} usos`} el cupón queda agotado
-                    y los demás códigos ya no sirven. Para que se puedan usar todos, dejá el campo vacío.
-                  </p>
-                ) : (
-                  <p className="plan-note">
-                    Cada código único ya se usa una sola vez. Este límite cuenta los usos de todos los códigos juntos: vacío, se pueden usar todos.
-                  </p>
-                ))}
+              {form.codeMode === 'unique' && (
+                <p className="plan-note">
+                  Cada código se usa una vez: el cupón va a tener {uniqueCount === 1 ? '1 uso' : `${uniqueCount} usos`}, uno por código. Para más
+                  usos, generá más códigos desde el detalle del cupón.
+                </p>
+              )}
 
               <div className="plan-checks">
                 <label className="plan-check">
