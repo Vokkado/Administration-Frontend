@@ -32,7 +32,9 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
   const [usage, setUsage] = useState(saved?.usage ?? []);
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(!!saved?.proposal);
+  // Una propuesta guardada arranca oculta (se abre con "Ver propuesta"); solo se abre sola
+  // al analizar, porque ahí el usuario la acaba de pedir.
+  const [open, setOpen] = useState(false);
   // Lo tildado. Claves: ing:<i>, ingdel:<variantId>, al:<id>, aldel:<id>, nut:<i>, nutdel:<id>
   const [checked, setChecked] = useState<Set<string>>(() => defaults(saved?.proposal ?? null));
 
