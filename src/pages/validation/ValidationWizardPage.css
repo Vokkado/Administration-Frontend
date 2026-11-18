@@ -463,6 +463,68 @@
   }
   .vw-check input[type="checkbox"] { accent-color: var(--color-primary); width: 18px; height: 18px; }
 
+  /* Octógonos MSP: se marcan tocando la imagen. Sin marcar quedan apagados. */
+  .vw-octagons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .vw-octagon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 112px;
+    padding: 10px 8px 8px;
+    border: 2px solid var(--color-grey-200);
+    border-radius: 12px;
+    background: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .vw-octagon:hover { border-color: var(--color-grey-300); background: var(--color-grey-50); }
+  .vw-octagon:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.25); }
+  .vw-octagon.is-on { border-color: var(--color-primary); background: rgba(91, 136, 6, 0.06); }
+
+  .vw-octagon-img { position: relative; display: block; width: 72px; height: 72px; }
+  .vw-octagon-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.25;
+    filter: grayscale(1);
+    transition: opacity 0.15s ease;
+  }
+  .vw-octagon:hover .vw-octagon-img img { opacity: 0.45; }
+  .vw-octagon.is-on .vw-octagon-img img { opacity: 1; }
+
+  .vw-octagon-check {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .vw-octagon-label {
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--color-grey-500);
+  }
+  .vw-octagon.is-on .vw-octagon-label { color: var(--color-primary-dark); font-weight: 600; }
+
   .vw-photo-label { cursor: pointer; text-align: center; }
   .vw-photo-img {
     width: 110px; height: 110px; border-radius: 10px;
