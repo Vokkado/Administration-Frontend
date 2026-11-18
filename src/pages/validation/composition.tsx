@@ -229,8 +229,10 @@ function SortableRow<T>({ sortable, item, index, count, name, busy, children }: 
   );
 }
 
-export function CompositionStep({ productId, detail, busy, setBusy, onChanged }: {
+export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
+  /** Va arriba de la tabla nutricional (la porción, que es un dato del producto y la guarda el wizard). */
+  nutritionTop?: React.ReactNode;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
@@ -399,6 +401,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           placeholder="Buscar nutriente…"
           search={nutritionSearch}
           onPick={(p) => setNutritionDraft(p)} />}>
+        {nutritionTop}
         {/* R52 (APRENDIZAJE.md): "<1 g" no es un número; regla fija para que todos carguen igual. */}
         <p className="vp-order-hint">
           Si la etiqueta dice <strong>"&lt;1 g"</strong> (o "menos de…"): en proteínas, fibra, vitaminas y minerales

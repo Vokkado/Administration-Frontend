@@ -1076,6 +1076,22 @@
 .vp-nutri-value.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
 .vp-nutri-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; cursor: pointer; }
 .vp-nutri-value[aria-invalid="true"] { border-color: var(--color-error); }
+
+/* Porción, arriba de la tabla nutricional (mismo tamaño que los campos de cada fila). */
+.vp-portion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-grey-200);
+  border-radius: 10px;
+  background: var(--color-grey-50, #f9fafb);
+}
+.vp-portion-label { font-size: 14px; font-weight: 600; color: var(--color-grey-800); }
+.vp-portion-amount.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.vp-portion-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; }
+.vp-portion-hint { flex: 1 1 200px; font-size: 12px; color: var(--color-grey-500); }
 .vp-nutri-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; padding: 0;

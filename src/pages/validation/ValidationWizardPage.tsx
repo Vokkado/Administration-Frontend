@@ -1,8 +1,8 @@
 /**
  * Wizard de validación paso a paso (un producto):
  *   1. Básico        — foto, nombre, marca, código de barras (editable).
- *   2. Composición   — ingredientes/alérgenos/nutrición coloreados + fotos que cargó el usuario.
- *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol, porción, alertas.
+ *   2. Composición   — ingredientes/alérgenos/nutrición (con la porción) coloreados + fotos que cargó el usuario.
+ *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol, alertas.
  *   4. Finalizar     — "Completar" (guarda, queda pendiente) / "Completar y validar".
  */
 import { useEffect, useState } from 'react';
@@ -147,8 +147,8 @@ export function ValidationWizardPage() {
   };
 
   const goNext = async () => {
-    // Al salir de los pasos con campos meta (0 y 2) persistimos.
-    if (step === 0 || step === 2) {
+    // Al salir de los pasos con campos meta (0, 1 por la porción, y 2) persistimos.
+    if (step <= 2) {
       if (imageUrlInvalid) {
         setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
         return;
@@ -394,7 +394,38 @@ export function ValidationWizardPage() {
               // La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos.
               <div className="vw-card">
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
-                <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+                <CompositionStep
+                  productId={id}
+                  detail={detail}
+                  busy={busy}
+                  setBusy={setBusy}
+                  onChanged={loadDetail}
+                  // La porción va pegada a la tabla porque se carga mirando la misma parte de la
+                  // etiqueta. Es un dato del producto (meta): se guarda al pasar de paso.
+                  nutritionTop={
+                    <div className="vp-portion">
+                      <span className="vp-portion-label">Porción</span>
+                      <input
+                        className="input vp-portion-amount"
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={meta.servingSizeAmount}
+                        onChange={(e) => set('servingSizeAmount', e.target.value)}
+                        placeholder="30"
+                        aria-label="Porción (cantidad)"
+                      />
+                      <input
+                        className="input vp-portion-unit"
+                        value={meta.servingSizeUnit}
+                        onChange={(e) => set('servingSizeUnit', e.target.value)}
+                        placeholder="g / ml"
+                        aria-label="Porción (unidad)"
+                      />
+                      <span className="vp-portion-hint">Como dice la etiqueta. Con ella se lleva la tabla a "por 100".</span>
+                    </div>
+                  }
+                />
               </div>
             )}
 
@@ -464,12 +495,6 @@ export function ValidationWizardPage() {
                   </div>
                   <div className="form-group">
                     <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group">
-                    <Input label="Porción (cantidad)" type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group">
-                    <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
                   </div>
                 </div>
 
