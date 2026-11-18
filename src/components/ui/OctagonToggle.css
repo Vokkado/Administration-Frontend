@@ -1,0 +1,61 @@
+/* Octógonos MSP: se marcan tocando la imagen. Sin marcar quedan apagados. */
+.octagon-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.octagon-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 112px;
+  padding: 10px 8px 8px;
+  border: 2px solid var(--color-grey-200);
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.octagon-toggle:hover { border-color: var(--color-grey-300); background: var(--color-grey-50); }
+.octagon-toggle:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.25); }
+.octagon-toggle.is-on { border-color: var(--color-primary); background: rgba(91, 136, 6, 0.06); }
+
+.octagon-toggle-img { position: relative; display: block; width: 72px; height: 72px; }
+.octagon-toggle-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.25;
+  filter: grayscale(1);
+  transition: opacity 0.15s ease;
+}
+.octagon-toggle:hover .octagon-toggle-img img { opacity: 0.45; }
+.octagon-toggle.is-on .octagon-toggle-img img { opacity: 1; }
+
+.octagon-toggle-check {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.octagon-toggle-label {
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--color-grey-500);
+}
+.octagon-toggle.is-on .octagon-toggle-label { color: var(--color-primary-dark); font-weight: 600; }

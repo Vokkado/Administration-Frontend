@@ -1,15 +1,16 @@
 /**
  * Wizard de validación paso a paso (un producto):
  *   1. Básico        — foto, nombre, marca, código de barras (editable).
- *   2. Composición   — ingredientes/alérgenos/nutrición (con la porción) coloreados + fotos que cargó el usuario.
- *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol, alertas.
+ *   2. Composición   — ingredientes/alérgenos/nutrición (con la porción) coloreados, octógonos y
+ *                      ultraprocesado + fotos que cargó el usuario.
+ *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol.
  *   4. Finalizar     — "Completar" (guarda, queda pendiente) / "Completar y validar".
  */
 import { useEffect, useState } from 'react';
 import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
+import { Button, Input, LoadingSpinner, ConfirmDialog, OctagonPicker, type MspOctagon } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart, SKIPPED_TO_PART, skippedPhotosText } from '../../services/validation.service';
@@ -17,10 +18,6 @@ import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composit
 import { SourceImagesPanel } from './SourceImagesPanel';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
-import octSugar from '../../../assets/octogonos/azucares.png';
-import octFat from '../../../assets/octogonos/grasas.png';
-import octSatFat from '../../../assets/octogonos/grasasSaturadas.png';
-import octSodium from '../../../assets/octogonos/sodio.png';
 
 /** Mismo texto por defecto que el Backend (ProductValidationService.DEFAULT_APPROVAL_MESSAGE). */
 const DEFAULT_APPROVAL_MESSAGE = 'Vokkado validó tu producto. ¡Gracias por ayudar a las personas a elegir mejor!';
@@ -430,6 +427,49 @@ export function ValidationWizardPage() {
                     </div>
                   }
                 />
+                {/* Octógonos y ultraprocesado: se deciden mirando la tabla y los ingredientes de
+                    este mismo paso. Son datos del producto (meta): se guardan al pasar de paso. */}
+                <section className="vp-section">
+                  <div className="vp-section-head">
+                    <h3 className="vp-section-title">Octógonos (MSP) y ultraprocesado</h3>
+                  </div>
+                  <div className="vp-section-body">
+                    {/* Los octógonos se marcan tocando su imagen: así se compara de un vistazo con el envase. */}
+                    <div className="vw-octagons">
+                      <OctagonPicker
+                        values={{ sugar: meta.isSugarAlert, fat: meta.isFatAlert, saturatedFat: meta.isSaturatedFatAlert, sodium: meta.isSodiumAlert }}
+                        onChange={(id, v) => set(OCTAGON_FIELD[id], v)}
+                      />
+                    </div>
+                    <div className="vw-checks">
+                      <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
+                    </div>
+                    <NovaPanel
+                      ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
+                      value={meta.isUltraProcessed}
+                      onSet={(v) => set('isUltraProcessed', v)}
+                    />
+                    <KcalPanel detail={detail} />
+                    <DecreePanel
+                      detail={detail}
+                      name={meta.name}
+                      servingSizeAmount={meta.servingSizeAmount}
+                      servingSizeUnit={meta.servingSizeUnit}
+                      values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
+                      onSet={(k, v) => set(k, v)}
+                    />
+                    <ArSealsPanel
+                      detail={detail}
+                      name={meta.name}
+                      servingSizeAmount={meta.servingSizeAmount}
+                      servingSizeUnit={meta.servingSizeUnit}
+                      enabled={meta.arEnabled}
+                      onEnabled={(v) => set('arEnabled', v)}
+                      values={meta.arSeals}
+                      onChange={(v) => set('arSeals', v)}
+                    />
+                  </div>
+                </section>
               </div>
             )}
 
@@ -500,43 +540,6 @@ export function ValidationWizardPage() {
                   <div className="form-group">
                     <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
                   </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: 8 }}>
-                  <label className="form-label">Octógonos de Uruguay (MSP) / alertas</label>
-                  {/* Los octógonos se marcan tocando su imagen: así se compara de un vistazo con el envase. */}
-                  <div className="vw-octagons" role="group" aria-label="Octógonos del envase">
-                    {OCTAGONS.map((o) => (
-                      <OctagonToggle key={o.key} src={o.src} label={o.label} v={meta[o.key]} on={(v) => set(o.key, v)} />
-                    ))}
-                  </div>
-                  <div className="vw-checks">
-                    <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
-                  </div>
-                  <NovaPanel
-                    ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
-                    value={meta.isUltraProcessed}
-                    onSet={(v) => set('isUltraProcessed', v)}
-                  />
-                  <KcalPanel detail={detail} />
-                  <DecreePanel
-                    detail={detail}
-                    name={meta.name}
-                    servingSizeAmount={meta.servingSizeAmount}
-                    servingSizeUnit={meta.servingSizeUnit}
-                    values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
-                    onSet={(k, v) => set(k, v)}
-                  />
-                  <ArSealsPanel
-                    detail={detail}
-                    name={meta.name}
-                    servingSizeAmount={meta.servingSizeAmount}
-                    servingSizeUnit={meta.servingSizeUnit}
-                    enabled={meta.arEnabled}
-                    onEnabled={(v) => set('arEnabled', v)}
-                    values={meta.arSeals}
-                    onChange={(v) => set('arSeals', v)}
-                  />
                 </div>
               </div>
             )}
@@ -677,31 +680,13 @@ function Stepper({ step, onStep }: { step: number; onStep: (s: number) => void }
   );
 }
 
-const OCTAGONS: Array<{ key: 'isFatAlert' | 'isSaturatedFatAlert' | 'isSugarAlert' | 'isSodiumAlert'; label: string; src: string }> = [
-  { key: 'isSugarAlert', label: 'Exceso azúcares', src: octSugar },
-  { key: 'isFatAlert', label: 'Exceso grasas', src: octFat },
-  { key: 'isSaturatedFatAlert', label: 'Exceso grasas saturadas', src: octSatFat },
-  { key: 'isSodiumAlert', label: 'Exceso sodio', src: octSodium },
-];
-
-/** Octógono MSP como botón: marcado se ve a color con ✓; sin marcar, apagado. */
-function OctagonToggle({ src, label, v, on }: { src: string; label: string; v: boolean; on: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      className={`vw-octagon${v ? ' is-on' : ''}`}
-      aria-pressed={v}
-      title={v ? `${label}: lo trae (tocá para quitarlo)` : `${label}: no lo trae (tocá para marcarlo)`}
-      onClick={() => on(!v)}
-    >
-      <span className="vw-octagon-img">
-        <img src={src} alt="" draggable={false} />
-        {v && <span className="vw-octagon-check" aria-hidden>✓</span>}
-      </span>
-      <span className="vw-octagon-label">{label}</span>
-    </button>
-  );
-}
+/** Campo de meta que guarda cada octógono. */
+const OCTAGON_FIELD: Record<MspOctagon, 'isSugarAlert' | 'isFatAlert' | 'isSaturatedFatAlert' | 'isSodiumAlert'> = {
+  sugar: 'isSugarAlert',
+  fat: 'isFatAlert',
+  saturatedFat: 'isSaturatedFatAlert',
+  sodium: 'isSodiumAlert',
+};
 
 function Check({ label, v, on, hint }: { label: string; v: boolean; on: (v: boolean) => void; hint?: string }) {
   return <label className="vw-check" title={hint}><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;
