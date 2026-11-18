@@ -416,6 +416,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
             <NutritionInlineEditor
               key={nutritionDraft.id}
               initialValue=""
+              name={nutritionDraft.name}
               currentUnit={null}
               baseUnit={nutritionDraft.unit}
               busy={busy}
@@ -805,39 +806,54 @@ function formatNutritionValue(value: number | string | null): string {
   return Number.isFinite(n) ? String(n) : String(value);
 }
 
-const ENERGY_UNITS = ['kcal', 'kJ'];
+// Unidades que se ofrecen por tipo de nutriente. "cal" va aparte porque así figura en muchas
+// etiquetas ("Calorías"); el backend la toma como kcal al puntuar.
+const ENERGY_UNITS = ['kcal', 'kJ', 'cal'];
 const MASS_UNITS = ['g', 'mg', 'µg'];
-/** "gr", "GR", "mcg"… → la unidad estándar de la lista (el backend igual las normaliza al puntuar). */
+/**
+ * "gr", "GR", "mcg", "cal"… → la unidad estándar de la lista. Mismos alias que el backend
+ * (`UNIT_ALIASES` en nutritionNormalization.ts), que con estos mismos puntúa: "cal" de la
+ * etiqueta es kcal ("Calorías").
+ */
+const UNIT_ALIASES: Record<string, string> = {
+  g: 'g', gr: 'g', grs: 'g', gramo: 'g', gramos: 'g',
+  mg: 'mg', miligramo: 'mg', miligramos: 'mg',
+  'µg': 'µg', ug: 'µg', mcg: 'µg', microgramo: 'µg', microgramos: 'µg',
+  kcal: 'kcal', cal: 'kcal', kilocaloria: 'kcal', kilocalorias: 'kcal', 'kilocalorías': 'kcal',
+  kj: 'kJ', kilojulio: 'kJ', kilojulios: 'kJ',
+};
 function standardUnit(unit: string | null | undefined): string | null {
-  const u = (unit ?? '').trim().toLowerCase();
-  if (!u) return null;
-  if (['g', 'gr', 'grs', 'gramos'].includes(u)) return 'g';
-  if (['mg'].includes(u)) return 'mg';
-  if (['µg', 'ug', 'mcg'].includes(u)) return 'µg';
-  if (u === 'kcal') return 'kcal';
-  if (u === 'kj') return 'kJ';
-  return null;
+  const u = (unit ?? '').trim().toLowerCase().replace(/\.$/, '');
+  return UNIT_ALIASES[u] ?? null;
 }
+
+/** El nutriente es energía por su nombre ("Valor energético", "Calorías"): respaldo si no llega la unidad base. */
+const isEnergyName = (name: string) => /energ|calor/i.test(name);
 /**
  * Unidades que tienen sentido para un nutriente, según su unidad base del catálogo:
- * energía → kcal / kJ; masa → g / mg / µg; otras (UI, %, ml…) → solo esa, porque no se
- * convierten. Sin unidad base, se adivina por la unidad cargada (el criterio viejo).
+ * energía → kcal / kJ / cal; masa → g / mg / µg; otras (UI, %, ml…) → solo esa, porque no se
+ * convierten. Sin unidad base, se deduce por el nombre (energía) o por la unidad cargada.
  */
-function unitOptions(baseUnit: string | null | undefined, current: string | null | undefined): string[] {
+function unitOptions(baseUnit: string | null | undefined, current: string | null | undefined, name: string): string[] {
   const base = standardUnit(baseUnit);
   if (base && ENERGY_UNITS.includes(base)) return ENERGY_UNITS;
   if (base && MASS_UNITS.includes(base)) return MASS_UNITS;
   if (baseUnit?.trim()) return [baseUnit.trim()];
+  if (isEnergyName(name)) return ENERGY_UNITS;
   const cur = standardUnit(current);
   return cur && ENERGY_UNITS.includes(cur) ? ENERGY_UNITS : MASS_UNITS;
 }
 
-/** La opción de `options` que corresponde a `unit` ("gr" → "g", "ui" → "UI"), o null si no está. */
+/**
+ * La opción de `options` que corresponde a `unit`, o null si no está. Primero tal cual
+ * ("cal" → "cal", "ui" → "UI") y si no, por alias ("gr" → "g", "mcg" → "µg").
+ */
 function matchUnit(options: string[], unit: string | null | undefined): string | null {
-  const std = standardUnit(unit);
-  if (std && options.includes(std)) return std;
   const raw = (unit ?? '').trim().toLowerCase();
-  return options.find((o) => o.toLowerCase() === raw) ?? null;
+  const exact = options.find((o) => o.toLowerCase() === raw);
+  if (exact) return exact;
+  const std = standardUnit(unit);
+  return std && options.includes(std) ? std : null;
 }
 
 /** Acepta coma decimal ("0,2"); null si no es un número válido (incluido vacío o negativo). */
@@ -849,14 +865,14 @@ function parseAmount(raw: string): number | null {
 /**
  * Valor + unidad de un nutriente, editados DENTRO de la fila (sin modal, para seguir viendo la
  * etiqueta). Las unidades salen de la unidad base del nutriente (ver `unitOptions`): el valor
- * energético nunca ofrece g. Si la cargada no corresponde (p. ej. energía en g), arranca en la
+ * energético ofrece kcal / kJ / cal y nunca g. Si la cargada no corresponde (p. ej. energía en g), arranca en la
  * primera válida y avisa, para revisar también el número. Enter guarda, Esc cancela.
  */
-function NutritionInlineEditor({ initialValue, currentUnit, baseUnit, busy, onSave, onCancel }: {
-  initialValue: string; currentUnit: string | null; baseUnit: string | null | undefined; busy: boolean;
+function NutritionInlineEditor({ name, initialValue, currentUnit, baseUnit, busy, onSave, onCancel }: {
+  name: string; initialValue: string; currentUnit: string | null; baseUnit: string | null | undefined; busy: boolean;
   onSave: (value: number, unit: string) => void; onCancel: () => void;
 }) {
-  const units = unitOptions(baseUnit, currentUnit);
+  const units = unitOptions(baseUnit, currentUnit, name);
   const current = matchUnit(units, currentUnit);
   const wrongUnit = !!currentUnit?.trim() && !current;
   const [value, setValue] = useState(initialValue);
@@ -890,7 +906,7 @@ function NutritionInlineEditor({ initialValue, currentUnit, baseUnit, busy, onSa
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
   // Unidad que no corresponde al nutriente (p. ej. valor energético en g): se marca para corregirla.
-  const options = unitOptions(n.baseUnit, n.unit);
+  const options = unitOptions(n.baseUnit, n.unit, n.name);
   const wrongUnit = !!n.unit?.trim() && !matchUnit(options, n.unit);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
@@ -898,6 +914,7 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
       <span><Dot color={n.color} hint /> {n.name}</span>
       {editing ? (
         <NutritionInlineEditor
+          name={n.name}
           initialValue={formatNutritionValue(n.value)}
           currentUnit={n.unit}
           baseUnit={n.baseUnit}
@@ -914,7 +931,7 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
             title={wrongUnit ? `La unidad no corresponde a este nutriente (va en ${options.join(' / ')}). Tocá para corregirla.` : 'Editar'}
           >
             {wrongUnit && <span aria-hidden>⚠ </span>}
-            {formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}
+            {formatNutritionValue(n.value) || '—'} {matchUnit(options, n.unit) ?? n.unit ?? ''}
           </button>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
           <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
