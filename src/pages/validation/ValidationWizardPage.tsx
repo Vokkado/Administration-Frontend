@@ -137,8 +137,8 @@ export function ValidationWizardPage() {
       name: meta.name, brand: meta.brand, barcode: meta.barcode, image: meta.image,
       categoryId: meta.categoryId || null, registrationName: meta.registrationName, registrationCode: meta.registrationCode,
       legalName: meta.legalName, alcoholGraduation: meta.alcoholGraduation === '' ? null : Number(meta.alcoholGraduation),
-      source: meta.source || null, servingSizeAmount: meta.servingSizeAmount === '' ? null : Number(meta.servingSizeAmount),
-      servingSizeUnit: meta.servingSizeUnit, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
+      source: meta.source || null, servingSizeAmount: meta.servingSizeAmount === '' ? null : Number(meta.servingSizeAmount.replace(',', '.')),
+      servingSizeUnit: meta.servingSizeUnit || null, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
       isSaturatedFatAlert: meta.isSaturatedFatAlert, isSugarAlert: meta.isSugarAlert, isSodiumAlert: meta.isSodiumAlert,
       companyData: buildCompanyData(),
       // Sellos argentinos del envase: siempre se manda el estado actual ([] = no trae), así destildar
@@ -406,23 +406,29 @@ export function ValidationWizardPage() {
                   nutritionTop={
                     <div className="vp-portion">
                       <span className="vp-portion-label">Porción</span>
+                      {/* Solo números (con coma o punto decimal): se descarta cualquier otra tecla. */}
                       <input
                         className="input vp-portion-amount"
-                        type="number"
-                        min={0}
-                        step="any"
+                        type="text"
+                        inputMode="decimal"
                         value={meta.servingSizeAmount}
-                        onChange={(e) => set('servingSizeAmount', e.target.value)}
+                        onChange={(e) => {
+                          if (/^\d*[.,]?\d*$/.test(e.target.value)) set('servingSizeAmount', e.target.value);
+                        }}
                         placeholder="30"
                         aria-label="Porción (cantidad)"
                       />
-                      <input
+                      {/* La base solo acepta g o ml (migración 138): sólido o líquido. */}
+                      <select
                         className="input vp-portion-unit"
                         value={meta.servingSizeUnit}
                         onChange={(e) => set('servingSizeUnit', e.target.value)}
-                        placeholder="g / ml"
                         aria-label="Porción (unidad)"
-                      />
+                      >
+                        <option value="">—</option>
+                        <option value="g">g</option>
+                        <option value="ml">ml</option>
+                      </select>
                       <span className="vp-portion-hint">Como dice la etiqueta. Con ella se lleva la tabla a "por 100".</span>
                     </div>
                   }
