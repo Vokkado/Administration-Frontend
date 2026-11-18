@@ -416,7 +416,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
             <NutritionInlineEditor
               key={nutritionDraft.id}
               initialValue=""
-              initialUnit={standardUnit(nutritionDraft.unit) ?? 'g'}
+              currentUnit={null}
+              baseUnit={nutritionDraft.unit}
               busy={busy}
               onCancel={() => setNutritionDraft(null)}
               onSave={(value, unit) => run(async () => {
@@ -817,6 +818,28 @@ function standardUnit(unit: string | null | undefined): string | null {
   if (u === 'kj') return 'kJ';
   return null;
 }
+/**
+ * Unidades que tienen sentido para un nutriente, según su unidad base del catálogo:
+ * energía → kcal / kJ; masa → g / mg / µg; otras (UI, %, ml…) → solo esa, porque no se
+ * convierten. Sin unidad base, se adivina por la unidad cargada (el criterio viejo).
+ */
+function unitOptions(baseUnit: string | null | undefined, current: string | null | undefined): string[] {
+  const base = standardUnit(baseUnit);
+  if (base && ENERGY_UNITS.includes(base)) return ENERGY_UNITS;
+  if (base && MASS_UNITS.includes(base)) return MASS_UNITS;
+  if (baseUnit?.trim()) return [baseUnit.trim()];
+  const cur = standardUnit(current);
+  return cur && ENERGY_UNITS.includes(cur) ? ENERGY_UNITS : MASS_UNITS;
+}
+
+/** La opción de `options` que corresponde a `unit` ("gr" → "g", "ui" → "UI"), o null si no está. */
+function matchUnit(options: string[], unit: string | null | undefined): string | null {
+  const std = standardUnit(unit);
+  if (std && options.includes(std)) return std;
+  const raw = (unit ?? '').trim().toLowerCase();
+  return options.find((o) => o.toLowerCase() === raw) ?? null;
+}
+
 /** Acepta coma decimal ("0,2"); null si no es un número válido (incluido vacío o negativo). */
 function parseAmount(raw: string): number | null {
   const n = Number(raw.trim().replace(',', '.'));
@@ -825,16 +848,19 @@ function parseAmount(raw: string): number | null {
 
 /**
  * Valor + unidad de un nutriente, editados DENTRO de la fila (sin modal, para seguir viendo la
- * etiqueta). La unidad sale de una lista estándar según el tipo de nutriente (energía: kcal / kJ;
- * el resto: g / mg / µg). Enter guarda, Esc cancela.
+ * etiqueta). Las unidades salen de la unidad base del nutriente (ver `unitOptions`): el valor
+ * energético nunca ofrece g. Si la cargada no corresponde (p. ej. energía en g), arranca en la
+ * primera válida y avisa, para revisar también el número. Enter guarda, Esc cancela.
  */
-function NutritionInlineEditor({ initialValue, initialUnit, busy, onSave, onCancel }: {
-  initialValue: string; initialUnit: string; busy: boolean;
+function NutritionInlineEditor({ initialValue, currentUnit, baseUnit, busy, onSave, onCancel }: {
+  initialValue: string; currentUnit: string | null; baseUnit: string | null | undefined; busy: boolean;
   onSave: (value: number, unit: string) => void; onCancel: () => void;
 }) {
-  const units = ENERGY_UNITS.map((u) => u.toLowerCase()).includes(initialUnit.toLowerCase()) ? ENERGY_UNITS : MASS_UNITS;
+  const units = unitOptions(baseUnit, currentUnit);
+  const current = matchUnit(units, currentUnit);
+  const wrongUnit = !!currentUnit?.trim() && !current;
   const [value, setValue] = useState(initialValue);
-  const [unit, setUnit] = useState(units.includes(initialUnit) ? initialUnit : units[0]);
+  const [unit, setUnit] = useState(current ?? units[0]);
   const amount = parseAmount(value);
   const invalid = value !== '' && amount === null;
   const save = () => { if (amount !== null && !busy) onSave(amount, unit); };
@@ -852,12 +878,20 @@ function NutritionInlineEditor({ initialValue, initialUnit, busy, onSave, onCanc
       </select>
       <button type="button" className="vp-nutri-btn is-save" onClick={save} disabled={busy || amount === null} title="Guardar (Enter)" aria-label="Guardar">✓</button>
       <button type="button" className="vp-nutri-btn" onClick={onCancel} title="Cancelar (Esc)" aria-label="Cancelar">✕</button>
+      {wrongUnit && (
+        <span className="vp-nutri-unit-warn">
+          Estaba en «{currentUnit}», que no corresponde a este nutriente: elegí la unidad y revisá el número.
+        </span>
+      )}
     </span>
   );
 }
 
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
+  // Unidad que no corresponde al nutriente (p. ej. valor energético en g): se marca para corregirla.
+  const options = unitOptions(n.baseUnit, n.unit);
+  const wrongUnit = !!n.unit?.trim() && !matchUnit(options, n.unit);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
@@ -865,14 +899,21 @@ function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: s
       {editing ? (
         <NutritionInlineEditor
           initialValue={formatNutritionValue(n.value)}
-          initialUnit={standardUnit(n.unit) ?? 'g'}
+          currentUnit={n.unit}
+          baseUnit={n.baseUnit}
           busy={busy}
           onCancel={() => setEditing(false)}
           onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, value, unit); setEditing(false); })}
         />
       ) : (
         <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button type="button" className="vp-nutri-amount" onClick={() => !busy && setEditing(true)} title="Editar">
+          <button
+            type="button"
+            className={`vp-nutri-amount${wrongUnit ? ' is-wrong-unit' : ''}`}
+            onClick={() => !busy && setEditing(true)}
+            title={wrongUnit ? `La unidad no corresponde a este nutriente (va en ${options.join(' / ')}). Tocá para corregirla.` : 'Editar'}
+          >
+            {wrongUnit && <span aria-hidden>⚠ </span>}
             {formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}
           </button>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>

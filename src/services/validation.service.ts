@@ -86,6 +86,8 @@ export interface ValidationNutrition {
   name: string;
   value: number | null;
   unit: string | null;
+  /** Unidad base del nutriente en el catálogo (kcal, g, mg…): define qué unidades tienen sentido. */
+  baseUnit?: string | null;
   matchTier: string | null;
   color: LinkColor;
 }

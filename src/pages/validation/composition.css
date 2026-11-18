@@ -1072,7 +1072,9 @@
 }
 
 /* ── Nutrientes: edición dentro de la fila (sin modal, la etiqueta queda a la vista) ── */
-.vp-nutri-inline { display: inline-flex; align-items: center; gap: 6px; }
+.vp-nutri-inline { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+/* Unidad cargada que no corresponde al nutriente (p. ej. valor energético en g). */
+.vp-nutri-unit-warn { flex-basis: 100%; max-width: 360px; margin-left: auto; font-size: 12px; text-align: right; color: #b45309; }
 .vp-nutri-value.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
 .vp-nutri-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; cursor: pointer; }
 .vp-nutri-value[aria-invalid="true"] { border-color: var(--color-error); }
@@ -1106,6 +1108,7 @@
   font: inherit; font-weight: 700; color: inherit; cursor: pointer;
 }
 .vp-nutri-amount:hover { background: rgba(0, 0, 0, 0.05); }
+.vp-nutri-amount.is-wrong-unit { color: #b45309; background: #fffbeb; box-shadow: inset 0 0 0 1px #fcd34d; }
 .vp-nutri-new {
   margin-left: 6px; padding: 0 6px; border-radius: 999px;
   font-size: 10px; font-weight: 700; color: #92400e; background: #fde68a;
