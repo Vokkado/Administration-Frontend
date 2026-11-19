@@ -32,7 +32,9 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
   const [usage, setUsage] = useState(saved?.usage ?? []);
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(!!saved?.proposal);
+  // Una propuesta guardada arranca oculta (se abre con "Ver propuesta"); solo se abre sola
+  // al analizar, porque ahí el usuario la acaba de pedir.
+  const [open, setOpen] = useState(false);
   // Lo tildado. Claves: ing:<i>, ingdel:<variantId>, al:<id>, aldel:<id>, nut:<i>, nutdel:<id>
   const [checked, setChecked] = useState<Set<string>>(() => defaults(saved?.proposal ?? null));
 
@@ -171,7 +173,7 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
                 <div className="vp-sugg-note">
                   Porción de la etiqueta: {proposal.portion.amount != null ? `${fmt(proposal.portion.amount)} ${proposal.portion.unit ?? ''}` : '—'}
                   {' · '}cargada: {proposal.portion.current.amount != null ? `${fmt(proposal.portion.current.amount)} ${proposal.portion.current.unit ?? ''}` : '—'}
-                  {proposal.portion.amount != null && proposal.portion.amount !== proposal.portion.current.amount && <strong style={{ color: '#b45309' }}> · corregila en “Más info”</strong>}
+                  {proposal.portion.amount != null && proposal.portion.amount !== proposal.portion.current.amount && <strong style={{ color: '#b45309' }}> · corregila arriba de la tabla nutricional</strong>}
                 </div>
                 {proposal.nutrition.map((n, i) => (
                   <Row key={i} status={n.status}

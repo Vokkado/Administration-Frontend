@@ -1,9 +1,17 @@
 /**
  * Sub-component for the "Información Nutricional" tab in ProductModal
  */
-import { Button, Input } from '../../../../components/ui';
+import { Button, Input, OctagonPicker, type MspOctagon } from '../../../../components/ui';
 import type { ProductFormData, NutritionFactOption } from './types';
 import { SERVING_SIZE_UNITS, NUTRITION_UNITS } from './types';
+
+/** Campo del formulario que guarda cada octógono. */
+const OCTAGON_FIELD: Record<MspOctagon, 'sugarAlert' | 'fatAlert' | 'saturatedFatAlert' | 'sodiumAlert'> = {
+  sugar: 'sugarAlert',
+  fat: 'fatAlert',
+  saturatedFat: 'saturatedFatAlert',
+  sodium: 'sodiumAlert',
+};
 
 interface ProductNutritionSectionProps {
   formData: ProductFormData;
@@ -145,44 +153,16 @@ export function ProductNutritionSection({
       </div>
 
       <div className="form-group-full alert-section">
-        <label className="section-label">Alertas Nutricionales</label>
-        <div className="alert-checkboxes">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={formData.fatAlert}
-              onChange={(e) => onChange({ fatAlert: e.target.checked })}
-            />
-            <span>Alerta de Grasas</span>
-          </label>
-
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={formData.saturatedFatAlert}
-              onChange={(e) => onChange({ saturatedFatAlert: e.target.checked })}
-            />
-            <span>Alerta de Grasas Saturadas</span>
-          </label>
-
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={formData.sugarAlert}
-              onChange={(e) => onChange({ sugarAlert: e.target.checked })}
-            />
-            <span>Alerta de Azúcares</span>
-          </label>
-
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={formData.sodiumAlert}
-              onChange={(e) => onChange({ sodiumAlert: e.target.checked })}
-            />
-            <span>Alerta de Sodio</span>
-          </label>
-        </div>
+        <label className="section-label">Octógonos (MSP)</label>
+        <OctagonPicker
+          values={{
+            sugar: formData.sugarAlert,
+            fat: formData.fatAlert,
+            saturatedFat: formData.saturatedFatAlert,
+            sodium: formData.sodiumAlert,
+          }}
+          onChange={(id, v) => onChange({ [OCTAGON_FIELD[id]]: v })}
+        />
       </div>
     </div>
   );

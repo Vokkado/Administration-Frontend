@@ -6,6 +6,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Button, Modal, AttributeBadge, Tooltip, PositionInput } from '../../components/ui';
 import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
+import { useSortableList } from '../../hooks/useSortableList';
 import {
   ValidationService,
   type ValidationDetail,
@@ -141,8 +142,97 @@ function Chevron({ dir }: { dir: 'up' | 'down' }) {
   );
 }
 
-export function CompositionStep({ productId, detail, busy, setBusy, onChanged }: {
+/**
+ * Orden visual de la tabla nutricional por producto (ids en orden). Vive en memoria: dura
+ * mientras no se recargue la página, aunque se cambie de paso o de producto en el wizard.
+ */
+const nutritionOrderCache = new Map<string, string[]>();
+
+/** `list` ordenada según `order` (ids); lo que no está en `order` va al final en su orden original. */
+function applyOrder<T>(list: T[], order: string[], getId: (item: T) => string): T[] {
+  if (order.length === 0) return list;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return list
+    .map((item, i) => ({ item, key: rank.get(getId(item)) ?? order.length + i }))
+    .sort((a, b) => a.key - b.key)
+    .map((x) => x.item);
+}
+
+/** Copia de `list` con el ítem `from` movido al índice `to`. */
+function reorder<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+/**
+ * Fila de una lista ordenable como la etiqueta (ingredientes, tabla nutricional). Tres formas
+ * de moverla, las mismas que en el modal de producto:
+ *  - arrastrar desde el asa ⠿ (solo el asa inicia el drag, para no pisar los campos de la fila);
+ *  - escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta);
+ *  - flechas para subir/bajar de a uno.
+ * Después de moverse, la fila se resalta y se lleva a la vista.
+ */
+function SortableRow<T>({ sortable, item, index, count, name, busy, children }: {
+  sortable: ReturnType<typeof useSortableList<T>>;
+  item: T;
+  index: number;
+  count: number;
+  name: string;
+  busy: boolean;
+  children: React.ReactNode;
+}) {
+  const { className, ...row } = sortable.rowProps(item, index);
+  return (
+    <div {...row} className={`vp-order-row ${className}`}>
+      <span
+        className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
+        title="Arrastrar para cambiar el orden"
+        aria-hidden="true"
+        {...sortable.gripProps(item)}
+      >
+        ⠿
+      </span>
+      <div className="vp-order-handle">
+        <button
+          type="button"
+          className={`vp-order-arrow${index === 0 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index - 1)}
+          disabled={busy || index === 0}
+          aria-label={`Subir ${name}`}
+          title="Subir"
+        >
+          <Chevron dir="up" />
+        </button>
+        <PositionInput
+          className="vp-order-num"
+          value={index + 1}
+          max={count}
+          name={name}
+          disabled={busy}
+          onCommit={(pos) => sortable.move(index, pos - 1)}
+        />
+        <button
+          type="button"
+          className={`vp-order-arrow${index === count - 1 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index + 1)}
+          disabled={busy || index === count - 1}
+          aria-label={`Bajar ${name}`}
+          title="Bajar"
+        >
+          <Chevron dir="down" />
+        </button>
+      </div>
+      <div className="vp-order-body">{children}</div>
+    </div>
+  );
+}
+
+export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
+  /** Va arriba de la tabla nutricional (la porción, que es un dato del producto y la guarda el wizard). */
+  nutritionTop?: React.ReactNode;
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
@@ -156,65 +246,38 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   // Nutriente elegido en el buscador y todavía sin valor (fila en edición arriba de la lista).
   const [nutritionDraft, setNutritionDraft] = useState<Picked | null>(null);
 
-  // Orden de la etiqueta. Se muestra al instante (optimista) y se guarda en el backend;
-  // si falla, vuelve al orden que vino del servidor.
-  //
-  // Formas de mover (las mismas que en el modal de producto):
-  //  - Arrastrar desde el asa ⠿. La fila solo es `draggable` mientras se aprieta el asa,
-  //    porque si lo fuera siempre no se podría seleccionar texto en sus campos.
-  //  - Escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta).
-  //  - Flechas para subir/bajar de a uno.
-  // Después de moverse, la fila se resalta y se lleva a la vista.
+  // Orden de la etiqueta (ingredientes y tabla nutricional). Se muestra al instante
+  // (optimista) y se guarda en el backend; si falla, vuelve al orden que vino del servidor.
+  // Cómo se mueve (arrastre desde ⠿, posición escrita, flechas): ver `SortableRow`.
   const [ordered, setOrdered] = useState(detail.ingredients);
   useEffect(() => setOrdered(detail.ingredients), [detail.ingredients]);
-  const [armedId, setArmedId] = useState<string | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  // Hueco de inserción (0..N) donde caería la fila arrastrada.
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
-  const [movedId, setMovedId] = useState<string | null>(null);
-  const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const endDrag = () => { setArmedId(null); setDragIndex(null); setDropIndex(null); };
+  const ingredientsSortable = useSortableList({
+    items: ordered,
+    getId: (i) => i.variantId,
+    disabled: busy,
+    onMove: (from, to) => {
+      const next = reorder(ordered, from, to);
+      setOrdered(next);
+      run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
+        .catch(() => setOrdered(detail.ingredients));
+    },
+  });
 
-  // Si se suelta el mouse sin llegar a arrastrar, la fila deja de ser draggable.
-  useEffect(() => {
-    if (!armedId) return;
-    const disarm = () => setArmedId(null);
-    window.addEventListener('mouseup', disarm);
-    return () => window.removeEventListener('mouseup', disarm);
-  }, [armedId]);
-
-  useEffect(() => {
-    if (!movedId) return;
-    rowRefs.current[movedId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    const t = setTimeout(() => setMovedId(null), 1200);
-    return () => clearTimeout(t);
-  }, [movedId]);
-
-  /** Mueve la fila `from` al índice `to` (0-based) del orden final. */
-  const move = (from: number, to: number) => {
-    if (busy || from === to || to < 0 || to >= ordered.length) return;
-    const next = [...ordered];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    setOrdered(next);
-    setMovedId(moved.variantId);
-    run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
-      .catch(() => setOrdered(detail.ingredients));
+  // Tabla nutricional: el orden es SOLO visual (no se guarda en el backend). Se recuerda por
+  // producto mientras no se recargue la página, y se aplica sobre lo que venga del servidor:
+  // lo nuevo va al final y lo quitado desaparece.
+  const [nutritionOrder, setNutritionOrderState] = useState<string[]>(() => nutritionOrderCache.get(productId) ?? []);
+  const setNutritionOrder = (ids: string[]) => {
+    nutritionOrderCache.set(productId, ids);
+    setNutritionOrderState(ids);
   };
-
-  const handleDrop = () => {
-    if (dragIndex !== null && dropIndex !== null) {
-      // Sacar la fila corre una posición los huecos que están debajo de ella.
-      move(dragIndex, dropIndex > dragIndex ? dropIndex - 1 : dropIndex);
-    }
-    endDrag();
-  };
-
-  // Indicador solo si soltar ahí cambia algo (los huecos pegados a la fila no la mueven).
-  const showDropAt =
-    dragIndex !== null && dropIndex !== null && dropIndex !== dragIndex && dropIndex !== dragIndex + 1
-      ? dropIndex
-      : null;
+  const nutrition = applyOrder(detail.nutrition, nutritionOrder, (n) => n.nutritionFactId);
+  const nutritionSortable = useSortableList({
+    items: nutrition,
+    getId: (n) => n.nutritionFactId,
+    disabled: busy,
+    onMove: (from, to) => setNutritionOrder(reorder(nutrition, from, to).map((n) => n.nutritionFactId)),
+  });
 
   /** Editar solo refresca; una variante recién creada además se vincula al producto. */
   const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
@@ -282,89 +345,25 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           </p>
         )}
         {ordered.map((ing, idx) => (
-          <div
+          <SortableRow
             key={ing.variantId}
-            ref={(el) => { rowRefs.current[ing.variantId] = el; }}
-            className={[
-              'vp-order-row',
-              dragIndex === idx && 'is-dragging',
-              movedId === ing.variantId && 'is-moved',
-              showDropAt === idx && 'drop-before',
-              showDropAt === ordered.length && idx === ordered.length - 1 && 'drop-after',
-            ].filter(Boolean).join(' ')}
-            draggable={!busy && armedId === ing.variantId}
-            onDragStart={(e) => {
-              setDragIndex(idx);
-              e.dataTransfer.effectAllowed = 'move';
-              // Firefox no inicia el drag si no hay datos.
-              e.dataTransfer.setData('text/plain', ing.variantId);
-            }}
-            onDragEnd={endDrag}
-            onDragOver={(e) => {
-              if (dragIndex === null) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-              const rect = e.currentTarget.getBoundingClientRect();
-              const next = idx + (e.clientY > rect.top + rect.height / 2 ? 1 : 0);
-              if (next !== dropIndex) setDropIndex(next);
-            }}
-            onDrop={(e) => {
-              if (dragIndex === null) return;
-              e.preventDefault();
-              handleDrop();
-            }}
+            sortable={ingredientsSortable}
+            item={ing}
+            index={idx}
+            count={ordered.length}
+            name={ing.variantName}
+            busy={busy}
           >
-            <span
-              className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
-              title="Arrastrar para cambiar el orden"
-              aria-hidden="true"
-              onMouseDown={() => { if (!busy) setArmedId(ing.variantId); }}
-              onMouseUp={() => setArmedId(null)}
-            >
-              ⠿
-            </span>
-            <div className="vp-order-handle">
-              <button
-                type="button"
-                className={`vp-order-arrow${idx === 0 ? ' is-edge' : ''}`}
-                onClick={() => move(idx, idx - 1)}
-                disabled={busy || idx === 0}
-                aria-label={`Subir ${ing.variantName}`}
-                title="Subir"
-              >
-                <Chevron dir="up" />
-              </button>
-              <PositionInput
-                className="vp-order-num"
-                value={idx + 1}
-                max={ordered.length}
-                name={ing.variantName}
-                disabled={busy}
-                onCommit={(pos) => move(idx, pos - 1)}
-              />
-              <button
-                type="button"
-                className={`vp-order-arrow${idx === ordered.length - 1 ? ' is-edge' : ''}`}
-                onClick={() => move(idx, idx + 1)}
-                disabled={busy || idx === ordered.length - 1}
-                aria-label={`Bajar ${ing.variantName}`}
-                title="Bajar"
-              >
-                <Chevron dir="down" />
-              </button>
-            </div>
-            <div className="vp-order-body">
-              <IngredientRow
-                productId={productId}
-                ing={ing}
-                busy={busy}
-                setBusy={setBusy}
-                onChanged={onChanged}
-                onEditVariant={() => setVariantEditor({ id: ing.variantId })}
-                onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
-              />
-            </div>
-          </div>
+            <IngredientRow
+              productId={productId}
+              ing={ing}
+              busy={busy}
+              setBusy={setBusy}
+              onChanged={onChanged}
+              onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+              onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+            />
+          </SortableRow>
         ))}
       </Section>
 
@@ -402,6 +401,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
           placeholder="Buscar nutriente…"
           search={nutritionSearch}
           onPick={(p) => setNutritionDraft(p)} />}>
+        {nutritionTop}
         {/* R52 (APRENDIZAJE.md): "<1 g" no es un número; regla fija para que todos carguen igual. */}
         <p className="vp-order-hint">
           Si la etiqueta dice <strong>"&lt;1 g"</strong> (o "menos de…"): en proteínas, fibra, vitaminas y minerales
@@ -416,7 +416,9 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             <NutritionInlineEditor
               key={nutritionDraft.id}
               initialValue=""
-              initialUnit={standardUnit(nutritionDraft.unit) ?? 'g'}
+              name={nutritionDraft.name}
+              currentUnit={null}
+              baseUnit={nutritionDraft.unit}
               busy={busy}
               onCancel={() => setNutritionDraft(null)}
               onSave={(value, unit) => run(async () => {
@@ -426,9 +428,24 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             />
           </div>
         )}
-        {detail.nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
-        {detail.nutrition.map((n) => (
-          <NutritionRow key={n.nutritionFactId} productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+        {nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
+        {nutrition.length > 1 && (
+          <p className="vp-order-hint">
+            Ordenalas como en la etiqueta: arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
+          </p>
+        )}
+        {nutrition.map((n, idx) => (
+          <SortableRow
+            key={n.nutritionFactId}
+            sortable={nutritionSortable}
+            item={n}
+            index={idx}
+            count={nutrition.length}
+            name={n.name}
+            busy={busy}
+          >
+            <NutritionRow productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          </SortableRow>
         ))}
       </Section>
     </>
@@ -789,19 +806,56 @@ function formatNutritionValue(value: number | string | null): string {
   return Number.isFinite(n) ? String(n) : String(value);
 }
 
-const ENERGY_UNITS = ['kcal', 'kJ'];
+// Unidades que se ofrecen por tipo de nutriente. "cal" va aparte porque así figura en muchas
+// etiquetas ("Calorías"); el backend la toma como kcal al puntuar.
+const ENERGY_UNITS = ['kcal', 'kJ', 'cal'];
 const MASS_UNITS = ['g', 'mg', 'µg'];
-/** "gr", "GR", "mcg"… → la unidad estándar de la lista (el backend igual las normaliza al puntuar). */
+/**
+ * "gr", "GR", "mcg", "cal"… → la unidad estándar de la lista. Mismos alias que el backend
+ * (`UNIT_ALIASES` en nutritionNormalization.ts), que con estos mismos puntúa: "cal" de la
+ * etiqueta es kcal ("Calorías").
+ */
+const UNIT_ALIASES: Record<string, string> = {
+  g: 'g', gr: 'g', grs: 'g', gramo: 'g', gramos: 'g',
+  mg: 'mg', miligramo: 'mg', miligramos: 'mg',
+  'µg': 'µg', ug: 'µg', mcg: 'µg', microgramo: 'µg', microgramos: 'µg',
+  kcal: 'kcal', cal: 'kcal', kilocaloria: 'kcal', kilocalorias: 'kcal', 'kilocalorías': 'kcal',
+  kj: 'kJ', kilojulio: 'kJ', kilojulios: 'kJ',
+};
 function standardUnit(unit: string | null | undefined): string | null {
-  const u = (unit ?? '').trim().toLowerCase();
-  if (!u) return null;
-  if (['g', 'gr', 'grs', 'gramos'].includes(u)) return 'g';
-  if (['mg'].includes(u)) return 'mg';
-  if (['µg', 'ug', 'mcg'].includes(u)) return 'µg';
-  if (u === 'kcal') return 'kcal';
-  if (u === 'kj') return 'kJ';
-  return null;
+  const u = (unit ?? '').trim().toLowerCase().replace(/\.$/, '');
+  return UNIT_ALIASES[u] ?? null;
 }
+
+/** El nutriente es energía por su nombre ("Valor energético", "Calorías"): respaldo si no llega la unidad base. */
+const isEnergyName = (name: string) => /energ|calor/i.test(name);
+/**
+ * Unidades que tienen sentido para un nutriente, según su unidad base del catálogo:
+ * energía → kcal / kJ / cal; masa → g / mg / µg; otras (UI, %, ml…) → solo esa, porque no se
+ * convierten. Sin unidad base, se deduce por el nombre (energía) o por la unidad cargada.
+ */
+function unitOptions(baseUnit: string | null | undefined, current: string | null | undefined, name: string): string[] {
+  const base = standardUnit(baseUnit);
+  if (base && ENERGY_UNITS.includes(base)) return ENERGY_UNITS;
+  if (base && MASS_UNITS.includes(base)) return MASS_UNITS;
+  if (baseUnit?.trim()) return [baseUnit.trim()];
+  if (isEnergyName(name)) return ENERGY_UNITS;
+  const cur = standardUnit(current);
+  return cur && ENERGY_UNITS.includes(cur) ? ENERGY_UNITS : MASS_UNITS;
+}
+
+/**
+ * La opción de `options` que corresponde a `unit`, o null si no está. Primero tal cual
+ * ("cal" → "cal", "ui" → "UI") y si no, por alias ("gr" → "g", "mcg" → "µg").
+ */
+function matchUnit(options: string[], unit: string | null | undefined): string | null {
+  const raw = (unit ?? '').trim().toLowerCase();
+  const exact = options.find((o) => o.toLowerCase() === raw);
+  if (exact) return exact;
+  const std = standardUnit(unit);
+  return std && options.includes(std) ? std : null;
+}
+
 /** Acepta coma decimal ("0,2"); null si no es un número válido (incluido vacío o negativo). */
 function parseAmount(raw: string): number | null {
   const n = Number(raw.trim().replace(',', '.'));
@@ -810,16 +864,19 @@ function parseAmount(raw: string): number | null {
 
 /**
  * Valor + unidad de un nutriente, editados DENTRO de la fila (sin modal, para seguir viendo la
- * etiqueta). La unidad sale de una lista estándar según el tipo de nutriente (energía: kcal / kJ;
- * el resto: g / mg / µg). Enter guarda, Esc cancela.
+ * etiqueta). Las unidades salen de la unidad base del nutriente (ver `unitOptions`): el valor
+ * energético ofrece kcal / kJ / cal y nunca g. Si la cargada no corresponde (p. ej. energía en g), arranca en la
+ * primera válida y avisa, para revisar también el número. Enter guarda, Esc cancela.
  */
-function NutritionInlineEditor({ initialValue, initialUnit, busy, onSave, onCancel }: {
-  initialValue: string; initialUnit: string; busy: boolean;
+function NutritionInlineEditor({ name, initialValue, currentUnit, baseUnit, busy, onSave, onCancel }: {
+  name: string; initialValue: string; currentUnit: string | null; baseUnit: string | null | undefined; busy: boolean;
   onSave: (value: number, unit: string) => void; onCancel: () => void;
 }) {
-  const units = ENERGY_UNITS.map((u) => u.toLowerCase()).includes(initialUnit.toLowerCase()) ? ENERGY_UNITS : MASS_UNITS;
+  const units = unitOptions(baseUnit, currentUnit, name);
+  const current = matchUnit(units, currentUnit);
+  const wrongUnit = !!currentUnit?.trim() && !current;
   const [value, setValue] = useState(initialValue);
-  const [unit, setUnit] = useState(units.includes(initialUnit) ? initialUnit : units[0]);
+  const [unit, setUnit] = useState(current ?? units[0]);
   const amount = parseAmount(value);
   const invalid = value !== '' && amount === null;
   const save = () => { if (amount !== null && !busy) onSave(amount, unit); };
@@ -837,28 +894,44 @@ function NutritionInlineEditor({ initialValue, initialUnit, busy, onSave, onCanc
       </select>
       <button type="button" className="vp-nutri-btn is-save" onClick={save} disabled={busy || amount === null} title="Guardar (Enter)" aria-label="Guardar">✓</button>
       <button type="button" className="vp-nutri-btn" onClick={onCancel} title="Cancelar (Esc)" aria-label="Cancelar">✕</button>
+      {wrongUnit && (
+        <span className="vp-nutri-unit-warn">
+          Estaba en «{currentUnit}», que no corresponde a este nutriente: elegí la unidad y revisá el número.
+        </span>
+      )}
     </span>
   );
 }
 
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
+  // Unidad que no corresponde al nutriente (p. ej. valor energético en g): se marca para corregirla.
+  const options = unitOptions(n.baseUnit, n.unit, n.name);
+  const wrongUnit = !!n.unit?.trim() && !matchUnit(options, n.unit);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
       <span><Dot color={n.color} hint /> {n.name}</span>
       {editing ? (
         <NutritionInlineEditor
+          name={n.name}
           initialValue={formatNutritionValue(n.value)}
-          initialUnit={standardUnit(n.unit) ?? 'g'}
+          currentUnit={n.unit}
+          baseUnit={n.baseUnit}
           busy={busy}
           onCancel={() => setEditing(false)}
           onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, value, unit); setEditing(false); })}
         />
       ) : (
         <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button type="button" className="vp-nutri-amount" onClick={() => !busy && setEditing(true)} title="Editar">
-            {formatNutritionValue(n.value) || '—'} {standardUnit(n.unit) ?? n.unit ?? ''}
+          <button
+            type="button"
+            className={`vp-nutri-amount${wrongUnit ? ' is-wrong-unit' : ''}`}
+            onClick={() => !busy && setEditing(true)}
+            title={wrongUnit ? `La unidad no corresponde a este nutriente (va en ${options.join(' / ')}). Tocá para corregirla.` : 'Editar'}
+          >
+            {wrongUnit && <span aria-hidden>⚠ </span>}
+            {formatNutritionValue(n.value) || '—'} {matchUnit(options, n.unit) ?? n.unit ?? ''}
           </button>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
           <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>

@@ -1,15 +1,16 @@
 /**
  * Wizard de validación paso a paso (un producto):
  *   1. Básico        — foto, nombre, marca, código de barras (editable).
- *   2. Composición   — ingredientes/alérgenos/nutrición coloreados + fotos que cargó el usuario.
- *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol, porción, alertas.
+ *   2. Composición   — ingredientes/alérgenos/nutrición (con la porción) coloreados, octógonos y
+ *                      ultraprocesado + fotos que cargó el usuario.
+ *   3. Más info      — categoría, registro legal, fabricante/origen, alcohol.
  *   4. Finalizar     — "Completar" (guarda, queda pendiente) / "Completar y validar".
  */
 import { useEffect, useState } from 'react';
 import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, Input, LoadingSpinner, ConfirmDialog } from '../../components/ui';
+import { Button, Input, LoadingSpinner, ConfirmDialog, OctagonPicker, type MspOctagon } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart, SKIPPED_TO_PART, skippedPhotosText } from '../../services/validation.service';
@@ -136,8 +137,8 @@ export function ValidationWizardPage() {
       name: meta.name, brand: meta.brand, barcode: meta.barcode, image: meta.image,
       categoryId: meta.categoryId || null, registrationName: meta.registrationName, registrationCode: meta.registrationCode,
       legalName: meta.legalName, alcoholGraduation: meta.alcoholGraduation === '' ? null : Number(meta.alcoholGraduation),
-      source: meta.source || null, servingSizeAmount: meta.servingSizeAmount === '' ? null : Number(meta.servingSizeAmount),
-      servingSizeUnit: meta.servingSizeUnit, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
+      source: meta.source || null, servingSizeAmount: meta.servingSizeAmount === '' ? null : Number(meta.servingSizeAmount.replace(',', '.')),
+      servingSizeUnit: meta.servingSizeUnit || null, isUltraProcessed: meta.isUltraProcessed, isFatAlert: meta.isFatAlert,
       isSaturatedFatAlert: meta.isSaturatedFatAlert, isSugarAlert: meta.isSugarAlert, isSodiumAlert: meta.isSodiumAlert,
       companyData: buildCompanyData(),
       // Sellos argentinos del envase: siempre se manda el estado actual ([] = no trae), así destildar
@@ -147,8 +148,8 @@ export function ValidationWizardPage() {
   };
 
   const goNext = async () => {
-    // Al salir de los pasos con campos meta (0 y 2) persistimos.
-    if (step === 0 || step === 2) {
+    // Al salir de los pasos con campos meta (0, 1 por la porción, y 2) persistimos.
+    if (step <= 2) {
       if (imageUrlInvalid) {
         setError('La URL de la imagen debe comenzar con https:// (no se permite http://). Corregila o borrala para continuar.');
         return;
@@ -394,7 +395,87 @@ export function ValidationWizardPage() {
               // La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos.
               <div className="vw-card">
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
-                <CompositionStep productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+                <CompositionStep
+                  productId={id}
+                  detail={detail}
+                  busy={busy}
+                  setBusy={setBusy}
+                  onChanged={loadDetail}
+                  // La porción va pegada a la tabla porque se carga mirando la misma parte de la
+                  // etiqueta. Es un dato del producto (meta): se guarda al pasar de paso.
+                  nutritionTop={
+                    <div className="vp-portion">
+                      <span className="vp-portion-label">Porción</span>
+                      {/* Solo números (con coma o punto decimal): se descarta cualquier otra tecla. */}
+                      <input
+                        className="input vp-portion-amount"
+                        type="text"
+                        inputMode="decimal"
+                        value={meta.servingSizeAmount}
+                        onChange={(e) => {
+                          if (/^\d*[.,]?\d*$/.test(e.target.value)) set('servingSizeAmount', e.target.value);
+                        }}
+                        placeholder="30"
+                        aria-label="Porción (cantidad)"
+                      />
+                      {/* La base solo acepta g o ml (migración 138): sólido o líquido. */}
+                      <select
+                        className="input vp-portion-unit"
+                        value={meta.servingSizeUnit}
+                        onChange={(e) => set('servingSizeUnit', e.target.value)}
+                        aria-label="Porción (unidad)"
+                      >
+                        <option value="">—</option>
+                        <option value="g">g</option>
+                        <option value="ml">ml</option>
+                      </select>
+                      <span className="vp-portion-hint">Como dice la etiqueta. Con ella se lleva la tabla a "por 100".</span>
+                    </div>
+                  }
+                />
+                {/* Octógonos y ultraprocesado: se deciden mirando la tabla y los ingredientes de
+                    este mismo paso. Son datos del producto (meta): se guardan al pasar de paso. */}
+                <section className="vp-section">
+                  <div className="vp-section-head">
+                    <h3 className="vp-section-title">Octógonos (MSP) y ultraprocesado</h3>
+                  </div>
+                  <div className="vp-section-body">
+                    {/* Los octógonos se marcan tocando su imagen: así se compara de un vistazo con el envase. */}
+                    <div className="vw-octagons">
+                      <OctagonPicker
+                        values={{ sugar: meta.isSugarAlert, fat: meta.isFatAlert, saturatedFat: meta.isSaturatedFatAlert, sodium: meta.isSodiumAlert }}
+                        onChange={(id, v) => set(OCTAGON_FIELD[id], v)}
+                      />
+                    </div>
+                    <div className="vw-checks">
+                      <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
+                    </div>
+                    <NovaPanel
+                      ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
+                      value={meta.isUltraProcessed}
+                      onSet={(v) => set('isUltraProcessed', v)}
+                    />
+                    <KcalPanel detail={detail} />
+                    <DecreePanel
+                      detail={detail}
+                      name={meta.name}
+                      servingSizeAmount={meta.servingSizeAmount}
+                      servingSizeUnit={meta.servingSizeUnit}
+                      values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
+                      onSet={(k, v) => set(k, v)}
+                    />
+                    <ArSealsPanel
+                      detail={detail}
+                      name={meta.name}
+                      servingSizeAmount={meta.servingSizeAmount}
+                      servingSizeUnit={meta.servingSizeUnit}
+                      enabled={meta.arEnabled}
+                      onEnabled={(v) => set('arEnabled', v)}
+                      values={meta.arSeals}
+                      onChange={(v) => set('arSeals', v)}
+                    />
+                  </div>
+                </section>
               </div>
             )}
 
@@ -465,47 +546,6 @@ export function ValidationWizardPage() {
                   <div className="form-group">
                     <Input label="Graduación alcohólica (% vol)" type="number" value={meta.alcoholGraduation} onChange={(e) => set('alcoholGraduation', e.target.value)} fullWidth />
                   </div>
-                  <div className="form-group">
-                    <Input label="Porción (cantidad)" type="number" value={meta.servingSizeAmount} onChange={(e) => set('servingSizeAmount', e.target.value)} fullWidth />
-                  </div>
-                  <div className="form-group">
-                    <Input label="Porción (unidad)" value={meta.servingSizeUnit} onChange={(e) => set('servingSizeUnit', e.target.value)} placeholder="g / ml" fullWidth />
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: 8 }}>
-                  <label className="form-label">Octógonos de Uruguay (MSP) / alertas</label>
-                  <div className="vw-checks">
-                    <Check label="Ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
-                    <Check label="Exceso grasas" v={meta.isFatAlert} on={(v) => set('isFatAlert', v)} />
-                    <Check label="Exceso grasas sat." v={meta.isSaturatedFatAlert} on={(v) => set('isSaturatedFatAlert', v)} />
-                    <Check label="Exceso azúcares" v={meta.isSugarAlert} on={(v) => set('isSugarAlert', v)} />
-                    <Check label="Exceso sodio" v={meta.isSodiumAlert} on={(v) => set('isSodiumAlert', v)} />
-                  </div>
-                  <NovaPanel
-                    ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
-                    value={meta.isUltraProcessed}
-                    onSet={(v) => set('isUltraProcessed', v)}
-                  />
-                  <KcalPanel detail={detail} />
-                  <DecreePanel
-                    detail={detail}
-                    name={meta.name}
-                    servingSizeAmount={meta.servingSizeAmount}
-                    servingSizeUnit={meta.servingSizeUnit}
-                    values={{ isSodiumAlert: meta.isSodiumAlert, isSugarAlert: meta.isSugarAlert, isFatAlert: meta.isFatAlert, isSaturatedFatAlert: meta.isSaturatedFatAlert }}
-                    onSet={(k, v) => set(k, v)}
-                  />
-                  <ArSealsPanel
-                    detail={detail}
-                    name={meta.name}
-                    servingSizeAmount={meta.servingSizeAmount}
-                    servingSizeUnit={meta.servingSizeUnit}
-                    enabled={meta.arEnabled}
-                    onEnabled={(v) => set('arEnabled', v)}
-                    values={meta.arSeals}
-                    onChange={(v) => set('arSeals', v)}
-                  />
                 </div>
               </div>
             )}
@@ -645,6 +685,14 @@ function Stepper({ step, onStep }: { step: number; onStep: (s: number) => void }
     </div>
   );
 }
+
+/** Campo de meta que guarda cada octógono. */
+const OCTAGON_FIELD: Record<MspOctagon, 'isSugarAlert' | 'isFatAlert' | 'isSaturatedFatAlert' | 'isSodiumAlert'> = {
+  sugar: 'isSugarAlert',
+  fat: 'isFatAlert',
+  saturatedFat: 'isSaturatedFatAlert',
+  sodium: 'isSodiumAlert',
+};
 
 function Check({ label, v, on, hint }: { label: string; v: boolean; on: (v: boolean) => void; hint?: string }) {
   return <label className="vw-check" title={hint}><input type="checkbox" checked={v} onChange={(e) => on(e.target.checked)} /> {label}</label>;

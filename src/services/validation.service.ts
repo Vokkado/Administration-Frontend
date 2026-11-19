@@ -86,6 +86,8 @@ export interface ValidationNutrition {
   name: string;
   value: number | null;
   unit: string | null;
+  /** Unidad base del nutriente en el catálogo (kcal, g, mg…): define qué unidades tienen sentido. */
+  baseUnit?: string | null;
   matchTier: string | null;
   color: LinkColor;
 }
@@ -182,6 +184,8 @@ export interface ScorePreview {
     nutritionNegativeImpact: number; nutritionPositiveImpact: number; penaltyUltraProcessed: number;
     penaltyPobrezaNutricional: number; penaltyAmortiguacion: number;
   };
+  /** Puntaje nuevo en modo sombra (solo para comparar; no se guarda). */
+  scoreV4?: import('../pages/products/components/ScoreV4Panel').ScoreV4Result | null;
 }
 
 export interface LabelSources {

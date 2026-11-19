@@ -463,6 +463,8 @@
   }
   .vw-check input[type="checkbox"] { accent-color: var(--color-primary); width: 18px; height: 18px; }
 
+  .vw-octagons { margin-bottom: 14px; }
+
   .vw-photo-label { cursor: pointer; text-align: center; }
   .vw-photo-img {
     width: 110px; height: 110px; border-radius: 10px;
