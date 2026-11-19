@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Button } from '../../components/ui';
 import { ValidationService, type ScorePreview, type ScoreHighlightItem } from '../../services/validation.service';
+import { ScoreV4Panel } from '../products/components/ScoreV4Panel';
 
 /** Mismos cortes y colores que el ScoreBadge de la app. */
 function band(score: number): { color: string; label: string } {
@@ -99,6 +100,7 @@ export function ScorePreviewPanel({ productId, beforeCalc, isAlcoholic }: Props)
           </div>
         )
       )}
+      {data && <ScoreV4Panel result={data.scoreV4} />}
     </div>
   );
 }
