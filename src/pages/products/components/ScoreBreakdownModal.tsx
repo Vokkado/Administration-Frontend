@@ -3,6 +3,7 @@
  */
 import { GiWineBottle } from 'react-icons/gi';
 import { useBodyScrollLock } from '../../../components/ui/useBodyScrollLock';
+import { ScoreV4Panel, type ScoreV4Result } from './ScoreV4Panel';
 
 interface ScoreBreakdown {
   scoreFinal: number | null;
@@ -25,6 +26,8 @@ interface ScoreCalculationResult {
   };
   breakdown: ScoreBreakdown;
   logs: string[];
+  /** Puntaje nuevo en modo sombra (solo para comparar). */
+  scoreV4?: ScoreV4Result | null;
 }
 
 interface ScoreBreakdownModalProps {
@@ -155,6 +158,8 @@ export function ScoreBreakdownModal({ show, productName, result, alcoholGraduati
               </tbody>
             </table>
           </div>
+
+          <ScoreV4Panel result={result.scoreV4} />
 
           {/* Logs */}
           <div className="score-logs-section">

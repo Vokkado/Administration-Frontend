@@ -184,6 +184,8 @@ export interface ScorePreview {
     nutritionNegativeImpact: number; nutritionPositiveImpact: number; penaltyUltraProcessed: number;
     penaltyPobrezaNutricional: number; penaltyAmortiguacion: number;
   };
+  /** Puntaje nuevo en modo sombra (solo para comparar; no se guarda). */
+  scoreV4?: import('../pages/products/components/ScoreV4Panel').ScoreV4Result | null;
 }
 
 export interface LabelSources {
