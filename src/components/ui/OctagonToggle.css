@@ -6,6 +6,7 @@
 }
 
 .octagon-toggle {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -59,3 +60,20 @@
   color: var(--color-grey-500);
 }
 .octagon-toggle.is-on .octagon-toggle-label { color: var(--color-primary-dark); font-weight: 600; }
+
+/* Sugerido por el cálculo y todavía sin marcar. */
+.octagon-toggle.is-suggested { border-style: dashed; border-color: var(--color-primary); }
+.octagon-toggle-sugg {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.octagon-picker { padding-top: 8px; }

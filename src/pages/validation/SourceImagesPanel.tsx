@@ -14,15 +14,19 @@ import './ValidationWizardPage.css';
 interface SourceImagesPanelProps {
   productId: string;
   /**
-   * Foto que conviene mostrar según el paso (ej. la etiqueta de ingredientes). Manda hasta
-   * que el admin elige otra miniatura; desde ahí se respeta su elección en todos los pasos.
+   * Foto que conviene mostrar según la pestaña (ej. la etiqueta de ingredientes). Si el admin
+   * elige otra miniatura, se respeta mientras siga en esa pestaña; al cambiar de pestaña
+   * vuelve a mandar la que corresponde.
    */
   initialKey?: SourcePhotoKey;
 }
 
 export function SourceImagesPanel({ productId, initialKey = 'ingredients' }: SourceImagesPanelProps) {
   const { photos, uploader, loading, markFailed } = useSourceImages(productId);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  // Elección manual, atada a la foto sugerida con la que se hizo (cambia con la pestaña).
+  const [picked, setPicked] = useState<{ key: string; forKey: SourcePhotoKey } | null>(null);
+  const selectedKey = picked && picked.forKey === initialKey ? picked.key : null;
+  const setSelectedKey = (key: string) => setPicked({ key, forKey: initialKey });
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   // URL que ya terminó de bajar: mientras no coincida con la activa, se muestra el loader.
   const [shownUrl, setShownUrl] = useState<string | null>(null);

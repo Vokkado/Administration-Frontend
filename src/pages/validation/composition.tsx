@@ -229,10 +229,15 @@ function SortableRow<T>({ sortable, item, index, count, name, busy, children }: 
   );
 }
 
-export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop }: {
+export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop, part = 'all' }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
   /** Va arriba de la tabla nutricional (la porción, que es un dato del producto y la guarda el wizard). */
   nutritionTop?: React.ReactNode;
+  /**
+   * Qué mostrar: el wizard tiene una pestaña para ingredientes (con la propuesta de la IA y
+   * los alérgenos, que salen de la misma parte de la etiqueta) y otra para la tabla.
+   */
+  part?: 'all' | 'ingredients' | 'nutrition';
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
@@ -297,6 +302,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
 
   return (
     <>
+      {part !== 'nutrition' && (<>
       <AiCompositionPanel productId={productId} detail={detail} busy={busy} setBusy={setBusy} onChanged={onChanged} />
       <Section
         title={`Ingredientes (${detail.ingredients.length})`}
@@ -394,6 +400,9 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
       {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
 
       <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
+      </>)}
+
+      {part !== 'ingredients' && (
 
       <Section title={`Nutrición (${detail.nutrition.length})`}
         adder={<AdderButton label="+ Agregar nutriente"
@@ -448,6 +457,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
           </SortableRow>
         ))}
       </Section>
+      )}
     </>
   );
 }
@@ -690,9 +700,16 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
           )}
         </div>
         <div className="vp-row-actions">
-          {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
-          <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
+          {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario o ícono. */}
+          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+          <button type="button" className="vp-icon-btn" onClick={() => setCorrecting((c) => !c)} disabled={busy}
+            title="Corregir: la IA vinculó la variante equivocada" aria-label={`Corregir ${ing.variantName}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+          <button type="button" className="vp-icon-btn is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
+            title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
         </div>
       </div>
 
@@ -1272,12 +1289,17 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
 // ── helpers de estilo ────────────────────────────────────────────────────────────
 const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'help' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
+/**
+ * El color solo marca lo que hay que mirar: lo que ya está bien (verde) va neutro y el punto
+ * de color lo sigue indicando; ámbar y rojo conservan el fondo para que salten a la vista.
+ */
+const NEUTRAL = { bg: '#fff', border: '#E5E7EB' };
 function rowBox(color: LinkColor): React.CSSProperties {
-  const c = COLORS[color];
+  const c = color === 'green' ? NEUTRAL : COLORS[color];
   return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px' };
 }
 function chip(color: LinkColor): React.CSSProperties {
-  const c = COLORS[color];
+  const c = color === 'green' ? { bg: '#F3F4F6', border: '#E5E7EB' } : COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
 /**
