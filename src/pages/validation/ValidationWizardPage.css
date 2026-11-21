@@ -3,6 +3,10 @@
    .admin-layout. */
 .admin-layout.page-validation { background: var(--color-friendly-white); }
 
+/* Modales de esta pantalla: sin la línea entre el título y el contenido; el título queda más
+   cerca del texto (el cuerpo ya trae su margen de arriba). */
+.page-validation .modal-header { border-bottom: 0; padding-bottom: 0; }
+
 :where(.page-validation) {
 
   /* Estilos del wizard de validación — unificados con el resto del admin. */
@@ -341,7 +345,7 @@
     background: var(--color-friendly-white);
   }
 
-  .vw-crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0 2px; font-size: 13px; color: var(--color-grey-600); }
+  .vw-crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 10px; padding: 0 2px; font-size: 13px; color: var(--color-grey-600); }
   .vw-crumb-link { flex-shrink: 0; font-weight: 600; color: var(--color-primary); text-decoration: none; }
   .vw-crumb-link:hover { color: var(--color-primary-dark); text-decoration: underline; text-underline-offset: 3px; }
   .vw-crumb-here { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -371,6 +375,11 @@
   .vw-head-actions .vw-btn-ghost { background: transparent; border-color: transparent; color: var(--color-grey-700); }
   .vw-head-actions .vw-btn-ghost:hover:not(:disabled) { background: var(--color-grey-100); }
   .vw-head-actions .vw-btn-more { gap: 6px; }
+  /* Ícono gris; al pasar el mouse (y mientras el puntaje está abierto) se pone verde oscuro
+     sobre un fondo verde clarito. */
+  .vw-head-actions .vw-btn-icon { width: 42px; padding: 0; color: var(--color-grey-600); }
+  .vw-head-actions .vw-btn-icon:hover:not(:disabled) { background: rgba(91, 136, 6, 0.1); color: var(--color-primary-dark); }
+  .vw-head-actions .vw-btn-icon.is-on { background: rgba(91, 136, 6, 0.14); color: var(--color-primary-dark); }
 
   .vw-status { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .vw-status--pending { background: #fef3c7; color: #92400e; }
@@ -397,21 +406,33 @@
 
   /* Pestañas subrayadas sobre una línea fina de ancho completo (como GitHub Primer).
      La activa se marca con el subrayado verde oscuro; los contadores en gris. */
-  .vw-tabs { display: flex; flex-wrap: wrap; gap: 0 26px; border-bottom: 1px solid #D9DCD3; }
+  /* Línea gris fina de base; la pestaña activa lleva un subrayado más grueso, del ancho de la
+     pestaña (texto + aire a los costados), que sobresale por debajo de la línea. Todas con el
+     mismo peso de letra: al cambiar de pestaña nada cambia de ancho ni se corre. */
+  .vw-tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid #E2E5DD; }
   .vw-tab {
+    position: relative;
     display: inline-flex; align-items: center; gap: 8px;
-    margin-bottom: -1px; padding: 12px 2px 11px;
-    border: 0; border-bottom: 2px solid transparent; background: none;
-    font: inherit; font-size: 14px; font-weight: 500; color: var(--color-grey-600); cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    padding: 12px 16px;
+    border: 0; background: none;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--color-grey-600); cursor: pointer;
+    transition: color 0.15s ease;
   }
-  .vw-tab:hover { color: var(--color-primary-dark); border-bottom-color: #C9CFC0; }
-  .vw-tab.is-on { color: var(--color-primary-dark); font-weight: 700; border-bottom-color: var(--color-primary-dark); }
+  .vw-tab::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: -2px;
+    height: 3px; background: transparent;
+    transition: background-color 0.15s ease;
+  }
+  .vw-tab:hover { color: var(--color-primary-dark); }
+  .vw-tab.is-on { color: var(--color-primary-dark); }
+  .vw-tab.is-on::after { background: var(--color-primary-dark); }
   .vw-tab-count {
     display: inline-flex; align-items: center; justify-content: center;
-    min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
-    background: #E4E7EB; color: var(--color-grey-700);
-    font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+    min-width: 20px; height: 18px; padding: 0 5px; border-radius: 4px;
+    /* Verde de la marca un poco más oscuro, para que el número blanco se lea bien. */
+    background: #4D7505; color: #fff;
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
   }
 
   .vw-toast {
@@ -594,10 +615,8 @@
   background: #fffbeb; border: 1px solid #fde68a; color: #78350f; border-radius: 10px;
   padding: 10px 14px; margin-bottom: 12px; font-size: 14px;
 }
-.vw-needs-photos-form {
-  display: flex; flex-direction: column; gap: 8px; margin-top: 12px;
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px;
-}
+/* Va dentro del modal: el modal ya es la tarjeta, sin recuadro propio (el margen lo da .modal-body). */
+.vw-needs-photos-form { display: flex; flex-direction: column; gap: 12px; }
 .vw-needs-photos-form textarea {
   font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid #d1d5db; resize: vertical;
 }
@@ -664,7 +683,8 @@
 .ar-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; }
 .dc-label input { margin-right: 4px; vertical-align: middle; }
 .vw-notify { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(46, 125, 50, 0.06); }
-.vw-notify-check { font-weight: 600; cursor: pointer; }
+.vw-notify-check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.vw-notify-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); }
 .vw-notify-msg { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid #c8d3c8; resize: vertical; box-sizing: border-box; }
 .vw-notify-note { color: #6b7280; font-size: 13px; }
 .vw-notify-reset { background: none; border: none; padding: 0; color: var(--color-primary-dark, #2e7d32); text-decoration: underline; cursor: pointer; font-size: 13px; }

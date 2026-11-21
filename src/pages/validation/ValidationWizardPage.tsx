@@ -397,8 +397,25 @@ export function ValidationWizardPage() {
 
             {/* Jerarquía: Validar es el único primario; lo demás es secundario. */}
             <div className="vw-head-actions">
-              <Button variant="neutral" className="vw-btn-ghost" onClick={() => setShowScore((v) => !v)} aria-expanded={showScore}>
-                {showScore ? 'Ocultar puntaje' : 'Ver puntaje'}
+              {/* Mismo ícono de calculadora que "Calcular puntaje" en la tabla de productos. */}
+              <Button
+                variant="neutral"
+                className={`vw-btn-ghost vw-btn-icon${showScore ? ' is-on' : ''}`}
+                onClick={() => setShowScore((v) => !v)}
+                aria-expanded={showScore}
+                aria-label={showScore ? 'Ocultar puntaje' : 'Ver puntaje'}
+                title={showScore ? 'Ocultar puntaje' : 'Ver puntaje'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="4" y="2" width="16" height="20" rx="2" />
+                  <line x1="8" y1="6" x2="16" y2="6" />
+                  <line x1="8" y1="10" x2="10" y2="10" />
+                  <line x1="14" y1="10" x2="16" y2="10" />
+                  <line x1="8" y1="14" x2="10" y2="14" />
+                  <line x1="14" y1="14" x2="16" y2="14" />
+                  <line x1="8" y1="18" x2="10" y2="18" />
+                  <line x1="14" y1="18" x2="16" y2="18" />
+                </svg>
               </Button>
               <div className="vw-menu-wrap" ref={menuRef}>
                 <Button variant="outline" className="vw-btn-more" onClick={() => setMenuOpen((v) => !v)} aria-expanded={menuOpen} aria-haspopup="menu">
@@ -773,6 +790,7 @@ export function ValidationWizardPage() {
 
       {/* Validar: confirma y ofrece el aviso a quien lo cargó. */}
       <Modal show={showValidate} title="Validar producto" onClose={() => !busy && setShowValidate(false)} maxWidth="520px">
+        <div className="modal-body">
         <p className="vw-dialog-text">
           Se guardan los cambios y el producto sale de la cola: pasa a usar las tablas estructuradas y quien lo cargó recibe sus puntos.
           Los ingredientes sin validar siguen así hasta que alguien les cargue restricciones y atributos en Ingredientes.
@@ -813,21 +831,24 @@ export function ValidationWizardPage() {
           <Button variant="outline" onClick={() => setShowValidate(false)} disabled={busy}>Cancelar</Button>
           <Button variant="primary" onClick={onValidate} disabled={busy}>Validar</Button>
         </div>
+        </div>
       </Modal>
 
       {/* Salir con cambios sin guardar. */}
       <Modal show={showLeave} title="Hay cambios sin guardar" onClose={() => !busy && setShowLeave(false)} maxWidth="520px">
-        <p className="vw-dialog-text">Si salís ahora se pierden los cambios de la ficha: nombre, porción, octógonos, categoría y demás.</p>
-        <div className="vw-dialog-actions">
-          <Button variant="outline" onClick={() => setShowLeave(false)} disabled={busy}>Seguir editando</Button>
-          <Button variant="danger" onClick={() => navigate('/validation')} disabled={busy}>Salir sin guardar</Button>
-          <Button variant="primary" onClick={onSaveAndLeave} disabled={busy}>Guardar y salir</Button>
+        <div className="modal-body">
+          <p className="vw-dialog-text">Si salís ahora se pierden los cambios de la ficha: nombre, porción, octógonos, categoría y demás.</p>
+          <div className="vw-dialog-actions">
+            <Button variant="outline" onClick={() => setShowLeave(false)} disabled={busy}>Seguir editando</Button>
+            <Button variant="danger" onClick={() => navigate('/validation')} disabled={busy}>Salir sin guardar</Button>
+            <Button variant="primary" onClick={onSaveAndLeave} disabled={busy}>Guardar y salir</Button>
+          </div>
         </div>
       </Modal>
 
       {/* Pedir fotos que faltan. */}
       <Modal show={showNeedsPhotos} title={p.needsPhotos ? 'Editar las fotos pedidas' : 'Pedir fotos que faltan'} onClose={() => !busy && setShowNeedsPhotos(false)} maxWidth="560px">
-        <div className="vw-needs-photos-form">
+        <div className="modal-body vw-needs-photos-form">
           <p className="vw-dialog-text" style={{ margin: 0 }}>
             Para cuando ninguna fuente deja validarlo (fotos chicas, lista cortada, sin tabla). Se guarda lo hecho y el próximo
             usuario que lo escanee o lo busque tiene que sacar las fotos que tildes; cuando lleguen, vuelve a la cola.
