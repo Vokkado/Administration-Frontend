@@ -29,6 +29,7 @@ const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ defa
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
 const ScoreFamiliesPage = lazy(() => import('./pages/score-families/ScoreFamiliesPage').then(m => ({ default: m.ScoreFamiliesPage })));
+const ScorePhotosPage = lazy(() => import('./pages/score-photos/ScorePhotosPage').then(m => ({ default: m.ScorePhotosPage })));
 const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default: m.FaqsPage })));
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
@@ -156,6 +157,16 @@ function App() {
               element={
                 <ProtectedRoute roles={CATALOG_ROLES}>
                   <ScoreFamiliesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fotos para el puntaje: tablas nutricionales que mandan los usuarios cuando el puntaje v4 queda aproximado. */}
+            <Route
+              path="/score-photos"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <ScorePhotosPage />
                 </ProtectedRoute>
               }
             />
