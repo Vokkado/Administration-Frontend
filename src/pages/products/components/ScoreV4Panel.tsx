@@ -3,6 +3,8 @@
  * Modelo: pilares (nutrición 60 % · procesamiento 25 % · aditivos 15 %) por familia de producto, con techo,
  * los mismos 5 tramos de color que la app (85/65/45/25) y confianza según la calidad de los datos. Especificación: Backend/docs/MODELO_PUNTAJE_V4.md.
  */
+import { useState } from 'react';
+import { apiService } from '../../../services/api.service';
 export interface ScoreV4Result {
   score: number | null;
   reason?: string;
@@ -19,9 +21,11 @@ export interface ScoreV4Result {
   explanation?: ScoreExplanation;
 }
 
-/** Desglose transparente (el mismo que verá la app): 100 + Σ delta = puntaje. */
+/** Desglose transparente (el mismo que verá la app): arranca en el máximo de su familia (start) + Σ delta = puntaje. */
 export interface ScoreExplanation {
   headline: string;
+  start?: number;
+  startDetail?: string | null;
   groups: Array<{ id: string; label: string; subtotal: number }>;
   steps: Array<{ id: string; group: string; label: string; detail: string | null; delta: number; estimated: boolean }>;
   good: string[];
@@ -30,7 +34,12 @@ export interface ScoreExplanation {
 const num = (x: number) => (x > 0 ? '+' : x < 0 ? '−' : '') + String(Math.abs(x)).replace('.', ',');
 
 function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
-  const undeclared = e.notices.filter((n) => n.kind === 'undeclared');
+  // Defensivo: una respuesta parcial (backend viejo o error) no puede tirar el modal.
+  const notices = e.notices ?? [];
+  const groups = e.groups ?? [];
+  const steps = e.steps ?? [];
+  const good = e.good ?? [];
+  const undeclared = notices.filter((n) => n.kind === 'undeclared');
   const row: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' };
   return (
     <div style={{ marginTop: 10, fontSize: 13 }}>
@@ -39,11 +48,14 @@ function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
       ))}
       <p style={{ margin: '0 0 8px', fontStyle: 'italic' }}>{e.headline}</p>
       <div style={{ borderTop: '1px solid #ddd', paddingTop: 6 }}>
-        <div style={{ ...row, fontWeight: 600 }}><span>Punto de partida</span><span>100</span></div>
-        {e.groups.map((g) => (
+        <div style={{ ...row, fontWeight: 600 }}>
+          <span>Arranca en{e.startDetail ? <span style={{ fontWeight: 400, opacity: 0.7 }}> — {e.startDetail}</span> : null}</span>
+          <span>{e.start ?? 100}</span>
+        </div>
+        {groups.map((g) => (
           <div key={g.id} style={{ marginTop: 4 }}>
             <div style={{ ...row, fontWeight: 600 }}><span>{g.label}</span><span>{num(g.subtotal)}</span></div>
-            {e.steps.filter((s) => s.group === g.id).map((s) => (
+            {steps.filter((s) => s.group === g.id).map((s) => (
               <div key={s.id} style={{ ...row, paddingLeft: 12, opacity: 0.9 }}>
                 <span>{s.label}{s.detail ? <span style={{ opacity: 0.7 }}> — {s.detail}</span> : null}</span>
                 <span style={{ whiteSpace: 'nowrap' }}>{s.estimated ? '≈ ' : ''}{num(s.delta)}</span>
@@ -53,8 +65,8 @@ function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
         ))}
         <div style={{ ...row, fontWeight: 700, borderTop: '1px solid #ddd', marginTop: 4, paddingTop: 6 }}><span>Puntaje final</span><span>{score}</span></div>
       </div>
-      {!!e.good.length && <div style={{ marginTop: 6 }}>A favor: {e.good.join(' · ')}</div>}
-      {e.notices.filter((n) => n.kind !== 'undeclared').map((n, i) => <div key={`n${i}`} style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>ⓘ {n.text}</div>)}
+      {!!good.length && <div style={{ marginTop: 6 }}>A favor: {good.join(' · ')}</div>}
+      {notices.filter((n) => n.kind !== 'undeclared').map((n, i) => <div key={`n${i}`} style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>ⓘ {n.text}</div>)}
     </div>
   );
 }
@@ -78,7 +90,26 @@ const CONFIDENCE: Record<string, { color: string; text: string }> = {
 const KEY_LABEL: Record<string, string> = { sugar: 'azúcares', sodium: 'sodio', sat: 'grasas saturadas', energy: 'calorías' };
 const human = (s: string) => s.replace(/\b(sugar|sodium|sat|energy)\b/g, (k) => KEY_LABEL[k] ?? k);
 
-export function ScoreV4Panel({ result }: { result: ScoreV4Result | null | undefined }) {
+/** Borra la frase de IA guardada del producto: se vuelve a redactar la próxima vez que alguien abra el desglose en la app. */
+function RegenerateHeadline({ productId }: { productId: string }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+  const run = async () => {
+    setState('busy');
+    try { await apiService.post(`/products/${encodeURIComponent(productId)}/score-explanation/regenerate`, {}); setState('done'); }
+    catch { setState('error'); }
+  };
+  return (
+    <div style={{ marginTop: 8, fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+      <button type="button" className="btn btn-secondary" onClick={run} disabled={state === 'busy'} style={{ padding: '4px 10px', fontSize: 12 }}>
+        {state === 'busy' ? 'Borrando…' : 'Regenerar frase de IA'}
+      </button>
+      {state === 'done' && <span>Listo: la frase se vuelve a redactar la próxima vez que alguien abra el desglose.</span>}
+      {state === 'error' && <span style={{ color: '#C62828' }}>No se pudo borrar la frase. Probá de nuevo.</span>}
+    </div>
+  );
+}
+
+export function ScoreV4Panel({ result, productId }: { result: ScoreV4Result | null | undefined; productId?: string }) {
   if (result === undefined) return null; // backend viejo: no manda el campo
   const box: React.CSSProperties = { border: '1px dashed #9E9E9E', borderRadius: 8, padding: 12, marginTop: 16, background: 'rgba(0,0,0,0.02)' };
   const title = (
@@ -112,6 +143,7 @@ export function ScoreV4Panel({ result }: { result: ScoreV4Result | null | undefi
         </div>
       </div>
       {result.explanation && <Breakdown e={result.explanation} score={result.score} />}
+      {result.explanation && productId && <RegenerateHeadline productId={productId} />}
       {!result.explanation && !!result.dataIssues?.length && <div style={{ fontSize: 12, marginTop: 6 }}>⚠️ Datos a revisar: {result.dataIssues.map(human).join(' · ')}</div>}
       {!result.explanation && !!result.estimates?.length && <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>Estimado: {result.estimates.map(human).join(' · ')}</div>}
     </div>

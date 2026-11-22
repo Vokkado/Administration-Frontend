@@ -28,6 +28,7 @@ const GoalsPage = lazy(() => import('./pages/goals/GoalsPage').then(m => ({ defa
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
+const ScoreFamiliesPage = lazy(() => import('./pages/score-families/ScoreFamiliesPage').then(m => ({ default: m.ScoreFamiliesPage })));
 const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default: m.FaqsPage })));
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
@@ -145,6 +146,16 @@ function App() {
               element={
                 <ProtectedRoute roles={CATALOG_ROLES}>
                   <GoalsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Familias del puntaje: justificación del máximo de cada familia (la ve el usuario en la explicación del puntaje). */}
+            <Route
+              path="/score-families"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <ScoreFamiliesPage />
                 </ProtectedRoute>
               }
             />
