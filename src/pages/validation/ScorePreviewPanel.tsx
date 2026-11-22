@@ -100,7 +100,7 @@ export function ScorePreviewPanel({ productId, beforeCalc, isAlcoholic }: Props)
           </div>
         )
       )}
-      {data && <ScoreV4Panel result={data.scoreV4} />}
+      {data && <ScoreV4Panel result={data.scoreV4} productId={productId} />}
     </div>
   );
 }
