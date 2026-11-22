@@ -67,6 +67,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Atributos', description: 'Gestiona atributos y tipos de atributo', path: '/attributes', buttonLabel: 'Ver Atributos' },
       { title: 'Valores Nutricionales', description: 'Gestiona los valores nutricionales', path: '/nutrition-facts', buttonLabel: 'Ver Valores Nutricionales' },
       { title: 'Metas y Embarazo', description: 'Textos y umbrales de las metas que eligen los usuarios, qué se le avisa a una embarazada y qué señales de ingredientes usan', path: '/goals', buttonLabel: 'Ver Metas y Embarazo' },
+      { title: 'Familias del puntaje', description: 'Por qué cada familia tiene un puntaje máximo: el texto que ve el usuario al tocar el puntaje', path: '/score-families', buttonLabel: 'Ver Familias' },
     ],
   },
   {
