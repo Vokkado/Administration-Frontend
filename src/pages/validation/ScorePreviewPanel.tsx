@@ -10,11 +10,11 @@ import { ScoreV4Panel } from '../products/components/ScoreV4Panel';
 
 /** Mismos cortes y colores que el ScoreBadge de la app. */
 function band(score: number): { color: string; label: string } {
-  if (score >= 85) return { color: '#2E7D32', label: 'Muy bueno' };
-  if (score >= 65) return { color: '#7CB342', label: 'Bueno' };
-  if (score >= 45) return { color: '#F9A825', label: 'Regular' };
-  if (score >= 25) return { color: '#EF6C00', label: 'Malo' };
-  return { color: '#C62828', label: 'Muy malo' };
+  if (score >= 85) return { color: '#2E7D32', label: 'Muy alto' };
+  if (score >= 65) return { color: '#7CB342', label: 'Alto' };
+  if (score >= 45) return { color: '#F9A825', label: 'Medio' };
+  if (score >= 25) return { color: '#EF6C00', label: 'Bajo' };
+  return { color: '#C62828', label: 'Muy bajo' };
 }
 
 const STEPS: { key: keyof ScorePreview['breakdown']; label: string; sign: -1 | 1 }[] = [
