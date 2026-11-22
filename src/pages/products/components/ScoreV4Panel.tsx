@@ -19,6 +19,11 @@ export interface ScoreV4Result {
   version?: string;
   undeclared?: string[];
   explanation?: ScoreExplanation;
+  /** Puntaje aproximado: al producto le falta información (sin tabla, sin porción, datos clave o sin tipo). */
+  approximate?: boolean;
+  approxReasons?: string[];
+  /** 'nutrition': la app le pide al próximo usuario una foto de la tabla nutricional. */
+  photoNeeded?: 'nutrition' | null;
 }
 
 /** Desglose transparente (el mismo que verá la app): arranca en el máximo de su familia (start) + Σ delta = puntaje. */
@@ -29,7 +34,8 @@ export interface ScoreExplanation {
   groups: Array<{ id: string; label: string; subtotal: number }>;
   steps: Array<{ id: string; group: string; label: string; detail: string | null; delta: number; estimated: boolean }>;
   good: string[];
-  notices: Array<{ kind: 'undeclared' | 'estimated' | 'data' | 'info'; text: string }>;
+  notices: Array<{ kind: 'undeclared' | 'estimated' | 'data' | 'info' | 'approximate'; text: string }>;
+  approximate?: boolean;
 }
 const num = (x: number) => (x > 0 ? '+' : x < 0 ? '−' : '') + String(Math.abs(x)).replace('.', ',');
 
@@ -66,7 +72,7 @@ function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
         <div style={{ ...row, fontWeight: 700, borderTop: '1px solid #ddd', marginTop: 4, paddingTop: 6 }}><span>Puntaje final</span><span>{score}</span></div>
       </div>
       {!!good.length && <div style={{ marginTop: 6 }}>A favor: {good.join(' · ')}</div>}
-      {notices.filter((n) => n.kind !== 'undeclared').map((n, i) => <div key={`n${i}`} style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>ⓘ {n.text}</div>)}
+      {notices.filter((n) => n.kind !== 'undeclared').map((n, i) => <div key={`n${i}`} style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>{n.kind === 'approximate' ? '≈' : 'ⓘ'} {n.text}</div>)}
     </div>
   );
 }
@@ -109,6 +115,26 @@ function RegenerateHeadline({ productId }: { productId: string }) {
   );
 }
 
+/** Puntaje aproximado: por qué, y si la app le está pidiendo la foto de la tabla al próximo usuario. */
+function Approximate({ reasons, photoNeeded }: { reasons?: string[] | null; photoNeeded?: 'nutrition' | null }) {
+  const list = Array.isArray(reasons) ? reasons.filter((r) => typeof r === 'string' && r.trim()) : [];
+  return (
+    <div style={{ marginTop: 8, fontSize: 13, background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: 6, padding: '6px 8px' }}>
+      <span style={{ display: 'inline-block', background: '#F9A825', color: '#3E2723', borderRadius: 12, padding: '1px 8px', fontWeight: 600, fontSize: 12 }}>
+        ≈ Aproximado
+      </span>
+      {list.length > 0 && (
+        <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+          {list.map((r, i) => <li key={i}>{human(r)}</li>)}
+        </ul>
+      )}
+      {photoNeeded === 'nutrition' && (
+        <div style={{ marginTop: 4 }}>Falta la foto de la tabla nutricional (la app se la pide al próximo usuario)</div>
+      )}
+    </div>
+  );
+}
+
 export function ScoreV4Panel({ result, productId }: { result: ScoreV4Result | null | undefined; productId?: string }) {
   if (result === undefined) return null; // backend viejo: no manda el campo
   const box: React.CSSProperties = { border: '1px dashed #9E9E9E', borderRadius: 8, padding: 12, marginTop: 16, background: 'rgba(0,0,0,0.02)' };
@@ -124,6 +150,7 @@ export function ScoreV4Panel({ result, productId }: { result: ScoreV4Result | nu
   }
   const l = light(result.score);
   const conf = result.confidence ? CONFIDENCE[result.confidence] : null;
+  const approximate = result.approximate === true || result.explanation?.approximate === true;
   return (
     <div style={box}>
       {title}
@@ -142,6 +169,7 @@ export function ScoreV4Panel({ result, productId }: { result: ScoreV4Result | nu
           {conf && <div style={{ color: conf.color }}>{conf.text}</div>}
         </div>
       </div>
+      {approximate && <Approximate reasons={result.approxReasons} photoNeeded={result.photoNeeded} />}
       {result.explanation && <Breakdown e={result.explanation} score={result.score} />}
       {result.explanation && productId && <RegenerateHeadline productId={productId} />}
       {!result.explanation && !!result.dataIssues?.length && <div style={{ fontSize: 12, marginTop: 6 }}>⚠️ Datos a revisar: {result.dataIssues.map(human).join(' · ')}</div>}
