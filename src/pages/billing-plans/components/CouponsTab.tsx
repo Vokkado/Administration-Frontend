@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Button, DataTable, NotificationBanner, StatusBadge } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import { useCoupons } from '../hooks/useCoupons';
-import type { BillingPlan, Coupon } from '../types';
+import type { BillingConfig, BillingPlan, Coupon } from '../types';
 import { formatDate } from './accessFormat';
 import { CouponDetailModal } from './CouponDetailModal';
 import { CouponModal } from './CouponModal';
 import { couponCapacity, couponState, couponTerms, planNames } from './couponFormat';
 
 /** Pestaña "Cupones" de Planes: los cupones de descuento, crearlos y ver cada uno. */
-export function CouponsTab({ plans }: { plans: BillingPlan[] }) {
+export function CouponsTab({ plans, billingConfig }: { plans: BillingPlan[]; billingConfig: BillingConfig | null }) {
   const { coupons, loading, error, createCoupon, updateCoupon, addCodes, fetchDetail } = useCoupons();
   const [creating, setCreating] = useState(false);
   const [viewing, setViewing] = useState<Coupon | null>(null);
@@ -76,7 +76,7 @@ export function CouponsTab({ plans }: { plans: BillingPlan[] }) {
           </button>
         )}
       />
-      <CouponModal show={creating} plans={plans} onClose={() => setCreating(false)} onCreate={createCoupon} />
+      <CouponModal show={creating} plans={plans} billingConfig={billingConfig} onClose={() => setCreating(false)} onCreate={createCoupon} />
       <CouponDetailModal
         coupon={viewing}
         plans={plans}

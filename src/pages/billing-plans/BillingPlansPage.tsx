@@ -9,6 +9,7 @@ import { PlanTable } from './components/PlanTable';
 import { NutritionistsTab } from './components/NutritionistsTab';
 import { CouponsTab } from './components/CouponsTab';
 import { usePlans } from './hooks/usePlans';
+import { useBillingConfig } from './hooks/useBillingConfig';
 import type { BillingPlan, PlanFormData } from './types';
 import './BillingPlansPage.css';
 
@@ -19,13 +20,14 @@ const EMPTY_FORM: PlanFormData = {
   unlimited: false,
   maxPatients: '',
   priceAmount: '',
-  currency: 'UYU',
+  currency: '',
   isPublic: true,
   isActive: true,
   sortOrder: '0',
 };
 
-function toForm(plan: BillingPlan): PlanFormData {
+/** Al guardar, el plan queda en la moneda de la cuenta de pagos (la única que acepta el backend). */
+function toForm(plan: BillingPlan, currency: string): PlanFormData {
   return {
     code: plan.code,
     name: plan.name,
@@ -33,7 +35,7 @@ function toForm(plan: BillingPlan): PlanFormData {
     unlimited: plan.maxPatients === null,
     maxPatients: plan.maxPatients === null ? '' : String(plan.maxPatients),
     priceAmount: String(plan.priceAmount),
-    currency: plan.currency,
+    currency,
     isPublic: plan.isPublic,
     isActive: plan.isActive,
     sortOrder: String(plan.sortOrder),
@@ -52,6 +54,7 @@ export function BillingPlansPage() {
   const [tab, setTab] = useState<Tab>('plans');
   const { plans, loading, error, setError, createPlan, updatePlan, fetchChanges } = usePlans();
   const crud = useCRUDActions();
+  const { config: billingConfig, error: configError } = useBillingConfig();
 
   const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<BillingPlan | null>(null);
@@ -60,16 +63,18 @@ export function BillingPlansPage() {
   const [historyPlan, setHistoryPlan] = useState<BillingPlan | null>(null);
 
   const openCreateModal = () => {
+    if (!billingConfig) return;
     setError('');
     setEditingPlan(null);
-    setFormData({ ...EMPTY_FORM, sortOrder: String(plans.length) });
+    setFormData({ ...EMPTY_FORM, currency: billingConfig.currency, sortOrder: String(plans.length) });
     setShowModal(true);
   };
 
   const openEditModal = (plan: BillingPlan) => {
+    if (!billingConfig) return;
     setError('');
     setEditingPlan(plan);
-    setFormData(toForm(plan));
+    setFormData(toForm(plan, billingConfig.currency));
     setShowModal(true);
   };
 
@@ -110,7 +115,7 @@ export function BillingPlansPage() {
         countLabelSingular="plan"
         actions={
           tab === 'plans' ? (
-            <Button variant="primary" onClick={openCreateModal}>
+            <Button variant="primary" onClick={openCreateModal} disabled={!billingConfig}>
               + Nuevo plan
             </Button>
           ) : undefined
@@ -141,13 +146,13 @@ export function BillingPlansPage() {
       {tab === 'plans' ? (
         <>
           <NotificationBanner type="success" message={crud.successMessage} />
-          {!showModal && <NotificationBanner type="error" message={error} />}
+          {!showModal && <NotificationBanner type="error" message={error || configError} />}
           <PlanTable plans={plans} loading={loading} onEdit={openEditModal} onHistory={setHistoryPlan} />
         </>
       ) : tab === 'nutritionists' ? (
         <NutritionistsTab plans={plans} />
       ) : (
-        <CouponsTab plans={plans} />
+        <CouponsTab plans={plans} billingConfig={billingConfig} />
       )}
 
       <PlanModal

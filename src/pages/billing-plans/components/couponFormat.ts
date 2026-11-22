@@ -9,6 +9,11 @@ export function couponTerms(c: Pick<Coupon, 'kind' | 'percentOff' | 'durationMon
   return c.durationMonths === 1 ? `${pct} el primer mes` : `${pct} durante ${c.durationMonths} meses`;
 }
 
+/** El precio con el porcentaje de descuento, redondeado a centavos (la misma cuenta que el backend). */
+export function discountedPrice(listPrice: number, percentOff: number): number {
+  return Math.round(listPrice * (100 - percentOff)) / 100;
+}
+
 /** "Pro, Premium" con los nombres del catálogo (o el código si ya no está). */
 export function planNames(codes: string[], plans: BillingPlan[]): string {
   return codes.map((code) => plans.find((p) => p.code === code)?.name ?? code).join(', ');

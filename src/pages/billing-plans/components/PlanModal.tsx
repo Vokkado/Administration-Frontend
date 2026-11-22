@@ -15,9 +15,6 @@ interface PlanModalProps {
   onChange: (data: Partial<PlanFormData>) => void;
 }
 
-/** Monedas que acepta el backend (las verificadas con Mercado Pago). */
-const CURRENCIES = ['UYU'];
-
 /** El mismo formato que el campo "Código": 2 a 40 minúsculas, números, guion o guion bajo. */
 const CODE_PATTERN = /^[a-z0-9][a-z0-9_-]{1,39}$/;
 
@@ -94,6 +91,12 @@ export function PlanModal({ show, editingPlan, formData, error, loading = false,
               quienes ya lo tienen conservan el precio y el límite que contrataron.
             </p>
           )}
+          {editingPlan && editingPlan.currency !== formData.currency && (
+            <p className="plan-note plan-note-warning">
+              Este plan está en {editingPlan.currency} y la cuenta de pagos cobra en {formData.currency}: al guardar pasa a{' '}
+              {formData.currency}. Revisá el precio.
+            </p>
+          )}
           {isFree && (
             <p className="plan-note">
               Free es el plan que rige cuando alguien no tiene suscripción: tiene que ser gratis, activo y visible. Su límite de pacientes
@@ -158,24 +161,8 @@ export function PlanModal({ show, editingPlan, formData, error, loading = false,
                   required
                   fullWidth
                 />
-                {/* Misma estructura y clases que <Input>: así la etiqueta, la separación y el alto coinciden. */}
-                <div className="input-wrapper input-fullwidth">
-                  <label className="input-label" htmlFor="plan-currency">
-                    Moneda
-                  </label>
-                  <select
-                    id="plan-currency"
-                    className="input plan-select"
-                    value={formData.currency}
-                    onChange={(e) => onChange({ currency: e.target.value })}
-                  >
-                    {CURRENCIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* La de la cuenta de pagos (la configura el backend): no se elige. */}
+                <Input id="plan-currency" label="Moneda" value={formData.currency} readOnly disabled fullWidth />
               </div>
 
               <div className="plan-row plan-pair-row">

@@ -165,3 +165,9 @@ export interface CouponFormData {
   oncePerAccount: boolean;
   isActive: boolean;
 }
+
+/** GET /admin/billing/config: la moneda de la cuenta de pagos y lo mínimo que cobra el proveedor por mes. */
+export interface BillingConfig {
+  currency: string;
+  minimumCharge: number;
+}

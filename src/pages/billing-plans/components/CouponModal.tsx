@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Button, Input, Modal } from '../../../components/ui';
 import { getApiMessage } from '../../../services/apiError';
-import { FREE_PLAN_CODE, type BillingPlan, type CouponFormData } from '../types';
+import { FREE_PLAN_CODE, type BillingConfig, type BillingPlan, type CouponFormData } from '../types';
 import { formatPrice } from './PlanTable';
-import { couponTerms } from './couponFormat';
+import { couponTerms, discountedPrice } from './couponFormat';
 import { ModalTabs } from './ModalTabs';
 import { modalTabPanelProps, nextTab } from './modalTabHelpers';
 
 interface CouponModalProps {
   show: boolean;
   plans: BillingPlan[];
+  /** Moneda y mínimo de cobro del backend; mientras carga no se avisa del mínimo. */
+  billingConfig: BillingConfig | null;
   onClose: () => void;
   onCreate: (form: CouponFormData) => Promise<unknown>;
 }
@@ -32,9 +34,6 @@ const EMPTY: CouponFormData = {
   isActive: true,
 };
 
-/** Mínimo que cobra Mercado Pago en UYU: el precio con descuento no puede quedar por debajo. */
-const MIN_CHARGE = 15;
-
 /** El mismo formato que el campo "Código": 3 a 40 letras, números o guiones, sin empezar con guion. */
 const CODE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{2,39}$/;
 
@@ -45,7 +44,7 @@ type Section = 'discount' | 'plans' | 'codes' | 'usage';
  * con un código compartido o un lote de códigos únicos (escritos o generados). El formulario va en
  * pestañas; la que tiene algo obligatorio sin completar se marca.
  */
-export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps) {
+export function CouponModal({ show, plans, billingConfig, onClose, onCreate }: CouponModalProps) {
   const [form, setForm] = useState<CouponFormData>(EMPTY);
   const [section, setSection] = useState<Section>('discount');
   const [saving, setSaving] = useState(false);
@@ -59,9 +58,10 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
     percentOff: form.kind === 'percent' ? percent || 0 : null,
     durationMonths: form.kind === 'percent' && form.forever ? null : Number(form.durationMonths) || 0,
   });
+  // El backend rechaza un descuento que deje un plan por debajo de lo mínimo que cobra el proveedor.
   const belowMinimum =
-    form.kind === 'percent' && percent > 0
-      ? contractable.filter((p) => form.planCodes.includes(p.code) && Math.round(p.priceAmount * (100 - percent)) / 100 < MIN_CHARGE)
+    billingConfig && form.kind === 'percent' && percent > 0
+      ? contractable.filter((p) => form.planCodes.includes(p.code) && discountedPrice(p.priceAmount, percent) < billingConfig.minimumCharge)
       : [];
   const uniqueCount =
     form.uniqueCodes
@@ -212,15 +212,15 @@ export function CouponModal({ show, plans, onClose, onCreate }: CouponModalProps
                     />
                     {p.name} ({formatPrice(p.priceAmount, p.currency)}
                     {form.kind === 'percent' && percent > 0 && percent < 100
-                      ? ` → ${formatPrice(Math.round(p.priceAmount * (100 - percent)) / 100, p.currency)}`
+                      ? ` → ${formatPrice(discountedPrice(p.priceAmount, percent), p.currency)}`
                       : ''}
                     )
                   </label>
                 ))}
               </fieldset>
-              {belowMinimum.length > 0 && (
+              {billingConfig && belowMinimum.length > 0 && (
                 <p className="plan-note plan-note-warning" role="alert">
-                  Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(MIN_CHARGE, 'UYU')},
+                  Con ese descuento, {belowMinimum.map((p) => p.name).join(', ')} quedaría por debajo de {formatPrice(billingConfig.minimumCharge, billingConfig.currency)},
                   que es lo mínimo que cobra Mercado Pago. Para un mes sin cobrar, usá meses gratis.
                 </p>
               )}
