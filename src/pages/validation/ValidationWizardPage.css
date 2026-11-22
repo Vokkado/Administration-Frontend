@@ -440,6 +440,8 @@
     padding: 12px 18px; border-radius: 12px; background: var(--color-grey-800); color: #fff; font-size: 14px;
   }
   .vw-dialog-text { margin: 0 0 14px; font-size: 14px; color: var(--color-grey-600); }
+  .vw-blind { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: #fff4e5; border: 1px solid #f5c26b; font-size: 13px; color: var(--color-grey-800); }
+  .vw-blind ul { margin: 6px 0 8px 18px; padding: 0; }
   .vw-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 
   /* ── Card ─────────────────────────────────────────────────────────────── */

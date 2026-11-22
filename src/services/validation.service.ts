@@ -64,6 +64,8 @@ export interface ValidationIngredient {
    * el clasificador y nadie los validó; se validan en la pantalla del ingrediente (aprobar el producto no).
    */
   autoAttributes?: ValidationAutoAttribute[];
+  /** false = la variante no tiene atributos ni el ingrediente restricciones: ningún veredicto lo ve. */
+  hasVerdictData?: boolean;
 }
 
 export interface ValidationAutoAttribute {

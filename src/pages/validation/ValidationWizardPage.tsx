@@ -110,6 +110,8 @@ export function ValidationWizardPage() {
 
   // Aviso a quien cargó el producto al validar (prendido por defecto, mensaje editable).
   const [notify, setNotify] = useState(true);
+  // Ingredientes que ningún veredicto ve (sin atributos ni restricciones): hay que confirmar para validar igual.
+  const [validateAnyway, setValidateAnyway] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState(DEFAULT_APPROVAL_MESSAGE);
   // "Pedir fotos que faltan": diálogo con qué fotos y una nota opcional.
   const [showNeedsPhotos, setShowNeedsPhotos] = useState(false);
@@ -319,6 +321,7 @@ export function ValidationWizardPage() {
   if (loading || !detail || !meta) return <AdminLayout className="page-validation"><LoadingSpinner /></AdminLayout>;
 
   const p = detail.product;
+  const blindIngredients = detail.ingredients.filter((i) => i.hasVerdictData === false);
   // La portada no puede ser la foto que sacó el usuario (es privada, R41).
   const userCover = p.labelSources?.userPhotos?.cover ?? null;
   const isUserPhoto = !!meta.image && (meta.image === userCover || meta.image.includes(`/products/${id}/cover`));
@@ -800,6 +803,18 @@ export function ValidationWizardPage() {
           Se guardan los cambios y el producto sale de la cola: pasa a usar las tablas estructuradas y quien lo cargó recibe sus puntos.
           Los ingredientes sin validar siguen así hasta que alguien les cargue restricciones y atributos en Ingredientes.
         </p>
+        {blindIngredients.length > 0 && (
+          <div className="vw-blind" role="alert">
+            <strong>Ojo: {blindIngredients.length === 1 ? 'este ingrediente no tiene' : 'estos ingredientes no tienen'} restricciones ni atributos.</strong>
+            {' '}Ningún veredicto los ve: por ejemplo, si tiene leche o gluten, un alérgico o un celíaco recibiría APTO.
+            Cargalos en Ingredientes antes de validar.
+            <ul>{blindIngredients.map((i) => <li key={i.variantId}>{i.variantName || i.ingredientName}</li>)}</ul>
+            <label className="vw-notify-check">
+              <input type="checkbox" checked={validateAnyway} onChange={(e) => setValidateAnyway(e.target.checked)} />
+              {' '}Ya lo revisé: validar igual (no lleva nada que choque con una restricción)
+            </label>
+          </div>
+        )}
         <div className="vw-notify">
           {p.hasUploader === undefined ? null : !p.hasUploader ? (
             <span className="vw-notify-note">No lo cargó un usuario de la app: no hay a quién avisarle.</span>
@@ -834,7 +849,7 @@ export function ValidationWizardPage() {
         </div>
         <div className="vw-dialog-actions">
           <Button variant="outline" onClick={() => setShowValidate(false)} disabled={busy}>Cancelar</Button>
-          <Button variant="primary" onClick={onValidate} disabled={busy}>Validar</Button>
+          <Button variant="primary" onClick={onValidate} disabled={busy || (blindIngredients.length > 0 && !validateAnyway)}>Validar</Button>
         </div>
         </div>
       </Modal>
