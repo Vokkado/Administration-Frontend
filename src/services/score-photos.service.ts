@@ -1,30 +1,39 @@
 /**
- * Fotos para el puntaje: cuando al producto le falta información (sin tabla, sin porción, sin tipo…) el puntaje v4
- * queda APROXIMADO y la app le pide al usuario UNA foto de la tabla nutricional. Esas fotos llegan acá para que
- * catálogo cargue los datos en el producto; al recalcular, el puntaje deja de ser aproximado.
+ * Puntaje aproximado (≈): cuando al producto le falta información (sin tabla, sin porción, sin tipo…) el puntaje v4
+ * se calcula con el promedio de su familia y la app le pide al usuario UNA foto de la tabla nutricional.
+ * Las fotos se ven en el asistente de validación del producto (y en la cola, con el filtro "Foto de tabla nueva");
+ * al validarlo quedan revisadas. La pestaña "Aproximados" de Puntaje lista los productos que siguen así.
  */
 import { apiService } from './api.service';
 
-export interface ScorePhoto {
+/** Foto de tabla que mandó un usuario (en el detalle del asistente). */
+export interface ScorePhotoLite {
   id: string;
-  productId: string;
-  productName: string | null;
-  barcode: string | null;
-  /** URL firmada: vence en 1 hora (si no carga, hay que recargar la lista). */
+  /** URL firmada: vence en 1 hora (si no carga, hay que recargar el producto). */
   imageUrl: string | null;
   createdAt: string;
   reviewedAt: string | null;
 }
 
-export type ScorePhotoStatus = 'pending' | 'all';
+/** Producto con puntaje aproximado. */
+export interface ApproximateProduct {
+  id: string;
+  name: string;
+  barcode: string | null;
+  image: string | null;
+  score: number | null;
+  validated: boolean;
+  /** Por qué es aproximado (lo calcula el modelo). */
+  reasons: string[];
+  pendingPhotos: number;
+}
 
 export const ScorePhotosService = {
-  async list(status: ScorePhotoStatus, limit: number, offset: number): Promise<{ items: ScorePhoto[]; total: number }> {
-    const params = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
-    const r = await apiService.get<{ success: boolean; data: { items: ScorePhoto[]; total: number } }>(`/products/score-photos?${params.toString()}`);
-    return { items: r.data?.items ?? [], total: r.data?.total ?? 0 };
-  },
   async markReviewed(photoId: string): Promise<void> {
     await apiService.post<{ success: boolean }>(`/products/score-photos/${encodeURIComponent(photoId)}/reviewed`, {});
+  },
+  async approximate(): Promise<ApproximateProduct[]> {
+    const r = await apiService.get<{ success: boolean; data: ApproximateProduct[] }>('/products/score-approximate');
+    return r.data ?? [];
   },
 };

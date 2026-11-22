@@ -22,6 +22,7 @@ import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart, SKIPPED_TO_PART, skippedPhotosText } from '../../services/validation.service';
 import { AiSuggestPanel, CompositionStep, Legend, TagsSection } from './composition';
 import { SourceImagesPanel } from './SourceImagesPanel';
+import { ScoreTablePhotos } from './ScoreTablePhotos';
 import { AiSourcesInfo } from './AiSourcesInfo';
 import { DecreePanel } from './DecreePanel';
 import { checkDecree, type DecreeKey } from './decreeCheck';
@@ -781,6 +782,7 @@ export function ValidationWizardPage() {
           <div className="vw-split-aside">
             {/* Fotos arriba (se estiran) y, debajo, de dónde sacó cada dato el enriquecimiento IA. */}
             <div className="vw-split-aside-stack">
+              {!!detail.scorePhotos?.length && <ScoreTablePhotos photos={detail.scorePhotos} onChanged={loadDetail} />}
               <SourceImagesPanel productId={id} initialKey={photoKey} />
               <div className="vw-photo-panel vw-ai-panel">
                 <AiSourcesInfo

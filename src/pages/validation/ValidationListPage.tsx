@@ -50,7 +50,9 @@ export function ValidationListPage() {
   // arriba, que es donde lo busca quien acaba de enriquecerlo.
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
   // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
-  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated'>('all');
+  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated' | 'scorePhotos'>(
+    () => (new URLSearchParams(window.location.search).get('filtro') === 'fotos-tabla' ? 'scorePhotos' : 'all'),
+  );
   // Filtro por quién lo cargó (mail).
   const [uploader, setUploader] = useState('');
   const [uploaderExact, setUploaderExact] = useState(false);
@@ -65,11 +67,12 @@ export function ValidationListPage() {
         // En "Validados" el orden por fecha es por cuándo se validó.
         (sort.key === 'counts' ? 'links' : needsFilter === 'validated' && (sort.key === 'updatedAt' || sort.key === 'createdAt') ? 'validatedAt' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links' | 'validatedAt',
         sort.direction,
-        needsFilter === 'all' || needsFilter === 'rejected' || needsFilter === 'validated' ? undefined : needsFilter === 'yes',
+        needsFilter === 'all' || needsFilter === 'rejected' || needsFilter === 'validated' || needsFilter === 'scorePhotos' ? undefined : needsFilter === 'yes',
         needsFilter === 'rejected',
         needsFilter === 'validated',
         uploader || undefined,
         uploaderExact,
+        needsFilter === 'scorePhotos',
       ).then((r) => ({ data: r.items, total: r.total })),
     [sort, needsFilter, uploader, uploaderExact],
   );
@@ -114,6 +117,11 @@ export function ValidationListPage() {
           {!!p.skippedLabelPhotos?.length && (
             <Tooltip content={`Quien lo cargó avisó que el envase no tiene ${skippedPhotosText(p.skippedLabelPhotos)} (salteó esa foto en la app).`}>
               <span className="vq-needs-photos vq-skipped">🚫 Sin {p.skippedLabelPhotos.map((s) => (s === 'nutritionFacts' ? 'tabla' : 'lista')).join(' ni ')} en el envase</span>
+            </Tooltip>
+          )}
+          {!!p.pendingScorePhotos && (
+            <Tooltip content="Un usuario mandó la foto de la tabla porque el puntaje quedó aproximado. Entrá, cargá los datos y validá.">
+              <span className="vq-needs-photos vq-score-photo">📷 Foto de tabla nueva</span>
             </Tooltip>
           )}
           {p.needsPhotos && (
@@ -176,12 +184,13 @@ export function ValidationListPage() {
             </div>
 
             <select className="vq-filter" value={needsFilter} aria-label="Filtrar por información"
-              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected' | 'validated'); setCurrentPage(1); }}>
+              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected' | 'validated' | 'scorePhotos'); setCurrentPage(1); }}>
               <option value="all">Todos</option>
               <option value="yes">📷 Info insuficiente</option>
               <option value="no">Con información</option>
               <option value="rejected">🚫 Rechazados</option>
               <option value="validated">✅ Validados</option>
+              <option value="scorePhotos">📷 Foto de tabla nueva</option>
             </select>
             <UploaderFilter value={uploader} exact={uploaderExact} onChange={pickUploader} />
             <div className="header-search">
