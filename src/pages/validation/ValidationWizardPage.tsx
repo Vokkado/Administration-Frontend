@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { validatedByText } from '../../utils/validatedBy';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, Input, LoadingSpinner, ConfirmDialog, Modal, OctagonPicker, type MspOctagon } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
@@ -86,7 +86,12 @@ export function ValidationWizardPage() {
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<CompanyIds>({ manufacturer: '', distributor: '', importer: '' });
   const [meta, setMeta] = useState<Meta | null>(null);
   const [saved, setSaved] = useState('');
-  const [tab, setTab] = useState<Tab>('portada');
+  // `?tab=tabla` abre directo en esa pestaña (lo usa "Fotos para el puntaje" para ir a la tabla nutricional).
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = searchParams.get('tab');
+    return TABS.some((x) => x.key === t) ? (t as Tab) : 'portada';
+  });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
