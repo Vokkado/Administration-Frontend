@@ -138,8 +138,8 @@ export function ScoreFamiliesPage() {
             </div>
             <div className="sf-preview">
               <span className="sf-preview-title">Así lo ve el usuario</span>
-              <span className="sf-preview-step">Arranca en {editing.ceiling}</span>
-              <span className="sf-preview-detail">Es el máximo para "{editing.label}"{clean ? `: ${clean}` : ''}</span>
+              <span className="sf-preview-step">Punto de partida: {editing.ceiling} · Máximo para {editing.label}</span>
+              <span className="sf-preview-detail">{clean || '(sin texto)'}</span>
             </div>
             <div className="modal-actions">
               <Button type="button" variant="secondary" onClick={closeEdit} disabled={saving}>Cancelar</Button>
