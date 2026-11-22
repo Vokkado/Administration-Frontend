@@ -15,6 +15,48 @@ export interface ScoreV4Result {
   dataIssues?: string[];
   estimates?: string[];
   version?: string;
+  undeclared?: string[];
+  explanation?: ScoreExplanation;
+}
+
+/** Desglose transparente (el mismo que verá la app): 100 + Σ delta = puntaje. */
+export interface ScoreExplanation {
+  headline: string;
+  groups: Array<{ id: string; label: string; subtotal: number }>;
+  steps: Array<{ id: string; group: string; label: string; detail: string | null; delta: number; estimated: boolean }>;
+  good: string[];
+  notices: Array<{ kind: 'undeclared' | 'estimated' | 'data' | 'info'; text: string }>;
+}
+const num = (x: number) => (x > 0 ? '+' : x < 0 ? '−' : '') + String(Math.abs(x)).replace('.', ',');
+
+function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
+  const undeclared = e.notices.filter((n) => n.kind === 'undeclared');
+  const row: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0' };
+  return (
+    <div style={{ marginTop: 10, fontSize: 13 }}>
+      {undeclared.map((n, i) => (
+        <div key={`u${i}`} role="alert" style={{ background: '#FFF3E0', border: '1px solid #FB8C00', color: '#5D4037', borderRadius: 6, padding: '6px 8px', marginBottom: 6 }}>⚠️ {n.text}</div>
+      ))}
+      <p style={{ margin: '0 0 8px', fontStyle: 'italic' }}>{e.headline}</p>
+      <div style={{ borderTop: '1px solid #ddd', paddingTop: 6 }}>
+        <div style={{ ...row, fontWeight: 600 }}><span>Punto de partida</span><span>100</span></div>
+        {e.groups.map((g) => (
+          <div key={g.id} style={{ marginTop: 4 }}>
+            <div style={{ ...row, fontWeight: 600 }}><span>{g.label}</span><span>{num(g.subtotal)}</span></div>
+            {e.steps.filter((s) => s.group === g.id).map((s) => (
+              <div key={s.id} style={{ ...row, paddingLeft: 12, opacity: 0.9 }}>
+                <span>{s.label}{s.detail ? <span style={{ opacity: 0.7 }}> — {s.detail}</span> : null}</span>
+                <span style={{ whiteSpace: 'nowrap' }}>{s.estimated ? '≈ ' : ''}{num(s.delta)}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+        <div style={{ ...row, fontWeight: 700, borderTop: '1px solid #ddd', marginTop: 4, paddingTop: 6 }}><span>Puntaje final</span><span>{score}</span></div>
+      </div>
+      {!!e.good.length && <div style={{ marginTop: 6 }}>A favor: {e.good.join(' · ')}</div>}
+      {e.notices.filter((n) => n.kind !== 'undeclared').map((n, i) => <div key={`n${i}`} style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>ⓘ {n.text}</div>)}
+    </div>
+  );
 }
 
 /** Semáforo del modelo nuevo: verde ≥70, amarillo 40–69, rojo <40. */
@@ -66,8 +108,9 @@ export function ScoreV4Panel({ result }: { result: ScoreV4Result | null | undefi
           {conf && <div style={{ color: conf.color }}>{conf.text}</div>}
         </div>
       </div>
-      {!!result.dataIssues?.length && <div style={{ fontSize: 12, marginTop: 6 }}>⚠️ Datos a revisar: {result.dataIssues.map(human).join(' · ')}</div>}
-      {!!result.estimates?.length && <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>Estimado: {result.estimates.map(human).join(' · ')}</div>}
+      {result.explanation && <Breakdown e={result.explanation} score={result.score} />}
+      {!result.explanation && !!result.dataIssues?.length && <div style={{ fontSize: 12, marginTop: 6 }}>⚠️ Datos a revisar: {result.dataIssues.map(human).join(' · ')}</div>}
+      {!result.explanation && !!result.estimates?.length && <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>Estimado: {result.estimates.map(human).join(' · ')}</div>}
     </div>
   );
 }
