@@ -1,7 +1,7 @@
 /**
  * Puntaje NUEVO (v4) en modo sombra: se muestra al lado del actual para comparar. No se guarda ni lo ve la app.
  * Modelo: pilares (nutrición 60 % · procesamiento 25 % · aditivos 15 %) por familia de producto, con techo,
- * semáforo 70/40 y confianza según la calidad de los datos. Especificación: Backend/docs/MODELO_PUNTAJE_V4.md.
+ * los mismos 5 tramos de color que la app (85/65/45/25) y confianza según la calidad de los datos. Especificación: Backend/docs/MODELO_PUNTAJE_V4.md.
  */
 export interface ScoreV4Result {
   score: number | null;
@@ -59,11 +59,14 @@ function Breakdown({ e, score }: { e: ScoreExplanation; score: number }) {
   );
 }
 
-/** Semáforo del modelo nuevo: verde ≥70, amarillo 40–69, rojo <40. */
+/** Mismos 5 tramos y colores que el puntaje de la app (85/65/45/25), con nombres neutros. */
 function light(score: number): { color: string; label: string } {
-  if (score >= 70) return { color: '#2E7D32', label: 'Verde' };
-  if (score >= 40) return { color: '#F9A825', label: 'Amarillo' };
-  return { color: '#C62828', label: 'Rojo' };
+  const s = Math.round(score);
+  if (s >= 85) return { color: '#2E7D32', label: 'Muy alto' };
+  if (s >= 65) return { color: '#7CB342', label: 'Alto' };
+  if (s >= 45) return { color: '#F9A825', label: 'Medio' };
+  if (s >= 25) return { color: '#EF6C00', label: 'Bajo' };
+  return { color: '#C62828', label: 'Muy bajo' };
 }
 
 const CONFIDENCE: Record<string, { color: string; text: string }> = {
