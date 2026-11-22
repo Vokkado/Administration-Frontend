@@ -470,7 +470,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
 }
 
@@ -501,7 +501,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
   cursor: help;
 }
@@ -542,7 +542,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-grey-500);
 }
 
@@ -667,7 +667,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-grey-500);
   margin-bottom: 6px;
 }
@@ -977,7 +977,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-grey-600);
 }
 
@@ -1033,7 +1033,7 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--color-grey-600);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.04em;
 }
 
@@ -1113,3 +1113,15 @@
   margin-left: 6px; padding: 0 6px; border-radius: 999px;
   font-size: 10px; font-weight: 700; color: #92400e; background: #fde68a;
 }
+
+/* Acciones de cada fila como íconos: no compiten con el único botón primario (Validar). */
+.vp-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border: 0; border-radius: 8px; background: none;
+  color: var(--color-grey-500); cursor: pointer;
+}
+.vp-icon-btn:hover:not(:disabled) { background: var(--color-grey-100); color: var(--color-grey-800); }
+.vp-icon-btn.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
+.vp-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.vp-row-actions { align-items: center; }

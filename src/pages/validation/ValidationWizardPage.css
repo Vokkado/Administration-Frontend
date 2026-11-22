@@ -1,4 +1,14 @@
+/* Fondo liso (no el degradé del resto del admin): el encabezado fijo del producto
+   lleva este mismo color y así no se nota dónde termina. Fuera del :where para ganarle a
+   .admin-layout. */
+.admin-layout.page-validation { background: var(--color-friendly-white); }
+
+/* Modales de esta pantalla: sin la línea entre el título y el contenido; el título queda más
+   cerca del texto (el cuerpo ya trae su margen de arriba). */
+.page-validation .modal-header { border-bottom: 0; padding-bottom: 0; }
+
 :where(.page-validation) {
+
   /* Estilos del wizard de validación — unificados con el resto del admin. */
 
   /* Todos los pasos muestran contenido + fotos lado a lado: usa todo el ancho de la página
@@ -34,7 +44,7 @@
      foto se lee bien aunque el paso tenga poco contenido. */
   .vw-split-aside {
     position: relative;
-    min-height: max(520px, calc(100vh - 320px));
+    min-height: max(520px, calc(100vh - var(--vw-head, 160px) - 48px));
   }
 
   /* Fotos + información de la IA apiladas. Quedan fijas en pantalla (sticky) mientras se
@@ -43,8 +53,8 @@
      corta; abajo dejan el mismo margen que las cards de la izquierda. */
   .vw-split-aside-stack {
     position: sticky;
-    top: 16px;
-    height: min(calc(100vh - 32px), calc(100% - 14px));
+    top: var(--vw-head, 0px);
+    height: min(calc(100vh - var(--vw-head, 0px) - 16px), calc(100% - 14px));
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -313,17 +323,6 @@
     .vw-split-aside .vw-photo-panel--fill .vw-photo-main { height: 60vh; }
   }
 
-  .vw-back {
-    background: none;
-    border: none;
-    color: var(--color-grey-500);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  .vw-back:hover { color: var(--color-primary-dark); }
-
   .vw-error {
     background: var(--color-error-light);
     color: var(--color-error-dark);
@@ -334,59 +333,114 @@
     margin-bottom: 16px;
   }
 
-  /* ── Stepper (verde oscuro de la app, más grueso) ─────────────────────── */
-  .vw-stepper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0 24px;
-  }
-  .vw-step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .vw-step-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--color-grey-400);
-  }
-  .vw-step-btn.is-current { color: var(--color-primary-dark); font-weight: 700; }
-  .vw-step-btn.is-done { color: var(--color-primary-dark); }
-
-  .vw-step-dot {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 700;
-    background: var(--color-grey-200);
-    color: var(--color-grey-500);
-    flex-shrink: 0;
-  }
-  .vw-step-btn.is-current .vw-step-dot,
-  .vw-step-btn.is-done .vw-step-dot {
-    background: var(--color-primary-dark);
-    color: #fff;
+  /* ── Encabezado de la página: sobre el fondo, sin tarjeta (como Shopify/Atlassian) ── */
+  /* Fijo al scrollear; lleva el color del fondo para tapar el contenido que pasa por debajo.
+     La línea de las pestañas es su borde inferior. */
+  .vw-head {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin-bottom: 20px;
+    padding-top: 12px;
+    background: var(--color-friendly-white);
   }
 
-  .vw-step-line {
-    flex: 1;
-    height: 5px;
-    border-radius: 3px;
-    background: var(--color-grey-200);
+  .vw-crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 10px; padding: 0 2px; font-size: 13px; color: var(--color-grey-600); }
+  .vw-crumb-link { flex-shrink: 0; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+  .vw-crumb-link:hover { color: var(--color-primary-dark); text-decoration: underline; text-underline-offset: 3px; }
+  .vw-crumb-here { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .vw-head-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding-bottom: 14px; }
+  .vw-head-thumb {
+    width: 64px; height: 64px; flex-shrink: 0;
+    border: 1px solid var(--color-grey-200); border-radius: 12px; object-fit: contain;
+    background: #fff;
   }
-  .vw-step-line.is-done { background: var(--color-primary-dark); }
+  .vw-head-thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--color-grey-400); }
+  .vw-head-id { display: flex; flex-direction: column; gap: 2px; flex: 1 1 240px; min-width: 0; }
+  .vw-head-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; }
+  .vw-head-title {
+    margin: 0; min-width: 0;
+    font-size: 24px; line-height: 1.2; font-weight: 700; color: var(--color-primary-dark);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .vw-head-sub { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--color-grey-600); }
+  .vw-head-sub .is-num { font-variant-numeric: tabular-nums; }
+  .vw-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  /* Todos los botones del encabezado del mismo alto, tengan o no borde. */
+  .vw-head-actions .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 42px; padding: 0 18px; box-sizing: border-box; font-size: 15px;
+  }
+  .vw-head-actions .vw-btn-ghost { background: transparent; border-color: transparent; color: var(--color-grey-700); }
+  .vw-head-actions .vw-btn-ghost:hover:not(:disabled) { background: var(--color-grey-100); }
+  .vw-head-actions .vw-btn-more { gap: 6px; }
+  /* Ícono gris; al pasar el mouse (y mientras el puntaje está abierto) se pone verde oscuro
+     sobre un fondo verde clarito. */
+  .vw-head-actions .vw-btn-icon { width: 42px; padding: 0; color: var(--color-grey-600); }
+  .vw-head-actions .vw-btn-icon:hover:not(:disabled) { background: rgba(91, 136, 6, 0.1); color: var(--color-primary-dark); }
+  .vw-head-actions .vw-btn-icon.is-on { background: rgba(91, 136, 6, 0.14); color: var(--color-primary-dark); }
+
+  .vw-status { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .vw-status--pending { background: #fef3c7; color: #92400e; }
+  .vw-status--ok { background: #dcfce7; color: #166534; }
+  .vw-status--rejected { background: #fee2e2; color: #991b1b; }
+
+  .vw-menu-wrap { position: relative; }
+  .vw-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 40;
+    display: flex; flex-direction: column; min-width: 230px; padding: 6px;
+    background: #fff; border: 1px solid var(--color-grey-200); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+  .vw-menu-item {
+    display: block; width: 100%; padding: 10px 12px;
+    border: 0; border-radius: 8px; background: none;
+    font: inherit; font-size: 14px; text-align: left; color: var(--color-grey-800); cursor: pointer;
+  }
+  .vw-menu-item:hover:not(:disabled) { background: var(--color-grey-100); }
+  .vw-menu-item.is-danger { color: #b91c1c; }
+  .vw-menu-item:disabled { opacity: 0.5; cursor: default; }
+
+  .vw-head-score { margin-bottom: 14px; }
+
+  /* Pestañas subrayadas sobre una línea fina de ancho completo (como GitHub Primer).
+     La activa se marca con el subrayado verde oscuro; los contadores en gris. */
+  /* Línea gris fina de base; la pestaña activa lleva un subrayado más grueso, del ancho de la
+     pestaña (texto + aire a los costados), que sobresale por debajo de la línea. Todas con el
+     mismo peso de letra: al cambiar de pestaña nada cambia de ancho ni se corre. */
+  .vw-tabs { display: flex; flex-wrap: wrap; gap: 0 4px; border-bottom: 1px solid #E2E5DD; }
+  .vw-tab {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    border: 0; background: none;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--color-grey-600); cursor: pointer;
+    transition: color 0.15s ease;
+  }
+  .vw-tab::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: -2px;
+    height: 3px; background: transparent;
+    transition: background-color 0.15s ease;
+  }
+  .vw-tab:hover { color: var(--color-primary-dark); }
+  .vw-tab.is-on { color: var(--color-primary-dark); }
+  .vw-tab.is-on::after { background: var(--color-primary-dark); }
+  .vw-tab-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 18px; padding: 0 5px; border-radius: 4px;
+    /* Verde de la marca un poco más oscuro, para que el número blanco se lea bien. */
+    background: #4D7505; color: #fff;
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+
+  .vw-toast {
+    position: fixed; left: 50%; bottom: 24px; z-index: 60; transform: translateX(-50%);
+    padding: 12px 18px; border-radius: 12px; background: var(--color-grey-800); color: #fff; font-size: 14px;
+  }
+  .vw-dialog-text { margin: 0 0 14px; font-size: 14px; color: var(--color-grey-600); }
+  .vw-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 
   /* ── Card ─────────────────────────────────────────────────────────────── */
   .vw-card {
@@ -478,22 +532,6 @@
   }
   .vw-photo-change { font-size: 13px; color: var(--color-primary); margin-top: 6px; }
 
-  /* Fila de arriba (volver + rechazar), navegación entre pasos y botones de Finalizar. */
-  .vw-topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .vw-step-nav {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
   /* "Ver POSIBLE PUNTAJE" (paso Finalizar) */
   .vw-score-preview {
     margin-top: 20px;
@@ -516,14 +554,6 @@
   .vw-score-preview-detail li { margin: 2px 0; }
   .vw-score-preview-hl { margin-top: 8px; display: grid; gap: 4px; color: var(--color-grey-700, #374151); overflow-wrap: anywhere; }
 
-  .vw-finish-actions {
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
   /* Paso 1: foto a la izquierda y campos a la derecha. */
   .vw-basics-row {
     display: flex;
@@ -539,16 +569,6 @@
     /* En celular la foto va arriba y los campos debajo, a todo el ancho. */
     .vw-basics-row { flex-direction: column; gap: 16px; }
     .vw-basics-row > .vw-form-grid { width: 100%; }
-
-    /* Los 4 pasos con nombre no entran: se ven los círculos y el nombre del paso actual. */
-    .vw-stepper { gap: 6px; }
-    .vw-step, .vw-step-btn { gap: 6px; }
-    .vw-step-btn { padding: 0; }
-    .vw-step-btn:not(.is-current) .vw-step-label { display: none; }
-    .vw-step-label { white-space: nowrap; }
-
-    /* Completar / Completar y validar: uno debajo del otro, a todo el ancho. */
-    .vw-finish-actions .btn { flex: 1 1 100%; }
 
     /* Menos margen interno: en celular cada píxel de ancho cuenta para las filas de adentro. */
     .vw-card { padding: 14px; }
@@ -595,10 +615,8 @@
   background: #fffbeb; border: 1px solid #fde68a; color: #78350f; border-radius: 10px;
   padding: 10px 14px; margin-bottom: 12px; font-size: 14px;
 }
-.vw-needs-photos-form {
-  display: flex; flex-direction: column; gap: 8px; margin-top: 12px;
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px;
-}
+/* Va dentro del modal: el modal ya es la tarjeta, sin recuadro propio (el margen lo da .modal-body). */
+.vw-needs-photos-form { display: flex; flex-direction: column; gap: 12px; }
 .vw-needs-photos-form textarea {
   font: inherit; font-size: 14px; padding: 8px; border-radius: 8px; border: 1px solid #d1d5db; resize: vertical;
 }
@@ -665,7 +683,8 @@
 .ar-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; }
 .dc-label input { margin-right: 4px; vertical-align: middle; }
 .vw-notify { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; padding: 10px 12px; border-radius: 10px; background: rgba(46, 125, 50, 0.06); }
-.vw-notify-check { font-weight: 600; cursor: pointer; }
+.vw-notify-check { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.vw-notify-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); }
 .vw-notify-msg { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid #c8d3c8; resize: vertical; box-sizing: border-box; }
 .vw-notify-note { color: #6b7280; font-size: 13px; }
 .vw-notify-reset { background: none; border: none; padding: 0; color: var(--color-primary-dark, #2e7d32); text-decoration: underline; cursor: pointer; font-size: 13px; }
