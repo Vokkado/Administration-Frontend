@@ -140,7 +140,7 @@ export function IngredientTable({
             borderColor: getScoreColor(ingredient.score)
           }}
         >
-          {ingredient.score}/10
+          {ingredient.score === 0 ? 'No se evalúa' : `${ingredient.score}/10`}
         </span>
       ),
     },

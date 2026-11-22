@@ -17,13 +17,17 @@ export { Input } from './Input';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Modal } from './Modal';
 export { NotificationBanner } from './NotificationBanner';
+export { OctagonPicker, OctagonToggle } from './OctagonToggle';
+export type { MspOctagon } from './OctagonToggle';
 export { PageHeader } from './PageHeader';
 export { Pagination } from './Pagination';
+export { PositionInput } from './PositionInput';
 export { ScanHeatmapMap } from './ScanHeatmapMap';
 export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
 export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
+export { AttributeBadge } from './AttributeBadge';
 export { Tooltip } from './Tooltip';
 
 // Re-export types

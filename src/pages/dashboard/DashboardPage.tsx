@@ -52,6 +52,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Productos', description: 'Gestiona los productos alimenticios', path: '/products', buttonLabel: 'Ver Productos' },
       { title: 'Ingredientes', description: 'Gestiona los ingredientes', path: '/ingredients', buttonLabel: 'Ver Ingredientes' },
       { title: 'Categorías', description: 'Gestiona las categorías de productos', path: '/categories', buttonLabel: 'Ver Categorías' },
+      { title: 'Tags', description: 'Validá y corregí los tags de los productos (los usan las alternativas)', path: '/tags', buttonLabel: 'Ver Tags' },
       { title: 'Empresas', description: 'Gestiona las empresas productoras', path: '/companies', buttonLabel: 'Ver Empresas' },
     ],
   },
@@ -65,6 +66,9 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Alérgenos', description: 'Gestiona los alérgenos del sistema', path: '/allergens', buttonLabel: 'Ver Alérgenos' },
       { title: 'Atributos', description: 'Gestiona atributos y tipos de atributo', path: '/attributes', buttonLabel: 'Ver Atributos' },
       { title: 'Valores Nutricionales', description: 'Gestiona los valores nutricionales', path: '/nutrition-facts', buttonLabel: 'Ver Valores Nutricionales' },
+      { title: 'Metas y Embarazo', description: 'Textos y umbrales de las metas que eligen los usuarios, qué se le avisa a una embarazada y qué señales de ingredientes usan', path: '/goals', buttonLabel: 'Ver Metas y Embarazo' },
+      { title: 'Familias del puntaje', description: 'Por qué cada familia tiene un puntaje máximo: el texto que ve el usuario al tocar el puntaje', path: '/score-families', buttonLabel: 'Ver Familias' },
+      { title: 'Fotos para el puntaje', description: 'Fotos de tablas nutricionales que mandaron los usuarios para que un puntaje aproximado quede exacto', path: '/score-photos', buttonLabel: 'Ver Fotos' },
     ],
   },
   {
@@ -81,6 +85,7 @@ const DASHBOARD_GROUPS: DashboardGroupConfig[] = [
       { title: 'Preguntas frecuentes', description: 'Gestiona las FAQs visibles en la app', path: '/faqs', buttonLabel: 'Ver FAQs' },
       { title: 'Notificaciones', description: 'Envía notificaciones push a los usuarios', path: '/notifications', buttonLabel: 'Ver Notificaciones' },
       { title: 'Términos y Privacidad', description: 'Edita y publica nuevas versiones de los Términos y la Política de Privacidad', path: '/legal', buttonLabel: 'Editar Términos' },
+      { title: 'Versiones de la app', description: 'Versión mínima obligatoria y actual de Android e iOS: con una menor, la app pide actualizar', path: '/app-versions', buttonLabel: 'Ver Versiones' },
     ],
   },
   {

@@ -5,13 +5,17 @@
  * Izquierda: las elegidas, ordenadas por su posición en la etiqueta (que es información
  * real: el orden indica cantidad decreciente). Derecha: el buscador y el catálogo paginado.
  *
- * El campo de posición queda FUERA del <label> del checkbox. Cuando estaba adentro había
- * que frenar la propagación en cada evento para que escribir un número no desmarcara la
- * variante que se estaba editando.
+ * El orden se cambia de dos formas:
+ *  - Arrastrando desde el asa (⠿). La fila solo es `draggable` mientras se aprieta el asa;
+ *    si lo fuera siempre, el navegador no deja seleccionar texto en el input de posición.
+ *  - Escribiendo el número. Es un borrador local: recién se aplica con Enter o al salir del
+ *    campo (Esc lo descarta), así la fila no se mueve mientras se está tipeando. Después de
+ *    moverse, la fila queda resaltada y visible en su nuevo lugar.
+ * En ambos casos la lista se renumera 1..N.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ProductFormData, IngredientVariant } from './types';
-import { Input, Pagination } from '../../../../components/ui';
+import { Input, Pagination, PositionInput } from '../../../../components/ui';
 import { matchesSearch } from '../../../../utils/search';
 import { VariantEditorModal } from './VariantEditorModal';
 import { IngredientEditorModal } from './IngredientEditorModal';
@@ -24,7 +28,10 @@ interface ProductIngredientsSectionProps {
   ingredientPositions: Record<string, number>;
   onChange: (data: Partial<ProductFormData>) => void;
   onIngredientToggle: (variantId: string) => void;
-  onIngredientPositionChange: (variantId: string, position: number) => void;
+  /** Nuevo orden completo de las elegidas visibles (posición = índice + 1). */
+  onIngredientsReorder: (orderedIds: string[]) => void;
+  /** Cambia una variante elegida por otra, en la misma posición. */
+  onIngredientReplace: (oldId: string, newId: string) => void;
   /** Vuelve a pedir el catálogo tras crear o editar una variante. */
   onVariantsChanged: () => Promise<void> | void;
 }
@@ -39,19 +46,54 @@ export function ProductIngredientsSection({
   ingredientPositions,
   onChange,
   onIngredientToggle,
-  onIngredientPositionChange,
+  onIngredientsReorder,
+  onIngredientReplace,
   onVariantsChanged,
 }: ProductIngredientsSectionProps) {
+  // Arrastre: `armedId` habilita el drag de esa fila al apretar el asa; `dropIndex` es el
+  // hueco de inserción (0..N) donde caería la fila arrastrada.
+  const [armedId, setArmedId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  // Fila recién movida: se resalta un momento y se lleva a la vista.
+  const [movedId, setMovedId] = useState<string | null>(null);
+  const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const [searchIngredient, setSearchIngredient] = useState('');
   const [currentPageIngredients, setCurrentPageIngredients] = useState(1);
   // null = cerrado | { id: null } = crear | { id } = editar esa variante.
   const [editor, setEditor] = useState<{ id: string | null; ingredientId?: string } | null>(null);
   const [creatingIngredient, setCreatingIngredient] = useState(false);
+  // Variante elegida que se está reemplazando: mientras está activo, el catálogo de la
+  // derecha elige la nueva en vez de agregar.
+  const [replacingRaw, setReplacingId] = useState<string | null>(null);
+  // Si la fila en reemplazo se quitó del producto, el modo queda sin efecto.
+  const replacingId = replacingRaw && selectedIngredients.has(replacingRaw) ? replacingRaw : null;
+  const replacing = replacingId
+    ? ingredientVariants.find((v) => String(v.id) === replacingId) ?? null
+    : null;
 
-  /** Tras guardar: refresca el catálogo y, si es nueva, la agrega al producto. */
+  const startReplace = (id: string) => {
+    setReplacingId(replacingId === id ? null : id);
+    setSearchIngredient('');
+    setCurrentPageIngredients(1);
+  };
+
+  const replaceWith = (newId: string) => {
+    if (!replacingId) return;
+    onIngredientReplace(replacingId, newId);
+    setReplacingId(null);
+    setMovedId(newId);
+  };
+
+  /**
+   * Tras guardar: refresca el catálogo y, si es nueva, la agrega al producto (o, si se
+   * estaba reemplazando, ocupa el lugar de la reemplazada).
+   */
   const handleSaved = async (saved: { id: string; name: string }, isNew: boolean) => {
     await onVariantsChanged();
-    if (isNew && saved.id) onIngredientToggle(saved.id);
+    if (!isNew || !saved.id) return;
+    if (replacingId) replaceWith(String(saved.id));
+    else onIngredientToggle(saved.id);
   };
 
   /**
@@ -73,20 +115,68 @@ export function ProductIngredientsSection({
       return posA !== posB ? posA - posB : a.name.localeCompare(b.name);
     });
 
+  // Reemplazando: primero las otras variantes del mismo ingrediente (lo más probable).
+  const isSibling = (v: IngredientVariant) =>
+    !!replacing && v.ingredientId === replacing.ingredientId && String(v.id) !== replacingId;
   const options = ingredientVariants
     .filter((v) => matchesSearch(v.name, searchIngredient))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      if (replacing) {
+        const diff = Number(isSibling(b)) - Number(isSibling(a));
+        if (diff !== 0) return diff;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
   const totalPages = Math.ceil(options.length / ITEMS_PER_PAGE);
   const startIndex = (currentPageIngredients - 1) * ITEMS_PER_PAGE;
   const paginatedOptions = options.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  /** Al vaciar el campo se le asigna la última posición libre, para no dejarla sin número. */
-  const handlePositionBlur = (variantId: string, raw: string) => {
-    if (raw && parseInt(raw, 10) >= 1) return;
-    const positions = Object.values(ingredientPositions).filter((v) => typeof v === 'number' && !Number.isNaN(v));
-    onIngredientPositionChange(variantId, (positions.length > 0 ? Math.max(...positions) : 0) + 1);
+  // Si se suelta el mouse sin llegar a arrastrar (fuera del asa), la fila deja de ser draggable.
+  useEffect(() => {
+    if (!armedId) return;
+    const disarm = () => setArmedId(null);
+    window.addEventListener('mouseup', disarm);
+    return () => window.removeEventListener('mouseup', disarm);
+  }, [armedId]);
+
+  useEffect(() => {
+    if (!movedId) return;
+    itemRefs.current[movedId]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const t = setTimeout(() => setMovedId(null), 1200);
+    return () => clearTimeout(t);
+  }, [movedId]);
+
+  /** Mueve la fila `id` al índice `to` (0-based) del orden final. */
+  const moveTo = (id: string, to: number) => {
+    const ids = selected.map((v) => String(v.id));
+    const from = ids.indexOf(id);
+    if (from === -1 || from === to) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    onIngredientsReorder(ids);
+    setMovedId(id);
   };
+
+  const resetDrag = () => {
+    setArmedId(null);
+    setDragId(null);
+    setDropIndex(null);
+  };
+
+  const handleDrop = () => {
+    if (dragId !== null && dropIndex !== null) {
+      const from = selected.findIndex((v) => String(v.id) === dragId);
+      // Sacar la fila corre una posición los huecos que están debajo de ella.
+      moveTo(dragId, dropIndex > from ? dropIndex - 1 : dropIndex);
+    }
+    resetDrag();
+  };
+
+  // Indicador solo si soltar ahí cambia algo (los huecos pegados a la fila no la mueven).
+  const dragFrom = dragId ? selected.findIndex((v) => String(v.id) === dragId) : -1;
+  const showDropAt =
+    dropIndex !== null && dropIndex !== dragFrom && dropIndex !== dragFrom + 1 ? dropIndex : null;
 
   return (
     <div className="ingredients-tab-content">
@@ -118,9 +208,71 @@ export function ProductIngredientsSection({
                 Todavía no elegiste ninguno. Buscalos en la lista de la derecha.
               </p>
             ) : (
-              <ul className="mp-selected-list">
-                {selected.map((variant) => (
-                  <li key={variant.id} className="mp-selected-item">
+              <ul
+                className="mp-selected-list"
+                onDragOver={(e) => {
+                  // También en los huecos entre filas, para que el drop no se pierda ahí.
+                  if (dragId) e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  if (!dragId) return;
+                  e.preventDefault();
+                  handleDrop();
+                }}
+              >
+                {selected.map((variant, index) => {
+                  const id = String(variant.id);
+                  const classes = [
+                    'mp-selected-item',
+                    dragId === id && 'is-dragging',
+                    movedId === id && 'is-moved',
+                    showDropAt === index && 'drop-before',
+                    showDropAt === selected.length && index === selected.length - 1 && 'drop-after',
+                    replacingId === id && 'is-replacing',
+                  ].filter(Boolean).join(' ');
+
+                  return (
+                  <li
+                    key={variant.id}
+                    ref={(el) => { itemRefs.current[id] = el; }}
+                    className={classes}
+                    draggable={armedId === id}
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = 'move';
+                      // Firefox no inicia el drag si no hay datos.
+                      e.dataTransfer.setData('text/plain', variant.name);
+                      setDragId(id);
+                    }}
+                    onDragOver={(e) => {
+                      if (!dragId) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const after = e.clientY > rect.top + rect.height / 2;
+                      const next = index + (after ? 1 : 0);
+                      if (next !== dropIndex) setDropIndex(next);
+                    }}
+                    onDragEnd={resetDrag}
+                  >
+                    <span
+                      className="mp-drag-handle"
+                      title="Arrastrar para cambiar el orden"
+                      aria-hidden="true"
+                      onMouseDown={() => setArmedId(id)}
+                      onMouseUp={() => setArmedId(null)}
+                    >
+                      ⠿
+                    </span>
+
+                    <span className="mp-position" title="Posición en la etiqueta (1 = el que más aporta). Escribí el número y Enter.">
+                      <PositionInput
+                        value={index + 1}
+                        max={selected.length}
+                        name={variant.name}
+                        onCommit={(pos) => moveTo(id, pos - 1)}
+                      />
+                    </span>
+
                     <span className="mp-name" title={variant.name}>{variant.name}</span>
 
                     <button
@@ -133,27 +285,18 @@ export function ProductIngredientsSection({
                       ✎
                     </button>
 
-                    <label className="mp-position" title="Posición en la etiqueta (1 = el que más aporta)">
-                      Pos.
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={ingredientPositions[String(variant.id)] ?? ''}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          // Vacío = el usuario está borrando; se limpia hasta que escriba.
-                          if (raw === '') {
-                            onIngredientPositionChange(String(variant.id), NaN);
-                            return;
-                          }
-                          if (!/^\d+$/.test(raw)) return;
-                          const value = parseInt(raw, 10);
-                          if (value >= 1) onIngredientPositionChange(String(variant.id), value);
-                        }}
-                        onBlur={(e) => handlePositionBlur(String(variant.id), e.target.value)}
-                      />
-                    </label>
+                    <button
+                      type="button"
+                      className={`mp-edit mp-swap${replacingId === id ? ' is-active' : ''}`}
+                      title={replacingId === id
+                        ? 'Cancelar el reemplazo'
+                        : 'Cambiar por otra variante (queda en la misma posición)'}
+                      aria-label={`Cambiar ${variant.name} por otra variante`}
+                      aria-pressed={replacingId === id}
+                      onClick={() => startReplace(id)}
+                    >
+                      ⇄
+                    </button>
 
                     <button
                       type="button"
@@ -165,7 +308,8 @@ export function ProductIngredientsSection({
                       ✕
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -173,18 +317,37 @@ export function ProductIngredientsSection({
           {/* ── Catálogo ───────────────────────────────────────────────── */}
           <section className="mp-panel">
             <header className="mp-panel-head">
-              <span className="mp-panel-title">Agregar ingrediente</span>
+              <span className="mp-panel-title">
+                {replacing ? 'Reemplazar ingrediente' : 'Agregar ingrediente'}
+              </span>
               <div className="mp-head-actions">
                 {/* El ingrediente es la entidad base; la variante es lo que se vincula al
-                    producto. Por eso van los dos, y crear un ingrediente encadena su variante. */}
+                    producto. Por eso van los dos, y crear un ingrediente encadena su variante.
+                    Reemplazando, la variante nueva arranca con el ingrediente de la reemplazada. */}
                 <button type="button" className="mp-new" onClick={() => setCreatingIngredient(true)}>
                   + Ingrediente
                 </button>
-                <button type="button" className="mp-new" onClick={() => setEditor({ id: null })}>
+                <button
+                  type="button"
+                  className="mp-new"
+                  onClick={() => setEditor({ id: null, ingredientId: replacing?.ingredientId })}
+                >
                   + Variante
                 </button>
               </div>
             </header>
+
+            {replacing && (
+              <div className="mp-replace-banner">
+                <span>
+                  Elegí la variante que va en lugar de <strong>{replacing.name}</strong>.
+                  Mantiene su posición.
+                </span>
+                <button type="button" className="mp-replace-cancel" onClick={() => setReplacingId(null)}>
+                  Cancelar
+                </button>
+              </div>
+            )}
 
             <Input
               type="text"
@@ -205,7 +368,24 @@ export function ProductIngredientsSection({
             ) : (
               <>
                 <div className="mp-options">
-                  {paginatedOptions.map((variant) => (
+                  {paginatedOptions.map((variant) => replacing ? (
+                    // Modo reemplazo: cada fila es un botón; las que ya están en el
+                    // producto (incluida la reemplazada) no se pueden elegir.
+                    <button
+                      key={variant.id}
+                      type="button"
+                      className={`mp-option mp-option-replace${isSibling(variant) ? ' is-sibling' : ''}`}
+                      disabled={selectedIngredients.has(String(variant.id))}
+                      title={selectedIngredients.has(String(variant.id))
+                        ? 'Ya está en el producto'
+                        : `Usar ${variant.name}`}
+                      onClick={() => replaceWith(String(variant.id))}
+                    >
+                      <span className="mp-swap-icon" aria-hidden="true">⇄</span>
+                      <span className="mp-name" title={variant.name}>{variant.name}</span>
+                      {isSibling(variant) && <span className="mp-sibling-tag">mismo ingrediente</span>}
+                    </button>
+                  ) : (
                     <label
                       key={variant.id}
                       className={`mp-option${selectedIngredients.has(String(variant.id)) ? ' is-selected' : ''}`}

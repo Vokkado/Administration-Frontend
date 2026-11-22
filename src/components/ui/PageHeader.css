@@ -53,6 +53,12 @@
   font-weight: 600;
 }
 
+/* Puede achicarse más que su contenido: las pestañas de arriba (aboveTitle) tienen su propio
+   scroll horizontal. Sin esto, en celular empujaban el ancho de toda la página. */
+.page-header-info {
+  min-width: 0;
+}
+
 .page-header-info h2 {
   font-size: 32px;
   font-weight: 700;
@@ -156,6 +162,9 @@
 @media (max-width: 767px) {
   .page-header {
     flex-direction: column;
+    /* En columna, con wrap la "línea" toma el ancho del hijo más ancho (ej. las pestañas) y
+       empuja la página más allá de la pantalla. Sin wrap, todo se ajusta al ancho. */
+    flex-wrap: nowrap;
     gap: 16px;
     align-items: stretch;
     margin-bottom: 20px;
@@ -174,12 +183,17 @@
   .page-header-actions {
     flex-wrap: wrap;
     gap: 8px;
+    /* En columna, el margin-left:auto de escritorio la empujaba fuera de la pantalla. */
+    margin-left: 0;
+    min-width: 0;
   }
 
   /* header-actions used by some pages directly */
   .header-actions {
     flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 8px;
+    width: 100%;
   }
 
   .header-search {

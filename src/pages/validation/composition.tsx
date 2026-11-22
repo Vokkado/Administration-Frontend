@@ -4,21 +4,27 @@
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { Button, Modal, Tooltip } from '../../components/ui';
+import { Button, Modal, AttributeBadge, Tooltip, PositionInput } from '../../components/ui';
+import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
+import { useSortableList } from '../../hooks/useSortableList';
 import {
   ValidationService,
   type ValidationDetail,
   type ValidationIngredient,
+  type ValidationAutoAttribute,
   type ValidationTag,
   type LinkColor,
 } from '../../services/validation.service';
 import { IngredientVariantsService } from '../../services/ingredient-variants.service';
 import { AllergensService } from '../../services/allergens.service';
 import { NutritionFactsService } from '../../services/nutrition-facts.service';
-import { TagsService, type ApplicableTagGroup } from '../../services/tags.service';
+import { TagsService, type ApplicableTagGroup, type TagSuggestion } from '../../services/tags.service';
 import { EditIngredientModal } from './EditIngredientModal';
+import { AiCompositionPanel } from './AiCompositionPanel';
 import { VariantEditorModal } from '../products/components/product-modal/VariantEditorModal';
 import { IngredientEditorModal } from '../products/components/product-modal/IngredientEditorModal';
+import { OriginBadge, originLabel } from '../ingredients/components/OriginBadge';
+import type { IngredientVariant } from '../ingredients/types';
 import './composition.css';
 
 /** `hint` sigue la regla de color de `ProductValidationService` (backend). */
@@ -29,7 +35,7 @@ export const COLORS: Record<LinkColor, { bg: string; border: string; dot: string
   },
   yellow: {
     bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b', label: 'Revisar',
-    hint: 'Se vinculó con algo que ya existía, pero por aproximación o sinónimo: puede estar mal. Revisá que corresponda.',
+    hint: 'Se vinculó con algo que ya existía, pero por aproximación o sinónimo (puede estar mal), o el ingrediente ya existía pero nadie lo validó todavía. Revisá que corresponda.',
   },
   red: {
     bg: '#fef2f2', border: '#fecaca', dot: '#ef4444', label: 'Creado por IA',
@@ -57,7 +63,9 @@ const NO_TIER_HINT = 'No hay registro de cómo se hizo este vínculo (por ejempl
 
 const TRAZAS_HINT = 'La etiqueta dice "puede contener": no es un ingrediente, sino un posible rastro por contaminación cruzada en la fábrica.';
 const AI_TAG_HINT = 'No había nada parecido en la base, así que la IA creó el ingrediente y estimó su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
-type Picked = { id: string; name: string };
+const UNVALIDATED_TAG_HINT = 'Este ingrediente ya existía en el catálogo (no lo creó la IA), pero nadie revisó todavía su puntaje y toxicidad. Al validarlo, la ficha queda aprobada para todos los productos que la usen.';
+/** `extra`: lo que se muestra al lado del nombre en el buscador (origen, ingrediente, uso). */
+type Picked = { id: string; name: string; extra?: React.ReactNode; /** Nutrientes: su unidad base (g, mg, µg, kcal). */ unit?: string };
 type PageResult = { items: Picked[]; total: number };
 /** Búsqueda paginada para el picker: (término, offset, límite) → página + total. */
 type PickerSearch = (term: string, offset: number, limit: number) => Promise<PageResult>;
@@ -65,13 +73,34 @@ type PickerSearch = (term: string, offset: number, limit: number) => Promise<Pag
 // Helpers a nivel módulo = identidad estable (el SearchPicker los usa en deps de useEffect).
 const variantSearch: PickerSearch = (term, offset, limit) =>
   IngredientVariantsService.listAdminVariants({ limit, offset, search: term || undefined })
-    .then((r) => ({ items: r.data.map((v: any) => ({ id: v.id, name: v.name })), total: r.total }));
+    .then((r) => ({ items: r.data.map((v) => ({ id: v.id, name: v.name, extra: <VariantPickerInfo v={v} /> })), total: r.total }));
 const allergenSearch: PickerSearch = (term, offset, limit) =>
   AllergensService.listAdminAllergens({ limit, offset, search: term || undefined })
     .then((r) => ({ items: r.data.map((a: any) => ({ id: a.id, name: a.name })), total: r.total }));
 const nutritionSearch: PickerSearch = (term, offset, limit) =>
   NutritionFactsService.listAdminNutritionFacts({ limit, offset, search: term || undefined })
-    .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name })), total: r.total }));
+    .then((r) => ({ items: r.data.map((x: any) => ({ id: x.id, name: x.name, unit: x.baseUnit })), total: r.total }));
+
+/**
+ * Al buscar una variante: a qué ingrediente apunta, si la variante (y el ingrediente, cuando no
+ * coincide) la creó la IA o una persona y si está validada, y en cuántos productos está.
+ */
+function VariantPickerInfo({ v }: { v: IngredientVariant }) {
+  const sameName = v.ingredientName && v.ingredientName.trim().toLowerCase() === v.name.trim().toLowerCase();
+  // El estado del ingrediente solo se muestra si no es el mismo que el de la variante (evita repetir).
+  const ingredientDiffers = v.ingredientInspected !== undefined
+    && originLabel(v.ingredientCreatedByAi, v.ingredientInspected).text !== originLabel(v.createdByAi, v.isInspected).text;
+  return (
+    <span className="vp-picker-item-extra">
+      {v.ingredientName && !sameName && <span className="vp-picker-item-parent">→ {v.ingredientName}</span>}
+      <OriginBadge createdByAi={v.createdByAi} inspected={v.isInspected} />
+      {v.ingredientName && !sameName && v.ingredientInspected !== undefined && ingredientDiffers && (
+        <OriginBadge prefix="ingr.:" createdByAi={v.ingredientCreatedByAi} inspected={v.ingredientInspected} />
+      )}
+      {v.productCount !== undefined && <span className="vp-picker-item-count">{v.productCount} prod.</span>}
+    </span>
+  );
+}
 
 /** `hint` = mostrar al hover qué significa el color (en la leyenda ya lo explica el texto de al lado). */
 export function Dot({ color, hint = false }: { color: LinkColor; hint?: boolean }) {
@@ -104,8 +133,111 @@ function TierBadge({ tier }: { tier: string | null }) {
   );
 }
 
-export function CompositionStep({ productId, detail, busy, setBusy, onChanged }: {
+/** Flecha fina para subir/bajar un ingrediente (hereda el color del botón). */
+function Chevron({ dir }: { dir: 'up' | 'down' }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden focusable="false">
+      <path d={dir === 'up' ? 'M3 7.5 6 4.5l3 3' : 'M3 4.5 6 7.5l3-3'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * Orden visual de la tabla nutricional por producto (ids en orden). Vive en memoria: dura
+ * mientras no se recargue la página, aunque se cambie de paso o de producto en el wizard.
+ */
+const nutritionOrderCache = new Map<string, string[]>();
+
+/** `list` ordenada según `order` (ids); lo que no está en `order` va al final en su orden original. */
+function applyOrder<T>(list: T[], order: string[], getId: (item: T) => string): T[] {
+  if (order.length === 0) return list;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return list
+    .map((item, i) => ({ item, key: rank.get(getId(item)) ?? order.length + i }))
+    .sort((a, b) => a.key - b.key)
+    .map((x) => x.item);
+}
+
+/** Copia de `list` con el ítem `from` movido al índice `to`. */
+function reorder<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+/**
+ * Fila de una lista ordenable como la etiqueta (ingredientes, tabla nutricional). Tres formas
+ * de moverla, las mismas que en el modal de producto:
+ *  - arrastrar desde el asa ⠿ (solo el asa inicia el drag, para no pisar los campos de la fila);
+ *  - escribir la posición: es un borrador y se aplica con Enter o al salir (Esc descarta);
+ *  - flechas para subir/bajar de a uno.
+ * Después de moverse, la fila se resalta y se lleva a la vista.
+ */
+function SortableRow<T>({ sortable, item, index, count, name, busy, children }: {
+  sortable: ReturnType<typeof useSortableList<T>>;
+  item: T;
+  index: number;
+  count: number;
+  name: string;
+  busy: boolean;
+  children: React.ReactNode;
+}) {
+  const { className, ...row } = sortable.rowProps(item, index);
+  return (
+    <div {...row} className={`vp-order-row ${className}`}>
+      <span
+        className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
+        title="Arrastrar para cambiar el orden"
+        aria-hidden="true"
+        {...sortable.gripProps(item)}
+      >
+        ⠿
+      </span>
+      <div className="vp-order-handle">
+        <button
+          type="button"
+          className={`vp-order-arrow${index === 0 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index - 1)}
+          disabled={busy || index === 0}
+          aria-label={`Subir ${name}`}
+          title="Subir"
+        >
+          <Chevron dir="up" />
+        </button>
+        <PositionInput
+          className="vp-order-num"
+          value={index + 1}
+          max={count}
+          name={name}
+          disabled={busy}
+          onCommit={(pos) => sortable.move(index, pos - 1)}
+        />
+        <button
+          type="button"
+          className={`vp-order-arrow${index === count - 1 ? ' is-edge' : ''}`}
+          onClick={() => sortable.move(index, index + 1)}
+          disabled={busy || index === count - 1}
+          aria-label={`Bajar ${name}`}
+          title="Bajar"
+        >
+          <Chevron dir="down" />
+        </button>
+      </div>
+      <div className="vp-order-body">{children}</div>
+    </div>
+  );
+}
+
+export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop, part = 'all' }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
+  /** Va arriba de la tabla nutricional (la porción, que es un dato del producto y la guarda el wizard). */
+  nutritionTop?: React.ReactNode;
+  /**
+   * Qué mostrar: el wizard tiene una pestaña para ingredientes (con la propuesta de la IA y
+   * los alérgenos, que salen de la misma parte de la etiqueta) y otra para la tabla.
+   */
+  part?: 'all' | 'ingredients' | 'nutrition';
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
@@ -116,6 +248,41 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // Nutriente elegido en el buscador y todavía sin valor (fila en edición arriba de la lista).
+  const [nutritionDraft, setNutritionDraft] = useState<Picked | null>(null);
+
+  // Orden de la etiqueta (ingredientes y tabla nutricional). Se muestra al instante
+  // (optimista) y se guarda en el backend; si falla, vuelve al orden que vino del servidor.
+  // Cómo se mueve (arrastre desde ⠿, posición escrita, flechas): ver `SortableRow`.
+  const [ordered, setOrdered] = useState(detail.ingredients);
+  useEffect(() => setOrdered(detail.ingredients), [detail.ingredients]);
+  const ingredientsSortable = useSortableList({
+    items: ordered,
+    getId: (i) => i.variantId,
+    disabled: busy,
+    onMove: (from, to) => {
+      const next = reorder(ordered, from, to);
+      setOrdered(next);
+      run(() => ValidationService.reorderIngredients(productId, next.map((i) => i.variantId)))
+        .catch(() => setOrdered(detail.ingredients));
+    },
+  });
+
+  // Tabla nutricional: el orden es SOLO visual (no se guarda en el backend). Se recuerda por
+  // producto mientras no se recargue la página, y se aplica sobre lo que venga del servidor:
+  // lo nuevo va al final y lo quitado desaparece.
+  const [nutritionOrder, setNutritionOrderState] = useState<string[]>(() => nutritionOrderCache.get(productId) ?? []);
+  const setNutritionOrder = (ids: string[]) => {
+    nutritionOrderCache.set(productId, ids);
+    setNutritionOrderState(ids);
+  };
+  const nutrition = applyOrder(detail.nutrition, nutritionOrder, (n) => n.nutritionFactId);
+  const nutritionSortable = useSortableList({
+    items: nutrition,
+    getId: (n) => n.nutritionFactId,
+    disabled: busy,
+    onMove: (from, to) => setNutritionOrder(reorder(nutrition, from, to).map((n) => n.nutritionFactId)),
+  });
 
   /** Editar solo refresca; una variante recién creada además se vincula al producto. */
   const handleVariantSaved = (saved: { id: string; name: string }, isNew: boolean) => {
@@ -135,6 +302,8 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
   return (
     <>
+      {part !== 'nutrition' && (<>
+      <AiCompositionPanel productId={productId} detail={detail} busy={busy} setBusy={setBusy} onChanged={onChanged} />
       <Section
         title={`Ingredientes (${detail.ingredients.length})`}
         help={
@@ -175,18 +344,32 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
             </Button>
           </div>
         }>
-        {detail.ingredients.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
-        {detail.ingredients.map((ing) => (
-          <IngredientRow
+        {ordered.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
+        {ordered.length > 1 && (
+          <p className="vp-order-hint">
+            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
+          </p>
+        )}
+        {ordered.map((ing, idx) => (
+          <SortableRow
             key={ing.variantId}
-            productId={productId}
-            ing={ing}
+            sortable={ingredientsSortable}
+            item={ing}
+            index={idx}
+            count={ordered.length}
+            name={ing.variantName}
             busy={busy}
-            setBusy={setBusy}
-            onChanged={onChanged}
-            onEditVariant={() => setVariantEditor({ id: ing.variantId })}
-            onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
-          />
+          >
+            <IngredientRow
+              productId={productId}
+              ing={ing}
+              busy={busy}
+              setBusy={setBusy}
+              onChanged={onChanged}
+              onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+              onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+            />
+          </SortableRow>
         ))}
       </Section>
 
@@ -216,36 +399,126 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged }:
 
       {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
 
-      <Section title={`Alérgenos (${detail.allergens.length})`}
-        adder={<AdderButton label="+ Agregar"
-          title="Agregar alérgeno"
-          placeholder="Buscar alérgeno…"
-          search={allergenSearch}
-          onPick={(p) => run(() => ValidationService.addAllergen(productId, p.id))} />}>
-        {detail.allergens.length === 0 && <Muted>Sin alérgenos.</Muted>}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {detail.allergens.map((a) => (
-            <span key={a.allergenId} style={chip(a.color)}>
-              <Dot color={a.color} hint /> {a.allergenName}
-              {a.presence === 'MAY_CONTAIN' && (
-                <Tooltip content={TRAZAS_HINT}>
-                  <span className="vp-hint-text" tabIndex={0}>(trazas)</span>
-                </Tooltip>
-              )}
-              <span onClick={() => !busy && run(() => ValidationService.removeAllergen(productId, a.allergenId))} style={xStyle} title="Quitar">✕</span>
-            </span>
-          ))}
-        </div>
-      </Section>
+      <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
+      </>)}
+
+      {part !== 'ingredients' && (
 
       <Section title={`Nutrición (${detail.nutrition.length})`}
-        adder={<NutritionAdder productId={productId} busy={busy} setBusy={setBusy} onChanged={onChanged} />}>
-        {detail.nutrition.length === 0 && <Muted>Sin valores nutricionales.</Muted>}
-        {detail.nutrition.map((n) => (
-          <NutritionRow key={n.nutritionFactId} productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+        adder={<AdderButton label="+ Agregar nutriente"
+          title="Agregar valor nutricional"
+          placeholder="Buscar nutriente…"
+          search={nutritionSearch}
+          onPick={(p) => setNutritionDraft(p)} />}>
+        {nutritionTop}
+        {/* R52 (APRENDIZAJE.md): "<1 g" no es un número; regla fija para que todos carguen igual. */}
+        <p className="vp-order-hint">
+          Si la etiqueta dice <strong>"&lt;1 g"</strong> (o "menos de…"): en proteínas, fibra, vitaminas y minerales
+          poné <strong>0</strong>; en azúcares, grasas y sodio poné <strong>el número</strong> (1 g). Así no damos
+          crédito de más ni escondemos algo malo.
+        </p>
+        {/* El nutriente recién elegido entra como fila en edición, arriba de la lista: se carga
+            mirando la etiqueta, sin un modal que la tape. */}
+        {nutritionDraft && (
+          <div style={{ ...rowBox('yellow'), justifyContent: 'space-between' }}>
+            <span><strong>{nutritionDraft.name}</strong> <span className="vp-nutri-new">nuevo</span></span>
+            <NutritionInlineEditor
+              key={nutritionDraft.id}
+              initialValue=""
+              name={nutritionDraft.name}
+              currentUnit={null}
+              baseUnit={nutritionDraft.unit}
+              busy={busy}
+              onCancel={() => setNutritionDraft(null)}
+              onSave={(value, unit) => run(async () => {
+                await ValidationService.upsertNutrition(productId, nutritionDraft.id, value, unit);
+                setNutritionDraft(null);
+              })}
+            />
+          </div>
+        )}
+        {nutrition.length === 0 && !nutritionDraft && <Muted>Sin valores nutricionales.</Muted>}
+        {nutrition.length > 1 && (
+          <p className="vp-order-hint">
+            Ordenalas como en la etiqueta: arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
+          </p>
+        )}
+        {nutrition.map((n, idx) => (
+          <SortableRow
+            key={n.nutritionFactId}
+            sortable={nutritionSortable}
+            item={n}
+            index={idx}
+            count={nutrition.length}
+            name={n.name}
+            busy={busy}
+          >
+            <NutritionRow productId={productId} n={n} busy={busy} setBusy={setBusy} onChanged={onChanged} />
+          </SortableRow>
         ))}
       </Section>
+      )}
     </>
+  );
+}
+
+type AllergenPresence = 'CONTAINS' | 'MAY_CONTAIN';
+const PRESENCE: Record<AllergenPresence, { title: string; add: string; empty: string; moveTo: string }> = {
+  CONTAINS: { title: 'Contiene', add: '+ Contiene', empty: 'Ninguno.', moveTo: 'Pasar a "puede contener"' },
+  MAY_CONTAIN: { title: 'Puede contener (trazas)', add: '+ Puede contener', empty: 'Ninguno.', moveTo: 'Pasar a "contiene"' },
+};
+
+/**
+ * Alérgenos separados en "Contiene" (es ingrediente) y "Puede contener" (trazas por contaminación
+ * cruzada en la fábrica). Cada uno se agrega directo en su grupo, y ⇄ lo pasa al otro (el backend
+ * hace upsert de la presencia, así que agregar el mismo alérgeno con la otra presencia lo mueve).
+ */
+function AllergensSection({ productId, allergens, busy, run }: {
+  productId: string; allergens: ValidationDetail['allergens']; busy: boolean; run: (fn: () => Promise<void>) => Promise<void>;
+}) {
+  const presenceOf = (a: ValidationDetail['allergens'][number]): AllergenPresence => (a.presence === 'MAY_CONTAIN' ? 'MAY_CONTAIN' : 'CONTAINS');
+  const groups: AllergenPresence[] = ['CONTAINS', 'MAY_CONTAIN'];
+  return (
+    <Section title={`Alérgenos (${allergens.length})`}
+      adder={
+        <div className="vp-section-actions">
+          {groups.map((p) => (
+            <AdderButton key={p} label={PRESENCE[p].add}
+              title={p === 'CONTAINS' ? 'Agregar alérgeno: contiene' : 'Agregar alérgeno: puede contener (trazas)'}
+              placeholder="Buscar alérgeno…"
+              search={allergenSearch}
+              onPick={(picked) => run(() => ValidationService.addAllergen(productId, picked.id, p))} />
+          ))}
+        </div>
+      }>
+      {groups.map((p) => {
+        const items = allergens.filter((a) => presenceOf(a) === p);
+        const other: AllergenPresence = p === 'CONTAINS' ? 'MAY_CONTAIN' : 'CONTAINS';
+        return (
+          <div key={p} className="vp-allergen-group">
+            <div className="vp-allergen-group-title">
+              {p === 'MAY_CONTAIN' ? (
+                <Tooltip content={TRAZAS_HINT}><span className="vp-hint-text" tabIndex={0}>{PRESENCE[p].title}</span></Tooltip>
+              ) : PRESENCE[p].title}
+              <span className="vp-allergen-group-count">{items.length}</span>
+            </div>
+            {items.length === 0 ? <Muted>{PRESENCE[p].empty}</Muted> : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {items.map((a) => (
+                  <span key={a.allergenId} style={chip(a.color)}>
+                    <Dot color={a.color} hint /> {a.allergenName}
+                    <button type="button" className="vp-allergen-move" disabled={busy}
+                      onClick={() => run(() => ValidationService.addAllergen(productId, a.allergenId, other))}
+                      title={PRESENCE[p].moveTo} aria-label={`${PRESENCE[p].moveTo}: ${a.allergenName}`}>⇄</button>
+                    <span onClick={() => !busy && run(() => ValidationService.removeAllergen(productId, a.allergenId))} style={xStyle} title="Quitar">✕</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Section>
   );
 }
 
@@ -297,7 +570,7 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         <dt>✕ Quitar</dt>
         <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
         <dt>Validar ingrediente</dt>
-        <dd>Solo en las filas rojas: guarda el puntaje y la toxicidad que revisaste, y da por aprobada la ficha que inventó la IA.</dd>
+        <dd>Solo en ingredientes sin validar (debajo del nombre): abre el panel de puntaje y toxicidad. Al validar se guardan los valores que revisaste y la ficha queda aprobada.</dd>
       </dl>
 
       <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
@@ -336,10 +609,52 @@ function DetectedSummary({ ing }: { ing: ValidationIngredient }) {
   );
 }
 
+/**
+ * Atributos de metas y embarazo de la variante (Metas > Sodio, Embarazo > Carne cruda o curada…): las
+ * metas los usan cuando el producto no tiene tabla y el embarazo avisa por ellos. Los sin validar
+ * (los puso la IA o el clasificador) se marcan; se validan en la pantalla del ingrediente (aprobar el producto no los valida). Para corregirlos: el ✎
+ * de la variante.
+ */
+function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: ValidationAutoAttribute[]; onEdit: () => void }) {
+  const { describeAttribute } = useGoalsAdminView();
+  if (!attributes || attributes.length === 0) return null;
+  const pending = attributes.some((a) => !a.inspected);
+  return (
+    <div className="vp-signals">
+      <span className="vp-signals-label">Metas / embarazo:</span>
+      <span className="attr-badge-row">
+        {attributes.map((a) => (
+          <AttributeBadge
+            key={a.attributeId}
+            label={a.attributeName}
+            size="small"
+            tone={a.inspected ? 'default' : 'pending'}
+            note={a.inspected ? undefined : 'sin validar'}
+            hint={
+              <>
+                {describeAttribute(a.attributeId)}
+                <br />
+                {a.inspected ? 'Validado.' : 'Lo puso la IA o el clasificador: falta validarlo en la pantalla del ingrediente.'}
+              </>
+            }
+          />
+        ))}
+      </span>
+      {pending && (
+        <button type="button" className="vp-signals-edit" onClick={onEdit} title="Corregir los atributos de la variante">
+          Corregir
+        </button>
+      )}
+    </div>
+  );
+}
+
 function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditVariant: () => void; onEditIngredient: () => void }) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
+  // El panel de puntaje/toxicidad ocupa mucho: arranca cerrado y se abre con el botón.
+  const [reviewing, setReviewing] = useState(false);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
@@ -368,21 +683,54 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
             </button>
             <TierBadge tier={ing.matchTier} />
           </div>
+          <IngredientAutoAttributes attributes={ing.autoAttributes} onEdit={onEditVariant} />
+          {/* Ingrediente sin validar: queda la marca a la vista, pero el panel se abre a pedido. */}
+          {!ing.ingredientInspected && (
+            <button
+              type="button"
+              className={`vp-ai-toggle${ing.color === 'red' ? '' : ' vp-ai-toggle--pending'}${reviewing ? ' is-open' : ''}`}
+              onClick={() => setReviewing((r) => !r)}
+              aria-expanded={reviewing}
+              title={reviewing ? 'Ocultar puntaje y toxicidad' : 'Revisar puntaje y toxicidad para validarlo'}
+            >
+              <span className="vp-ai-toggle-tag">{ing.color === 'red' ? 'Creado por la IA' : 'Sin validar'}</span>
+              {reviewing ? 'Ocultar' : 'Validar ingrediente'}
+              <span className="vp-ai-toggle-caret" aria-hidden>▾</span>
+            </button>
+          )}
         </div>
         <div className="vp-row-actions">
-          {ing.color !== 'green' && <Button variant="primary" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <Button variant="neutral" onClick={() => setCorrecting((c) => !c)} disabled={busy}>✎ Corregir</Button>
-          <Button variant="danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}>✕ Quitar</Button>
+          {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario o ícono. */}
+          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+          <button type="button" className="vp-icon-btn" onClick={() => setCorrecting((c) => !c)} disabled={busy}
+            title="Corregir: la IA vinculó la variante equivocada" aria-label={`Corregir ${ing.variantName}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+          <button type="button" className="vp-icon-btn is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
+            title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
         </div>
       </div>
 
-      {ing.color === 'red' && (
-        <div className="vp-ai-panel">
+      {/* Ingrediente sin validar: si lo creó la IA (rojo) o si ya existía y nadie lo revisó (amarillo). */}
+      {!ing.ingredientInspected && reviewing && (
+        <div className={`vp-ai-panel ${ing.color === 'red' ? '' : 'vp-ai-panel--pending'}`}>
           <div className="vp-ai-head">
-            <Tooltip content={AI_TAG_HINT}>
-              <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
-            </Tooltip>
-            <span className="vp-ai-hint">Revisá el puntaje y la toxicidad antes de validarlo.</span>
+            {ing.color === 'red' ? (
+              <Tooltip content={AI_TAG_HINT}>
+                <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
+              </Tooltip>
+            ) : (
+              <Tooltip content={UNVALIDATED_TAG_HINT}>
+                <span className="vp-ai-tag vp-ai-tag--pending" tabIndex={0}>Sin validar</span>
+              </Tooltip>
+            )}
+            <span className="vp-ai-hint">
+              {ing.color === 'red'
+                ? 'Revisá el puntaje y la toxicidad antes de validarlo.'
+                : 'Ya existía en el catálogo, pero todavía no está validado: revisá su puntaje y toxicidad.'}
+            </span>
           </div>
 
           {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
@@ -475,52 +823,138 @@ function formatNutritionValue(value: number | string | null): string {
   return Number.isFinite(n) ? String(n) : String(value);
 }
 
+// Unidades que se ofrecen por tipo de nutriente. "cal" va aparte porque así figura en muchas
+// etiquetas ("Calorías"); el backend la toma como kcal al puntuar.
+const ENERGY_UNITS = ['kcal', 'kJ', 'cal'];
+const MASS_UNITS = ['g', 'mg', 'µg'];
+/**
+ * "gr", "GR", "mcg", "cal"… → la unidad estándar de la lista. Mismos alias que el backend
+ * (`UNIT_ALIASES` en nutritionNormalization.ts), que con estos mismos puntúa: "cal" de la
+ * etiqueta es kcal ("Calorías").
+ */
+const UNIT_ALIASES: Record<string, string> = {
+  g: 'g', gr: 'g', grs: 'g', gramo: 'g', gramos: 'g',
+  mg: 'mg', miligramo: 'mg', miligramos: 'mg',
+  'µg': 'µg', ug: 'µg', mcg: 'µg', microgramo: 'µg', microgramos: 'µg',
+  kcal: 'kcal', cal: 'kcal', kilocaloria: 'kcal', kilocalorias: 'kcal', 'kilocalorías': 'kcal',
+  kj: 'kJ', kilojulio: 'kJ', kilojulios: 'kJ',
+};
+function standardUnit(unit: string | null | undefined): string | null {
+  const u = (unit ?? '').trim().toLowerCase().replace(/\.$/, '');
+  return UNIT_ALIASES[u] ?? null;
+}
+
+/** El nutriente es energía por su nombre ("Valor energético", "Calorías"): respaldo si no llega la unidad base. */
+const isEnergyName = (name: string) => /energ|calor/i.test(name);
+/**
+ * Unidades que tienen sentido para un nutriente, según su unidad base del catálogo:
+ * energía → kcal / kJ / cal; masa → g / mg / µg; otras (UI, %, ml…) → solo esa, porque no se
+ * convierten. Sin unidad base, se deduce por el nombre (energía) o por la unidad cargada.
+ */
+function unitOptions(baseUnit: string | null | undefined, current: string | null | undefined, name: string): string[] {
+  const base = standardUnit(baseUnit);
+  if (base && ENERGY_UNITS.includes(base)) return ENERGY_UNITS;
+  if (base && MASS_UNITS.includes(base)) return MASS_UNITS;
+  if (baseUnit?.trim()) return [baseUnit.trim()];
+  if (isEnergyName(name)) return ENERGY_UNITS;
+  const cur = standardUnit(current);
+  return cur && ENERGY_UNITS.includes(cur) ? ENERGY_UNITS : MASS_UNITS;
+}
+
+/**
+ * La opción de `options` que corresponde a `unit`, o null si no está. Primero tal cual
+ * ("cal" → "cal", "ui" → "UI") y si no, por alias ("gr" → "g", "mcg" → "µg").
+ */
+function matchUnit(options: string[], unit: string | null | undefined): string | null {
+  const raw = (unit ?? '').trim().toLowerCase();
+  const exact = options.find((o) => o.toLowerCase() === raw);
+  if (exact) return exact;
+  const std = standardUnit(unit);
+  return std && options.includes(std) ? std : null;
+}
+
+/** Acepta coma decimal ("0,2"); null si no es un número válido (incluido vacío o negativo). */
+function parseAmount(raw: string): number | null {
+  const n = Number(raw.trim().replace(',', '.'));
+  return raw.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/**
+ * Valor + unidad de un nutriente, editados DENTRO de la fila (sin modal, para seguir viendo la
+ * etiqueta). Las unidades salen de la unidad base del nutriente (ver `unitOptions`): el valor
+ * energético ofrece kcal / kJ / cal y nunca g. Si la cargada no corresponde (p. ej. energía en g), arranca en la
+ * primera válida y avisa, para revisar también el número. Enter guarda, Esc cancela.
+ */
+function NutritionInlineEditor({ name, initialValue, currentUnit, baseUnit, busy, onSave, onCancel }: {
+  name: string; initialValue: string; currentUnit: string | null; baseUnit: string | null | undefined; busy: boolean;
+  onSave: (value: number, unit: string) => void; onCancel: () => void;
+}) {
+  const units = unitOptions(baseUnit, currentUnit, name);
+  const current = matchUnit(units, currentUnit);
+  const wrongUnit = !!currentUnit?.trim() && !current;
+  const [value, setValue] = useState(initialValue);
+  const [unit, setUnit] = useState(current ?? units[0]);
+  const amount = parseAmount(value);
+  const invalid = value !== '' && amount === null;
+  const save = () => { if (amount !== null && !busy) onSave(amount, unit); };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    else if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+  };
+  return (
+    <span className="vp-nutri-inline">
+      <input autoFocus className="input vp-nutri-value" inputMode="decimal" value={value} placeholder="0,2"
+        onChange={(e) => setValue(e.target.value)} onKeyDown={onKeyDown} aria-invalid={invalid}
+        title={invalid ? 'Tiene que ser un número (podés usar coma)' : 'Valor tal cual la tabla. Enter guarda, Esc cancela.'} />
+      <select className="input vp-nutri-unit" value={unit} onChange={(e) => setUnit(e.target.value)} onKeyDown={onKeyDown} aria-label="Unidad">
+        {units.map((u) => <option key={u} value={u}>{u}</option>)}
+      </select>
+      <button type="button" className="vp-nutri-btn is-save" onClick={save} disabled={busy || amount === null} title="Guardar (Enter)" aria-label="Guardar">✓</button>
+      <button type="button" className="vp-nutri-btn" onClick={onCancel} title="Cancelar (Esc)" aria-label="Cancelar">✕</button>
+      {wrongUnit && (
+        <span className="vp-nutri-unit-warn">
+          Estaba en «{currentUnit}», que no corresponde a este nutriente: elegí la unidad y revisá el número.
+        </span>
+      )}
+    </span>
+  );
+}
+
 function NutritionRow({ productId, n, busy, setBusy, onChanged }: { productId: string; n: ValidationDetail['nutrition'][number]; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState<string>(formatNutritionValue(n.value));
-  const [unit, setUnit] = useState<string>(n.unit ?? '');
+  // Unidad que no corresponde al nutriente (p. ej. valor energético en g): se marca para corregirla.
+  const options = unitOptions(n.baseUnit, n.unit, n.name);
+  const wrongUnit = !!n.unit?.trim() && !matchUnit(options, n.unit);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   return (
     <div style={{ ...rowBox(n.color), justifyContent: 'space-between' }}>
       <span><Dot color={n.color} hint /> {n.name}</span>
       {editing ? (
-        <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <input value={value} onChange={(e) => setValue(e.target.value)} style={{ width: 70 }} />
-          <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unidad" style={{ width: 60 }} />
-          <Button variant="primary" onClick={() => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, Number(value), unit || null); setEditing(false); })} disabled={busy}>OK</Button>
-        </span>
+        <NutritionInlineEditor
+          name={n.name}
+          initialValue={formatNutritionValue(n.value)}
+          currentUnit={n.unit}
+          baseUnit={n.baseUnit}
+          busy={busy}
+          onCancel={() => setEditing(false)}
+          onSave={(value, unit) => run(async () => { await ValidationService.upsertNutrition(productId, n.nutritionFactId, value, unit); setEditing(false); })}
+        />
       ) : (
         <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <strong>{formatNutritionValue(n.value) || '—'} {n.unit ?? ''}</strong>
+          <button
+            type="button"
+            className={`vp-nutri-amount${wrongUnit ? ' is-wrong-unit' : ''}`}
+            onClick={() => !busy && setEditing(true)}
+            title={wrongUnit ? `La unidad no corresponde a este nutriente (va en ${options.join(' / ')}). Tocá para corregirla.` : 'Editar'}
+          >
+            {wrongUnit && <span aria-hidden>⚠ </span>}
+            {formatNutritionValue(n.value) || '—'} {matchUnit(options, n.unit) ?? n.unit ?? ''}
+          </button>
           <span onClick={() => !busy && setEditing(true)} style={xStyle} title="Editar">✎</span>
           <span onClick={() => !busy && run(() => ValidationService.removeNutrition(productId, n.nutritionFactId))} style={xStyle} title="Quitar">✕</span>
         </span>
       )}
     </div>
-  );
-}
-
-function NutritionAdder({ productId, busy, setBusy, onChanged }: { productId: string; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void }) {
-  const [picked, setPicked] = useState<Picked | null>(null);
-  const [value, setValue] = useState(''); const [unit, setUnit] = useState('');
-  const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
-  if (picked) {
-    return (
-      <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-        <strong style={{ fontSize: 13 }}>{picked.name}:</strong>
-        <input autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="valor" style={{ width: 70 }} />
-        <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unidad" style={{ width: 60 }} />
-        <Button variant="primary" onClick={() => run(async () => { await ValidationService.upsertNutrition(productId, picked.id, Number(value), unit || null); setPicked(null); setValue(''); setUnit(''); })} disabled={busy || !value}>Agregar</Button>
-        <Button variant="outline" onClick={() => setPicked(null)}>Cancelar</Button>
-      </span>
-    );
-  }
-  return (
-    <AdderButton label="+ Agregar nutriente"
-      title="Agregar valor nutricional"
-      placeholder="Buscar nutriente…"
-      search={nutritionSearch}
-      onPick={(p) => setPicked(p)} />
   );
 }
 
@@ -662,7 +1096,8 @@ function SearchPicker({ search, onSelect, onCancel, placeholder, plain = false }
             onMouseEnter={() => setActive(i)}
             onClick={() => onSelect(r)}
           >
-            <Highlight text={r.name} term={term} />
+            <span className="vp-picker-item-name"><Highlight text={r.name} term={term} /></span>
+            {r.extra}
           </button>
         ))}
         {!loading && results.length === 0 && (
@@ -724,15 +1159,147 @@ export function TagsSection({ productId, categoryId, tags, busy, setBusy, onChan
   );
 }
 
+/**
+ * "Sugerir con IA" (paso Más info): pide a la IA la categoría y los tags del producto (mira la foto de
+ * portada y los datos actuales: ver classificationContext en el backend), sin guardar
+ * nada. La categoría se aplica al formulario (se guarda al avanzar, como el resto del paso) y los
+ * tags marcados se agregan al producto; los que la IA propone y no existen se crean en su grupo.
+ * Los tags se piden para la categoría elegida en pantalla o, si no hay, para la que sugiere la IA.
+ * Son dos llamadas a la IA por clic.
+ */
+export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setBusy, onUseCategory, onCategoryCreated, onChanged }: {
+  productId: string; categoryId: string; linkedTagIds: string[]; busy: boolean; setBusy: (b: boolean) => void;
+  onUseCategory: (categoryId: string) => void;
+  /** Categoría nueva creada desde la propuesta de la IA: el wizard la suma a la lista y la elige. */
+  onCategoryCreated: (category: { id: string; name: string; parentId: string | null }) => void;
+  onChanged: () => void;
+}) {
+  type Category = Awaited<ReturnType<typeof ValidationService.suggestCategory>>;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ category: Category; tags: TagSuggestion[] } | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const key = (t: TagSuggestion) => `${t.groupId}|${t.tagName}`;
+
+  const suggest = async () => {
+    setLoading(true); setError(null);
+    try {
+      const category = await ValidationService.suggestCategory(productId);
+      const forTags = categoryId || category.match?.categoryId;
+      const linked = new Set(linkedTagIds);
+      const tags = (await TagsService.suggestProductTags(productId, forTags)).filter((t) => !t.tagId || !linked.has(t.tagId));
+      setResult({ category, tags });
+      setSelected(new Set(tags.map((_, i) => i)));
+    } catch {
+      setError('La IA no respondió. Probá de nuevo en un rato.');
+    } finally { setLoading(false); }
+  };
+
+  const addTags = async () => {
+    if (!result) return;
+    const chosen = result.tags.filter((_, i) => selected.has(i));
+    setBusy(true); setError(null);
+    try {
+      for (const t of chosen) {
+        const tagId = t.tagId ?? (await TagsService.createTag({ tagGroupId: t.groupId, name: t.tagName })).id;
+        await ValidationService.addTag(productId, tagId);
+      }
+      const done = new Set(chosen.map(key));
+      setResult({ ...result, tags: result.tags.filter((t) => !done.has(key(t))) });
+      setSelected(new Set());
+      onChanged();
+    } catch {
+      setError('No se pudieron agregar todos los tags. Revisá la lista y probá de nuevo.');
+      onChanged();
+    } finally { setBusy(false); }
+  };
+
+  const createCategory = async () => {
+    const p = result?.category.proposal;
+    if (!p) return;
+    setBusy(true); setError(null);
+    try {
+      const created = await ValidationService.createCategory({ name: p.name, parentCategoryId: p.parentId });
+      onCategoryCreated({ ...created, parentId: p.parentId });
+      setResult((r) => (r ? { ...r, category: { match: { categoryId: created.id, categoryName: created.name, confidence: 'MEDIUM' }, proposal: null } } : r));
+    } catch {
+      setError('No se pudo crear la categoría (¿ya existe con otro nombre?). Creala desde Categorías.');
+    } finally { setBusy(false); }
+  };
+
+  const toggle = (i: number) => setSelected((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  const cat = result?.category.match;
+  const proposal = result?.category.proposal;
+
+  return (
+    <div className="vp-sugg">
+      <div className="vp-sugg-head">
+        <p className="vp-sugg-note">La IA propone categoría y tags mirando la foto de portada y los datos actuales (nombre, marca e ingredientes ya corregidos). Revisalos antes de usarlos.</p>
+        <Button variant="outline" onClick={suggest} loading={loading} disabled={busy || loading}>✨ Sugerir con IA</Button>
+      </div>
+      {error && <div className="vp-sugg-note" role="alert" style={{ color: 'var(--color-error)' }}>{error}</div>}
+      {result && (
+        <>
+          <div className="vp-sugg-row">
+            <span className="vp-sugg-label">Categoría</span>
+            {cat ? (
+              <>
+                <strong>{cat.categoryName}</strong>
+                <span className="vp-sugg-note">confianza {cat.confidence === 'HIGH' ? 'alta' : 'media'}</span>
+                {cat.categoryId === categoryId
+                  ? <span className="vp-sugg-note">(es la que ya tiene)</span>
+                  : <Button variant="primary" onClick={() => onUseCategory(cat.categoryId)} disabled={busy}>Usar</Button>}
+              </>
+            ) : proposal ? (
+              <>
+                <span className="vp-sugg-note">Ninguna encaja. Propone una nueva:</span>
+                <strong>{proposal.name}</strong>
+                {proposal.parentName && <span className="vp-sugg-note">en {proposal.parentName}</span>}
+                <Button variant="outline" onClick={createCategory} disabled={busy}>Crear y usar</Button>
+              </>
+            ) : <span className="vp-sugg-note">No está segura: elegila a mano.</span>}
+          </div>
+          <div className="vp-sugg-row" style={{ alignItems: 'flex-start' }}>
+            <span className="vp-sugg-label">Tags</span>
+            {result.tags.length === 0 ? <span className="vp-sugg-note">Nada nuevo para agregar.</span> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                <div className="vp-sugg-tags">
+                  {result.tags.map((t, i) => (
+                    <label key={key(t)} className="vp-sugg-tag">
+                      <input type="checkbox" checked={selected.has(i)} onChange={() => toggle(i)} disabled={busy} />
+                      <span className="vp-sugg-tag-group">{t.groupName}:</span> {t.tagName}
+                      {!t.tagId && <span className="vp-sugg-tag-new" title="No existe: se crea en ese grupo al agregarlo">nuevo</span>}
+                    </label>
+                  ))}
+                </div>
+                <div>
+                  <Button variant="primary" onClick={addTags} disabled={busy || selected.size === 0}>
+                    Agregar {selected.size} {selected.size === 1 ? 'tag' : 'tags'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── helpers de estilo ────────────────────────────────────────────────────────────
 const tierBadge: React.CSSProperties = { marginLeft: 8, fontSize: 11, padding: '1px 6px', borderRadius: 6, background: '#f3f4f6', color: '#6b7280', cursor: 'help' };
 const xStyle: React.CSSProperties = { cursor: 'pointer', color: '#9ca3af', fontSize: 13, marginLeft: 2, userSelect: 'none' };
+/**
+ * El color solo marca lo que hay que mirar: lo que ya está bien (verde) va neutro y el punto
+ * de color lo sigue indicando; ámbar y rojo conservan el fondo para que salten a la vista.
+ */
+const NEUTRAL = { bg: '#fff', border: '#E5E7EB' };
 function rowBox(color: LinkColor): React.CSSProperties {
-  const c = COLORS[color];
+  const c = color === 'green' ? NEUTRAL : COLORS[color];
   return { display: 'flex', alignItems: 'center', gap: 12, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '10px 12px' };
 }
 function chip(color: LinkColor): React.CSSProperties {
-  const c = COLORS[color];
+  const c = color === 'green' ? { bg: '#F3F4F6', border: '#E5E7EB' } : COLORS[color];
   return { display: 'inline-flex', alignItems: 'center', gap: 6, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 999, padding: '4px 12px', fontSize: 14 };
 }
 /**

@@ -2,6 +2,7 @@
  * Modal para Crear/Editar Ingredientes
  */
 import { useState, useEffect, useRef } from 'react';
+import { validatedByText } from '../../../utils/validatedBy';
 import { Modal, Button, Input } from '../../../components/ui';
 import type { 
   Ingredient, 
@@ -12,6 +13,8 @@ import type {
 } from '../types';
 import { 
   RISK_LABELS, 
+  RISK_DESCRIPTIONS,
+  SCORE_HINT,
   RESTRICTION_TYPE_LABELS,
 } from '../types';
 import { apiService } from '../../../services/api.service';
@@ -193,19 +196,22 @@ export function IngredientModal({
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
+                {formData.toxicityLevel && (
+                  <small className="form-hint">{RISK_DESCRIPTIONS[formData.toxicityLevel as RiskLevel]}</small>
+                )}
               </div>
 
               <div className="form-group">
-                <label>Puntuación (1-10) *</label>
+                <label>Puntuación (0-10) *</label>
                 <Input
                   type="number"
-                  min="1"
+                  min="0"
                   max="10"
                   placeholder="Ej: 7"
                   value={formData.score}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    if (value >= 1 && value <= 10) {
+                    if (value >= 0 && value <= 10) {
                       onChange({ score: e.target.value });
                     } else if (e.target.value === '') {
                       onChange({ score: '' });
@@ -215,7 +221,9 @@ export function IngredientModal({
                   fullWidth
                 />
                 <small className="form-hint">
-                  Ingrese un valor entre 1 (peor) y 10 (mejor)
+                  {String(formData.score) === '0'
+                    ? '0 = no se evalúa: el ingrediente no cuenta en el puntaje del producto (por ejemplo, "Minerales del agua", que son trazas).'
+                    : SCORE_HINT}
                 </small>
               </div>
 
@@ -398,7 +406,10 @@ export function IngredientModal({
           <Button type="button" variant="outline" onClick={onClose} disabled={isValidating}>
             Cancelar
           </Button>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {editingIngredient?.isInspected && (
+              <span style={{ fontSize: 12, color: '#065f46' }}>✔ {validatedByText(editingIngredient.validatedByEmail, editingIngredient.validatedAt)}</span>
+            )}
             {editingIngredient && onValidate && (
               <Button
                 type="button"

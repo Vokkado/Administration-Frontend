@@ -3,18 +3,21 @@
  * de colores por producto. Clic en "Revisar" → wizard de validación paso a paso.
  */
 import { useCallback, useState } from 'react';
+import { UploaderFilter } from './UploaderFilter';
+import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { Button, DataTable, Pagination, SearchInput, PageHeader, Tooltip } from '../../components/ui';
 import type { DataTableColumn, DataTableSort } from '../../components/ui/DataTable';
 import { usePaginatedList, type PaginatedFetchParams } from '../../hooks/usePaginatedList';
-import { ValidationService, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
+import { ValidationService, needsPhotosText, needsPhotosShort, skippedPhotosText, type LinkColor, type ValidationQueueItem } from '../../services/validation.service';
 import { COLORS } from './composition';
+import './ValidationWizardPage.css';
 
 /** Qué cuenta cada color en la cola (la consulta solo cuenta vínculos de ingredientes). */
 const COUNT_HINTS: Record<LinkColor, (n: number) => string> = {
   green: (n) => `${n} ${n === 1 ? 'ingrediente ya existía' : 'ingredientes ya existían'} y no hace falta revisarlos.`,
-  yellow: (n) => `${n} ${n === 1 ? 'ingrediente se vinculó' : 'ingredientes se vincularon'} por aproximación o sinónimo: conviene revisarlos.`,
+  yellow: (n) => `${n} ${n === 1 ? 'ingrediente se vinculó' : 'ingredientes se vincularon'} por aproximación o sinónimo, o ya ${n === 1 ? 'existía' : 'existían'} pero nadie ${n === 1 ? 'lo' : 'los'} validó: conviene revisarlos.`,
   red: (n) => `${n} ${n === 1 ? 'ingrediente lo creó' : 'ingredientes los creó'} la IA: hay que validarlos.`,
 };
 
@@ -46,27 +49,86 @@ export function ValidationListPage() {
   // importó, así que al enriquecerlo quedaría enterrado al fondo de la cola en vez de
   // arriba, que es donde lo busca quien acaba de enriquecerlo.
   const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
+  // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
+  const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated'>('all');
+  // Filtro por quién lo cargó (mail).
+  const [uploader, setUploader] = useState('');
+  const [uploaderExact, setUploaderExact] = useState(false);
+  const pickUploader = (email: string, exact: boolean) => { setUploader(email); setUploaderExact(exact); setCurrentPage(1); };
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
         params.limit,
         params.offset,
         params.search,
-        sort.key as 'name' | 'createdAt' | 'updatedAt',
+        // La columna Vínculos ordena por la cantidad total de ingredientes vinculados.
+        // En "Validados" el orden por fecha es por cuándo se validó.
+        (sort.key === 'counts' ? 'links' : needsFilter === 'validated' && (sort.key === 'updatedAt' || sort.key === 'createdAt') ? 'validatedAt' : sort.key) as 'name' | 'createdAt' | 'updatedAt' | 'links' | 'validatedAt',
         sort.direction,
+        needsFilter === 'all' || needsFilter === 'rejected' || needsFilter === 'validated' ? undefined : needsFilter === 'yes',
+        needsFilter === 'rejected',
+        needsFilter === 'validated',
+        uploader || undefined,
+        uploaderExact,
       ).then((r) => ({ data: r.items, total: r.total })),
-    [sort],
+    [sort, needsFilter, uploader, uploaderExact],
   );
   const { items, total, loading, currentPage, totalPages, setCurrentPage, searchTerm, setSearchTerm } =
     usePaginatedList<ValidationQueueItem>({ fetchFn });
 
+  const renderCounts = (p: ValidationQueueItem) => (
+    <span>
+      <CountBadge n={p.counts.green} color="green" />
+      <CountBadge n={p.counts.yellow} color="yellow" />
+      <CountBadge n={p.counts.red} color="red" />
+      {!p.counts.green && !p.counts.yellow && !p.counts.red && <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>}
+    </span>
+  );
+
   const columns: DataTableColumn<ValidationQueueItem>[] = [
     {
-      key: 'image', header: '', width: '56px', render: (p) => p.image
+      key: 'image', header: '', width: '56px', hideOnMobile: true, render: (p) => p.image
         ? <img src={p.image} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#f3f4f6' }} />
         : <div style={{ width: 40, height: 40, borderRadius: 6, background: '#f3f4f6' }} />,
     },
-    { key: 'name', header: 'Producto', render: (p) => <strong>{p.name}</strong> },
+    {
+      key: 'name', header: 'Producto', render: (p) => (
+        <>
+          <strong>{p.name}</strong>
+          {p.uploaderEmail && (
+            <button type="button" className="vq-uploader" title="Ver solo los que cargó esta persona"
+              onClick={(e) => { e.stopPropagation(); pickUploader(p.uploaderEmail as string, true); }}>
+              👤 {p.uploaderEmail}
+            </button>
+          )}
+          {p.isRejected && (
+            <Tooltip content={`Rechazado${p.rejectedAt ? ` el ${new Date(p.rejectedAt).toLocaleDateString('es-UY')}` : ''}.${p.rejectedReason ? ` Motivo: ${p.rejectedReason}` : ''} Entrá para volverlo a la cola.`}>
+              <span className="vq-needs-photos vq-rejected">🚫 Rechazado{p.rejectedByEmail ? ` por ${p.rejectedByEmail.split('@')[0]}` : ''}</span>
+            </Tooltip>
+          )}
+          {needsFilter === 'validated' && (
+            <Tooltip content={validatedByText(p.validatedByEmail, p.validatedAt)}>
+              <span className="vq-needs-photos vq-validated">✅ {p.validatedByEmail ? p.validatedByEmail.split('@')[0] : 'sin registro'}{p.validatedAt ? ` · ${new Date(p.validatedAt).toLocaleDateString('es-UY')}` : ''}</span>
+            </Tooltip>
+          )}
+          {!!p.skippedLabelPhotos?.length && (
+            <Tooltip content={`Quien lo cargó avisó que el envase no tiene ${skippedPhotosText(p.skippedLabelPhotos)} (salteó esa foto en la app).`}>
+              <span className="vq-needs-photos vq-skipped">🚫 Sin {p.skippedLabelPhotos.map((s) => (s === 'nutritionFacts' ? 'tabla' : 'lista')).join(' ni ')} en el envase</span>
+            </Tooltip>
+          )}
+          {p.needsPhotos && (
+            <Tooltip content={`Esperando foto de ${needsPhotosText(p.needsPhotosParts)}.${p.needsPhotosNote ? ` Nota: ${p.needsPhotosNote}` : ''}`}>
+              <span className="vq-needs-photos">📷 Info insuficiente · {needsPhotosShort(p.needsPhotosParts)}</span>
+            </Tooltip>
+          )}
+          {/* En celular no entran las columnas Vínculos y acciones: van debajo del nombre. */}
+          <div className="vq-mobile-extra">
+            {renderCounts(p)}
+            <Button variant="primary" size="small" onClick={() => navigate(`/validation/${p.id}`)}>Revisar →</Button>
+          </div>
+        </>
+      ),
+    },
     { key: 'brand', header: 'Marca', hideOnMobile: true, width: '160px', render: (p) => p.brand || '—' },
     { key: 'barcode', header: 'Código', hideOnMobile: true, width: '170px', render: (p) => <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{p.barcode || '—'}</span> },
     {
@@ -96,14 +158,7 @@ export function ValidationListPage() {
       ),
     },
     {
-      key: 'counts', header: 'Vínculos', width: '140px', render: (p) => (
-        <span>
-          <CountBadge n={p.counts.green} color="green" />
-          <CountBadge n={p.counts.yellow} color="yellow" />
-          <CountBadge n={p.counts.red} color="red" />
-          {!p.counts.green && !p.counts.yellow && !p.counts.red && <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>}
-        </span>
-      ),
+      key: 'counts', header: 'Vínculos', sortable: true, width: '140px', hideOnMobile: true, render: renderCounts,
     },
   ];
 
@@ -120,6 +175,15 @@ export function ValidationListPage() {
               <span className="count-label">{total === 1 ? 'producto' : 'productos'}</span>
             </div>
 
+            <select className="vq-filter" value={needsFilter} aria-label="Filtrar por información"
+              onChange={(e) => { setNeedsFilter(e.target.value as 'all' | 'yes' | 'no' | 'rejected' | 'validated'); setCurrentPage(1); }}>
+              <option value="all">Todos</option>
+              <option value="yes">📷 Info insuficiente</option>
+              <option value="no">Con información</option>
+              <option value="rejected">🚫 Rechazados</option>
+              <option value="validated">✅ Validados</option>
+            </select>
+            <UploaderFilter value={uploader} exact={uploaderExact} onChange={pickUploader} />
             <div className="header-search">
               <SearchInput
                 value={searchTerm}
@@ -138,6 +202,7 @@ export function ValidationListPage() {
         emptyMessage="No hay productos pendientes de validación."
         actionsHeader=""
         actionsWidth="150px"
+        hideActionsOnMobile
         fixedLayout
         sort={sort}
         // Al cambiar el orden se vuelve a la página 1: seguir en la 5 con otro orden

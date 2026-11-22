@@ -592,6 +592,7 @@ export function IngredientsPage() {
               loading={variantsHook.loading}
               getIngredientName={variantsHook.getIngredientName}
               getAttributeName={variantsHook.getAttributeName}
+              isAutoAttribute={variantsHook.isAutoAttribute}
               onEdit={openEditVariantModal}
               onDelete={variantCrud.requestDelete}
               onValidationChange={variantCrud.requestValidation}
@@ -601,6 +602,11 @@ export function IngredientsPage() {
               // Al filtrar se vuelve a la página 1: con menos resultados, la actual puede no existir.
               onFilterInspectedChange={(next) => {
                 variantsHook.setFilterInspected(next);
+                variantsHook.setCurrentPage(1);
+              }}
+              filterAuto={variantsHook.filterAuto}
+              onFilterAutoChange={(next) => {
+                variantsHook.setFilterAuto(next);
                 variantsHook.setCurrentPage(1);
               }}
               sort={variantsHook.sort}

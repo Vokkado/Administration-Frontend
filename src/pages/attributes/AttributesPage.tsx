@@ -11,6 +11,7 @@ import { AttributeTypeManager } from './components/AttributeTypeManager';
 import { useAttributes } from './hooks/useAttributes';
 import { useCRUDActions } from '../../hooks/useCRUDActions';
 import type { Attribute, AttributeFormData } from './types';
+import { parseKeywords } from './types';
 import './AttributesPage.css';
 
 export function AttributesPage() {
@@ -56,6 +57,9 @@ export function AttributesPage() {
     typeId: '',
     isInspected: false,
     restrictionIds: [],
+    aiCriterion: '',
+    keywords: '',
+    excludeKeywords: '',
   });
 
   const openCreateModal = () => {
@@ -68,6 +72,9 @@ export function AttributesPage() {
       typeId: '',
       isInspected: false,
       restrictionIds: [],
+      aiCriterion: '',
+      keywords: '',
+      excludeKeywords: '',
     });
     setShowModal(true);
   };
@@ -82,6 +89,9 @@ export function AttributesPage() {
       typeId: attribute.typeId,
       isInspected: attribute.isInspected,
       restrictionIds: attribute.restrictionIds || [],
+      aiCriterion: attribute.aiCriterion ?? '',
+      keywords: (attribute.keywords ?? []).join(', '),
+      excludeKeywords: (attribute.excludeKeywords ?? []).join(', '),
     });
     setShowModal(true);
   };
@@ -105,6 +115,10 @@ export function AttributesPage() {
         score: parsedScore,
         reason: formData.reason || undefined,
         restrictionIds: formData.restrictionIds || [],
+        // Asignación automática: no toca productos (solo cómo se asigna a variantes nuevas).
+        aiCriterion: formData.aiCriterion.trim() || null,
+        keywords: parseKeywords(formData.keywords),
+        excludeKeywords: parseKeywords(formData.excludeKeywords),
         ...(editingAttribute ? {} : { isInspected: true }),
       };
 

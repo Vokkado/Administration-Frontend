@@ -14,6 +14,7 @@ import type {
 import { RESTRICTION_TYPE_LABELS, getAttributeTypeLabel } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
+import { useGoalsAdminView } from '../../../hooks/useGoalsAdminView';
 
 interface AttributeModalProps {
   show: boolean;
@@ -46,6 +47,13 @@ export function AttributeModal({
   onTypeCreated,
   onValidate,
 }: AttributeModalProps) {
+  // Quién usa el atributo (metas por rol y Embarazo), para "Lo usan: …".
+  const { attributeUsedBy } = useGoalsAdminView();
+  const usedBy = editingAttribute ? attributeUsedBy(editingAttribute.id) : [];
+  // El tipo "Metas" o "Embarazo" solo ordena la lista: lo que hace que cuente es el vínculo.
+  const selectedTypeName = attributeTypes.find((t) => t.id === formData.typeId)?.type;
+  const isGoalsType = selectedTypeName === 'Metas' || selectedTypeName === 'Embarazo';
+
   // Restrictions state
   const [restrictions, setRestrictions] = useState<Restriction[]>([]);
   const [loadingRestrictions, setLoadingRestrictions] = useState(false);
@@ -137,7 +145,6 @@ export function AttributeModal({
       'ILLNESS': 'illness',
       'VOLUNTARY': 'voluntary',
       'INVOLUNTARY': 'involuntary',
-      'GOAL': 'voluntary',
     };
     return typeMap[type] || 'voluntary';
   };
@@ -265,6 +272,54 @@ export function AttributeModal({
                 </select>
                 <small className="form-hint">
                   1 (peor) a 10 (mejor). Selecciona "No corresponde" si no aplica.
+                </small>
+              </div>
+
+              <div className="form-group attr-auto-section">
+                <label htmlFor="attribute-ai-criterion">Asignación automática</label>
+                {usedBy.length > 0 && (
+                  <p className="attr-used-by">
+                    <strong>Lo usan:</strong> {usedBy.join(', ')}
+                  </p>
+                )}
+                {usedBy.length === 0 && isGoalsType && (
+                  <p className="attr-used-by">
+                    El tipo solo ordena: este atributo todavía <strong>no lo usa ninguna meta ni el embarazo</strong>.
+                    Para que cuente, vinculalo en <strong>Metas y Embarazo</strong>.
+                  </p>
+                )}
+                <small className="form-hint">
+                  Con criterio o palabras clave, se asigna solo a las variantes nuevas. Cambiarlos no reclasifica las
+                  variantes que ya existen. "Excluir si dice" solo frena a las palabras clave.
+                </small>
+                <textarea
+                  id="attribute-ai-criterion"
+                  className="textarea"
+                  placeholder='Ej: Es carne, fiambre o embutido que se come crudo o curado (jamón crudo, salame…). NO: fiambres cocidos.'
+                  value={formData.aiCriterion}
+                  onChange={(e) => onChange({ aiCriterion: e.target.value })}
+                  rows={3}
+                  maxLength={1000}
+                />
+                <small className="form-hint">
+                  Criterio para la IA: cuándo una variante de ingrediente lleva este atributo. Con criterio, la IA lo
+                  asigna sola al cargar productos (queda para revisar en la validación). Vacío = solo a mano.
+                </small>
+                <Input
+                  label="Palabras clave"
+                  placeholder="jamon crudo, salame, carpaccio"
+                  value={formData.keywords}
+                  onChange={(e) => onChange({ keywords: e.target.value })}
+                />
+                <Input
+                  label="Excluir si dice"
+                  placeholder="cocido, sabor, aroma"
+                  value={formData.excludeKeywords}
+                  onChange={(e) => onChange({ excludeKeywords: e.target.value })}
+                />
+                <small className="form-hint">
+                  Separadas por coma, sin importar tildes ni mayúsculas. Se asignan sin IA. Cada una cuenta como
+                  palabra completa ("sal" no matchea "salsa"); con "=" adelante tiene que ser el nombre exacto ("=te").
                 </small>
               </div>
 

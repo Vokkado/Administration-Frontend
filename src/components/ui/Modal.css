@@ -64,6 +64,17 @@
   min-height: 0;
 }
 
+/* Margen interno por defecto del cuerpo y el pie de un modal. Cada página puede definir el suyo;
+   esto (prioridad cero, :where) cubre las que no lo hacen, para que el contenido nunca quede
+   pegado al borde del modal. */
+:where(.modal-body) {
+  padding: 24px 32px;
+}
+
+:where(.modal-footer) {
+  padding: 16px 32px;
+}
+
 /* Form helpers dentro de modales */
 .form-group {
   margin-bottom: 20px;
@@ -134,6 +145,14 @@
     font-size: 18px;
   }
 
+  :where(.modal-body) {
+    padding: 16px 20px;
+  }
+
+  :where(.modal-footer) {
+    padding: 16px 20px;
+  }
+
   .modal-error {
     margin: 12px 16px;
     padding: 10px 16px;
@@ -149,5 +168,27 @@
   .form-actions {
     margin-top: 16px;
     padding-top: 16px;
+  }
+
+  /* Pie de los modales: si los botones no entran en un renglón, bajan (alineados a la derecha)
+     en vez de salirse por la izquierda. Aplica también al grupo de botones que muchos pies
+     llevan dentro (ej. Validar + Guardar). */
+  .modal-footer,
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-footer > div,
+  .form-actions > div {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Con el tamaño de escritorio (10px 20px, 16px) dos botones ya no entran en un renglón de
+     375px y el pie terminaba con un botón por fila. */
+  .modal-footer .btn,
+  .form-actions .btn {
+    padding: 10px 14px;
+    font-size: 15px;
   }
 }

@@ -242,6 +242,137 @@
   justify-content: flex-end;
 }
 
+/* ── Orden de la etiqueta: número de posición + flechas, a la izquierda de cada fila ── */
+.vp-order-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-grey-500);
+}
+
+.vp-order-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  border-radius: 12px;
+  transition: opacity 0.15s ease, box-shadow 0.4s ease;
+}
+
+.vp-order-row.is-dragging { opacity: 0.45; }
+
+/* Recién movida (por número, flecha o arrastre): destello para ubicarla. */
+.vp-order-row.is-moved { box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.35); }
+
+/* Dónde va a caer: una línea del color de la marca en el hueco (arriba o abajo). */
+.vp-order-row.drop-before::before,
+.vp-order-row.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  pointer-events: none;
+}
+
+.vp-order-row.drop-before::before { top: -6px; }
+.vp-order-row.drop-after::after { bottom: -6px; }
+
+/* Asa de arrastre: la única parte de la fila que inicia el drag. */
+.vp-order-grip {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 1px;
+  color: var(--color-grey-300);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.vp-order-row:hover .vp-order-grip { color: var(--color-grey-500); }
+.vp-order-grip:hover { color: var(--color-primary) !important; }
+.vp-order-grip:active { cursor: grabbing; }
+.vp-order-grip.is-disabled { cursor: default; opacity: 0.5; }
+
+/* Discreto a propósito: no tiene que competir con los números de los pasos del wizard. */
+.vp-order-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-shrink: 0;
+  width: 30px;
+}
+
+/* Posición editable: parece texto hasta que se pasa el mouse o se enfoca. */
+.vp-order-num {
+  width: 28px;
+  padding: 1px 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  text-align: center;
+  color: var(--color-grey-500);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+}
+
+.vp-order-num:hover:not(:disabled) { border-color: var(--color-grey-300); color: var(--color-grey-700); }
+
+.vp-order-num:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: #fff;
+  color: var(--color-grey-800);
+  box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.12);
+}
+
+.vp-order-num:disabled { cursor: default; }
+
+.vp-order-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-grey-300);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.vp-order-row:hover .vp-order-arrow:not(:disabled),
+.vp-order-arrow:focus-visible { color: var(--color-grey-500); }
+
+.vp-order-arrow:hover:not(:disabled) {
+  background: var(--color-grey-100);
+  color: var(--color-primary);
+}
+
+.vp-order-arrow.is-edge { visibility: hidden; }
+
+.vp-order-arrow:disabled {
+  cursor: default;
+}
+
+.vp-order-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Fila de ingrediente ─────────────────────────────────────────────── */
 .vp-row-head {
   display: flex;
@@ -260,6 +391,37 @@
   flex-shrink: 0;
 }
 
+/* Señales del ingrediente (azúcar, sodio…), debajo del nombre */
+.vp-signals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.vp-signals-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.vp-signals-edit {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.vp-signals-edit:hover {
+  color: var(--color-primary-dark);
+}
+
 /* ── Panel de revisión de un ingrediente creado por la IA (filas rojas) ── */
 .vp-ai-panel {
   margin-top: 12px;
@@ -268,6 +430,61 @@
   border: 1px solid #fecaca;
   border-radius: 10px;
 }
+
+/* Ingrediente que ya existía pero nadie validó (filas amarillas): mismo panel, en amarillo. */
+.vp-ai-panel--pending {
+  border-color: #fde68a;
+  background: rgba(255, 251, 235, 0.85);
+}
+
+.vp-ai-tag--pending {
+  background: #f59e0b;
+}
+
+/* Botón que abre/cierra el panel de validación (arranca cerrado). */
+.vp-ai-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.vp-ai-toggle:hover { background: #fef2f2; border-color: #fca5a5; }
+
+.vp-ai-toggle-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.vp-ai-toggle-caret {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.vp-ai-toggle.is-open .vp-ai-toggle-caret { transform: rotate(180deg); }
+
+/* Amarillo: ya existía pero nadie lo validó. */
+.vp-ai-toggle--pending { border-color: #fde68a; color: #b45309; }
+.vp-ai-toggle--pending:hover { background: #fffbeb; border-color: #fcd34d; }
+.vp-ai-toggle--pending .vp-ai-toggle-tag { background: #f59e0b; }
 
 .vp-ai-head {
   display: flex;
@@ -284,7 +501,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
   cursor: help;
 }
@@ -325,7 +542,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-grey-500);
 }
 
@@ -450,7 +667,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-grey-500);
   margin-bottom: 6px;
 }
@@ -587,7 +804,10 @@
 }
 
 .vp-picker-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   width: 100%;
   text-align: left;
   padding: 9px 10px;
@@ -606,6 +826,20 @@
   color: var(--color-primary-dark);
   font-weight: 600;
 }
+
+/* Al lado del nombre: ingrediente al que apunta, origen y uso (buscador de variantes). */
+.vp-picker-item-name { flex: 1 1 auto; min-width: 0; }
+
+.vp-picker-item-extra {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-weight: 400;
+}
+
+.vp-picker-item-parent { font-size: 12px; color: var(--color-grey-500); }
+.vp-picker-item-count { font-size: 11px; color: var(--color-grey-400); font-variant-numeric: tabular-nums; }
 
 .vp-picker-mark {
   background: rgba(245, 158, 11, 0.28);
@@ -689,3 +923,205 @@
   text-underline-offset: 3px;
   cursor: help;
 }
+
+/* ── Celular: las filas apilan nombre y botones; nada se sale del ancho ───────────────── */
+@media (max-width: 720px) {
+  .vp-row-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .vp-row-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Comparten el renglón; si no entran (filas rojas: 3 botones), el que sobra baja. */
+  .vp-row-actions .btn {
+    flex: 1 1 auto;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .vp-section-body {
+    padding: 10px;
+  }
+
+  .vp-section-actions {
+    justify-content: flex-start;
+  }
+
+  .vp-ai-fields .btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ── Alérgenos: "Contiene" y "Puede contener" por separado ──────────────── */
+.vp-allergen-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vp-allergen-group + .vp-allergen-group {
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-grey-200);
+}
+
+.vp-allergen-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--color-grey-600);
+}
+
+.vp-allergen-group-count {
+  font-weight: 600;
+  color: var(--color-grey-400);
+}
+
+/* Pasa el alérgeno al otro grupo. */
+.vp-allergen-move {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--color-grey-400);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vp-allergen-move:hover:not(:disabled) { color: var(--color-primary); }
+.vp-allergen-move:disabled { cursor: default; opacity: 0.5; }
+
+/* ── Sugerencia de categoría y tags con IA (paso "Más info") ───────────── */
+.vp-sugg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #ddd6fe;
+  border-radius: 10px;
+  background: #faf5ff;
+}
+
+.vp-sugg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vp-sugg-note { margin: 0; font-size: 12px; color: var(--color-grey-500); }
+
+.vp-sugg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.vp-sugg-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-grey-600);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.vp-sugg-tags { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+
+/* Chip tildable: fondo blanco y texto oscuro (buen contraste sobre el panel lila). Pisa el estilo
+   genérico de .form-group label (display block, margen, verde) porque el panel vive en un form-group. */
+.form-group label.vp-sugg-tag,
+.vp-sugg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid #ddd6fe;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-grey-800);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.vp-sugg-tag:has(input:checked) { border-color: #a78bfa; }
+.vp-sugg-tag input { margin: 0; accent-color: #7c3aed; }
+
+.vp-sugg-tag-group { color: var(--color-grey-500); font-weight: 400; }
+
+.vp-sugg-tag-new {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #6d28d9;
+  background: #ede9fe;
+}
+
+/* ── Nutrientes: edición dentro de la fila (sin modal, la etiqueta queda a la vista) ── */
+.vp-nutri-inline { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+/* Unidad cargada que no corresponde al nutriente (p. ej. valor energético en g). */
+.vp-nutri-unit-warn { flex-basis: 100%; max-width: 360px; margin-left: auto; font-size: 12px; text-align: right; color: #b45309; }
+.vp-nutri-value.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.vp-nutri-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; cursor: pointer; }
+.vp-nutri-value[aria-invalid="true"] { border-color: var(--color-error); }
+
+/* Porción, arriba de la tabla nutricional (mismo tamaño que los campos de cada fila). */
+.vp-portion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-grey-200);
+  border-radius: 10px;
+  background: var(--color-grey-50, #f9fafb);
+}
+.vp-portion-label { font-size: 14px; font-weight: 600; color: var(--color-grey-800); }
+.vp-portion-amount.input { width: 92px; padding: 6px 10px; font-size: 14px; border-width: 1.5px; font-variant-numeric: tabular-nums; text-align: right; }
+.vp-portion-unit.input { width: 72px; padding: 6px 8px; font-size: 14px; border-width: 1.5px; }
+.vp-portion-hint { flex: 1 1 200px; font-size: 12px; color: var(--color-grey-500); }
+.vp-nutri-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0;
+  border: 1.5px solid var(--color-grey-300); border-radius: 8px;
+  background: #fff; color: var(--color-grey-600); font-size: 14px; cursor: pointer;
+}
+.vp-nutri-btn.is-save { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+.vp-nutri-btn:disabled { opacity: 0.4; cursor: default; }
+/* El valor guardado es clickeable para editarlo. */
+.vp-nutri-amount {
+  padding: 2px 6px; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-weight: 700; color: inherit; cursor: pointer;
+}
+.vp-nutri-amount:hover { background: rgba(0, 0, 0, 0.05); }
+.vp-nutri-amount.is-wrong-unit { color: #b45309; background: #fffbeb; box-shadow: inset 0 0 0 1px #fcd34d; }
+.vp-nutri-new {
+  margin-left: 6px; padding: 0 6px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; color: #92400e; background: #fde68a;
+}
+
+/* Acciones de cada fila como íconos: no compiten con el único botón primario (Validar). */
+.vp-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border: 0; border-radius: 8px; background: none;
+  color: var(--color-grey-500); cursor: pointer;
+}
+.vp-icon-btn:hover:not(:disabled) { background: var(--color-grey-100); color: var(--color-grey-800); }
+.vp-icon-btn.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
+.vp-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.vp-row-actions { align-items: center; }

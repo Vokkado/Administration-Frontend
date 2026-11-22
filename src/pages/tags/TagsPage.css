@@ -1,0 +1,529 @@
+:where(.page-tags) {
+  /* ===== Pestañas (mismo estilo que Metas e Ingredientes) ===== */
+  .tags-page-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .tags-page-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--color-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .tags-page-tab:hover {
+    color: var(--color-primary);
+  }
+
+  .tags-page-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  /* ===== Tablas ===== */
+  .tags-table-container {
+    background: var(--color-white);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+    margin-bottom: 24px;
+    animation: slideUp 0.5s ease-out 0.2s both;
+  }
+
+  .td-name {
+    font-weight: 600;
+    color: var(--color-primary-dark);
+  }
+
+  .tags-inline-meta {
+    display: block;
+    font-size: 12px;
+    color: var(--color-secondary);
+    margin-top: 2px;
+  }
+
+  .text-muted {
+    color: var(--color-grey);
+  }
+
+  /* Datos que en escritorio tienen su columna y en celular van debajo del nombre. */
+  .mobile-only {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .mobile-only {
+      display: block;
+    }
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid;
+  }
+
+  .badge-type {
+    background: var(--color-info-light);
+    color: #1565C0;
+    border-color: #42A5F5;
+  }
+
+  .badge-open {
+    background: var(--color-success-light);
+    color: var(--color-primary-dark);
+    border-color: var(--color-primary);
+  }
+
+  .badge-closed {
+    background: var(--color-friendly-white);
+    color: var(--color-secondary);
+    border-color: var(--color-border-light);
+  }
+
+  .tags-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .tags-link-btn:disabled {
+    color: var(--color-grey);
+    cursor: default;
+    text-decoration: none;
+  }
+
+  .tags-pending-link {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-warning-dark, #b45309);
+  }
+
+  .action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-secondary);
+  }
+
+  .action-btn:hover:not(:disabled) {
+    background: var(--color-friendly-white);
+    transform: scale(1.1);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .tags-actions {
+    display: flex;
+    gap: 2px;
+  }
+
+  .icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
+
+  /* ===== Barra de filtros (pestañas Tags y Productos) ===== */
+  .tags-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .tags-toolbar .select {
+    width: auto;
+    min-width: 180px;
+    max-width: 100%;
+  }
+
+  .tags-toolbar-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-primary-dark);
+    cursor: pointer;
+  }
+
+  .tags-toolbar-spacer {
+    flex: 1;
+  }
+
+  .select {
+    padding: 10px 14px;
+    border: 2px solid var(--color-border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    cursor: pointer;
+  }
+
+  .select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  /* ===== Chips de tags ===== */
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--color-primary);
+    background: var(--color-success-light);
+    color: var(--color-primary-dark);
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+  }
+
+  /* Solo para mostrar (sin botón de quitar): el texto corre seguido si no entra en una línea. */
+  .tag-chip.static {
+    display: inline-block;
+  }
+
+  .tag-chip-group {
+    font-weight: 500;
+    color: var(--color-secondary);
+  }
+
+  /* Creado por la IA y sin revisar todavía. */
+  .tag-chip.pending {
+    border-style: dashed;
+    border-color: var(--color-warning, #f59e0b);
+    background: #fff8e6;
+  }
+
+  /* Opción sin elegir (se toca para agregarla). */
+  .tag-chip.option {
+    border-color: var(--color-border-light);
+    background: var(--color-white);
+    color: var(--color-secondary);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .tag-chip.option:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+  }
+
+  .tag-chip.new {
+    border-style: dashed;
+  }
+
+  .tag-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: -4px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .tag-chip-remove:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  /* ===== Producto en la tabla ===== */
+  .tags-product-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .tags-product-thumb {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: contain;
+    background: var(--color-friendly-white);
+  }
+
+  .tags-product-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .tags-product-mobile-chips {
+    margin-top: 8px;
+  }
+
+  @media (max-width: 767px) {
+    .tags-product-cell {
+      align-items: flex-start;
+    }
+  }
+
+  /* ===== Buscador de tags (filtro de productos, fusionar, editar tags) ===== */
+  .tag-search {
+    position: relative;
+    min-width: 220px;
+    flex: 1 1 260px;
+    max-width: 420px;
+  }
+
+  .tag-search input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border: 2px solid var(--color-border-light);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+  }
+
+  .tag-search input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .tag-search-results {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    max-height: 280px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Dentro de un modal la lista va en el flujo: flotante, la tapa el pie del modal. */
+  .tag-search.inline .tag-search-results {
+    position: static;
+    box-shadow: none;
+    margin-top: 4px;
+  }
+
+  .tag-search-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: var(--color-primary-dark);
+    cursor: pointer;
+  }
+
+  .tag-search-option:hover,
+  .tag-search-option.selected {
+    background: var(--color-friendly-white);
+  }
+
+  .tag-search-option-meta {
+    font-size: 12px;
+    color: var(--color-secondary);
+    white-space: nowrap;
+  }
+
+  .tag-search-empty {
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--color-grey);
+  }
+
+  /* ===== Modales ===== */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-group > label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+  }
+
+  .form-group input[type='text'] {
+    padding: 10px 14px;
+    border: 2px solid var(--color-border-light);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .form-group input[type='text']:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .form-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-secondary);
+  }
+
+  .tags-note {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    background: var(--color-friendly-white);
+    color: var(--color-secondary);
+  }
+
+  .tags-note.ai {
+    background: #fff8e6;
+    color: #8a5a00;
+  }
+
+  .tags-radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+  }
+
+  .tags-radio-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .tags-category-list {
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+
+  .tags-category-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .tags-category-list .parent {
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .tags-category-list .child {
+    padding-left: 22px;
+    font-weight: 400;
+  }
+
+  /* Editor de tags de un producto: un bloque por grupo. */
+  .product-tag-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .product-tag-group {
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .product-tag-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .product-tag-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+  }
+
+  .product-tag-group-head .tags-inline-meta {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .product-tag-group.ai-touched {
+    background: #fffcf2;
+    margin: 0 -12px;
+    padding: 10px 12px 14px;
+    border-radius: 10px;
+  }
+
+  @media (max-width: 767px) {
+    .tags-toolbar .select,
+    .tag-search {
+      flex: 1 1 100%;
+      max-width: none;
+    }
+  }
+}

@@ -753,7 +753,8 @@
   .mp-selected-list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    /* Aire arriba/abajo para que la línea de "soltar acá" de la primera/última fila no se corte. */
+    padding: 4px 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -762,6 +763,7 @@
   }
 
   .mp-selected-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -769,6 +771,51 @@
     background: rgba(91, 136, 6, 0.07);
     border: 1px solid var(--color-primary);
     border-radius: 10px;
+    transition: opacity 0.15s ease, background-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .mp-selected-item.is-dragging {
+    opacity: 0.4;
+  }
+
+  /* Recién movida (por número o arrastre): destello para ubicarla en su nuevo lugar. */
+  .mp-selected-item.is-moved {
+    background: rgba(91, 136, 6, 0.22);
+    box-shadow: 0 0 0 3px rgba(91, 136, 6, 0.18);
+  }
+
+  /* Línea que marca dónde va a caer la fila arrastrada. */
+  .mp-selected-item.drop-before::before,
+  .mp-selected-item.drop-after::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--color-primary);
+    pointer-events: none;
+  }
+
+  .mp-selected-item.drop-before::before { top: -5px; }
+  .mp-selected-item.drop-after::after { bottom: -5px; }
+
+  .mp-drag-handle {
+    flex-shrink: 0;
+    padding: 2px 2px;
+    color: var(--color-grey-400);
+    font-size: 16px;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .mp-drag-handle:hover {
+    color: var(--color-primary-dark);
+  }
+
+  .mp-drag-handle:active {
+    cursor: grabbing;
   }
 
   .mp-selected-item .mp-name {
@@ -884,6 +931,81 @@
   .modal-picker .mp-option.is-selected {
     color: var(--color-primary-dark);
     font-weight: 600;
+  }
+
+  /* ── Reemplazar una variante elegida ─────────────────────────────────── */
+  .mp-swap.is-active,
+  .mp-swap.is-active:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .mp-selected-item.is-replacing {
+    background: rgba(91, 136, 6, 0.16);
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+
+  .mp-replace-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(91, 136, 6, 0.1);
+    border: 1px dashed var(--color-primary);
+    font-size: 13px;
+    color: var(--color-grey-800);
+  }
+
+  .mp-replace-banner > span { flex: 1; min-width: 0; }
+
+  .mp-replace-cancel {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--color-grey-300);
+    border-radius: 6px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--color-grey-700);
+    cursor: pointer;
+  }
+
+  .mp-replace-cancel:hover { border-color: var(--color-grey-400); }
+
+  /* En modo reemplazo las opciones son <button>: se les saca el estilo nativo. */
+  .modal-picker .mp-option-replace {
+    width: 100%;
+    border: none;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .modal-picker .mp-option-replace:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: none;
+  }
+
+  .mp-option-replace .mp-swap-icon {
+    flex-shrink: 0;
+    width: 17px;
+    text-align: center;
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .mp-option-replace .mp-name { flex: 1; }
+
+  .mp-sibling-tag {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(91, 136, 6, 0.12);
+    font-size: 11px;
+    color: var(--color-primary-dark);
   }
 
   .modal-picker .mp-option input[type="checkbox"] {
@@ -1211,6 +1333,36 @@
 
     .bulk-score-actions .bulk-score-btn {
       min-height: 48px;
+    }
+
+    /* Desglose de puntaje: el encabezado de escritorio (círculo de 100px + nombre a 20px)
+       se come media pantalla del teléfono. */
+    .score-header {
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+    }
+
+    .score-circle-filled {
+      width: 64px;
+      height: 64px;
+    }
+
+    .score-circle-number {
+      font-size: 24px;
+    }
+
+    .score-product-name {
+      font-size: 16px;
+    }
+
+    .score-breakdown-table th,
+    .score-breakdown-table td {
+      padding: 8px;
+    }
+
+    .score-logs {
+      padding: 14px;
     }
   }
 }

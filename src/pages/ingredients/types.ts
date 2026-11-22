@@ -12,6 +12,9 @@ export interface Ingredient {
   score: number;
   reason?: string;
   isInspected: boolean;
+  /** Quién lo validó en esta pantalla y cuándo (null si nadie / antes del registro). */
+  validatedByEmail?: string | null;
+  validatedAt?: string | null;
   /** Lo creó la IA al cargar un producto (no cambia al validarlo). */
   createdByAi?: boolean;
   /** Productos distintos que lo usan (por cualquiera de sus variantes). Viene en el listado. */
@@ -27,10 +30,17 @@ export interface IngredientVariant {
   ingredientId: string;
   name: string;
   isInspected: boolean;
+  /** Quién la validó en esta pantalla y cuándo (null si nadie / antes del registro). */
+  validatedByEmail?: string | null;
+  validatedAt?: string | null;
   /** La creó la IA al cargar un producto (no cambia al validarla). */
   createdByAi?: boolean;
   /** Productos distintos que la usan. Viene en el listado. */
   productCount?: number;
+  /** Solo en el listado admin: el ingrediente al que apunta y su estado (para el buscador). */
+  ingredientName?: string;
+  ingredientInspected?: boolean;
+  ingredientCreatedByAi?: boolean;
   attributeIds?: string[];
   createdAt: string;
   updatedAt: string;
@@ -50,6 +60,9 @@ export interface AttributeForVariant {
   typeId: string;
   isInspected: boolean;
   restrictionIds?: string[];
+  /** Asignación automática (Metas, Embarazo…): si tiene criterio o palabras clave, se asigna solo. */
+  aiCriterion?: string | null;
+  keywords?: string[];
 }
 
 export interface AttributeTypeForVariant {
@@ -281,6 +294,25 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
   'LOW': 'Bajo',
   'NONE': 'Ninguno'
 };
+
+/**
+ * Qué significa cada nivel de riesgo y cuánto pesa en el puntaje del producto (máximos con el
+ * ingrediente en primer lugar; ver Pasos 2 y 3 de ProductScoringService en el backend). Lo bueno
+ * que es el ingrediente, aunque no tenga riesgo, lo mide la puntuación (SCORE_HINT).
+ */
+export const RISK_DESCRIPTIONS: Record<RiskLevel, string> = {
+  NONE: 'Alimentos sin riesgo propio: verduras, frutas, legumbres, cereales, carnes, pescados, leche, huevo, agua, aceites y especias. No resta. Qué tan bueno es el ingrediente, tenga riesgo o no, se refleja en la puntuación.',
+  LOW: 'Ingredientes a moderar (como la sal y los azúcares refinados o agregados) o aditivos con alguna evidencia de efectos no deseados. Resta hasta unos 7 puntos si es el ingrediente principal; menos si está más abajo en la lista.',
+  MEDIUM: 'Riesgo moderado: aditivos con límites de consumo bajos o evidencia de efectos adversos (por ejemplo, ciertos conservantes o colorantes). Resta hasta unos 13 puntos.',
+  MEDIUM_HIGH: 'Riesgo considerable: evitar en consumo frecuente. Resta hasta unos 18 puntos.',
+  HIGH: 'Riesgo alto (por ejemplo, grasas trans industriales o aditivos cuestionados). Resta lo máximo: hasta unos 20 puntos.',
+};
+
+/** Qué mide la puntuación del ingrediente (1–10), con ejemplos reales del catálogo. */
+export const SCORE_HINT =
+  'Nota general del ingrediente: lo que aporta (nutrientes, qué tan natural o procesado es) menos lo que ' +
+  'puede perjudicar. 1 = muy malo, 10 = excelente. Ej.: tomate 10, harina de trigo 6, azúcar 4, ' +
+  'grasa hidrogenada 3. 0 = no se evalúa (trazas, como "Minerales del agua").';
 
 export const RISK_COLORS: Record<RiskLevel, string> = {
   'HIGH': '#D32F2F',

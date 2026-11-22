@@ -297,11 +297,20 @@
     color: var(--color-secondary);
   }
 
+  /* Celular: una sola fila de 3 botones iguales (con flex, "Todos" caía solo a otro renglón). */
   @media (max-width: 767px) {
+    .origin-filter .filter-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
     .origin-filter .filter-btn {
-      flex: 1 1 auto;
-      padding: 8px 10px;
-      font-size: 13px;
+      min-width: 0;
+      padding: 8px 6px;
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: normal;
     }
   }
 
@@ -1003,6 +1012,62 @@
   .inherited-restrictions-section {
     padding-bottom: 16px;
     border-bottom: 2px solid var(--color-border-light);
+  }
+
+  /* Metas y embarazo (VariantModal): mismo bloque que las restricciones heredadas */
+  .variant-signals-section {
+    margin-bottom: 4px;
+  }
+
+  .variant-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .variant-suggestions-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-secondary);
+  }
+
+  .variant-suggestion-add {
+    border: 1px dashed var(--color-primary);
+    background: var(--color-success-light);
+    color: var(--color-primary-dark);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .variant-suggestion-add:hover {
+    background: var(--color-white);
+  }
+
+  .variant-suggestion-detail {
+    font-weight: 500;
+    opacity: 0.8;
+  }
+
+  .variant-signals-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: var(--color-friendly-white);
+  }
+
+  .variant-signals-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--color-secondary);
   }
 
   .inherited-restrictions-empty {

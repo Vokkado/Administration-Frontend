@@ -189,6 +189,13 @@ export function EnrichmentPage() {
 
   const tooMany = selected.size > MAX_PER_RUN;
 
+  const renderResult = (id: string) => {
+    const r = results.get(id);
+    if (!r) return null;
+    const ui = STATUS_UI[r.status as RowStatus];
+    return <StatusBadge variant={ui.variant} title={resultHint(r)}>{ui.label}</StatusBadge>;
+  };
+
   const columns: DataTableColumn<EnrichCandidate>[] = [
     {
       key: 'select',
@@ -209,7 +216,7 @@ export function EnrichmentPage() {
       ),
     },
     {
-      key: 'image', header: '', width: '56px', render: (p) => p.image
+      key: 'image', header: '', width: '56px', hideOnMobile: true, render: (p) => p.image
         ? <img src={p.image} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#f3f4f6' }} />
         : <div style={{ width: 40, height: 40, borderRadius: 6, background: '#f3f4f6' }} />,
     },
@@ -222,6 +229,8 @@ export function EnrichmentPage() {
         <div className="enrich-name">
           <strong>{p.name}</strong>
           {p.brand && <span className="enrich-brand">{p.brand}</span>}
+          {/* En celular la columna Resultado no entra: el resultado va debajo del nombre. */}
+          {results.has(p.id) && <span className="enrich-result-inline">{renderResult(p.id)}</span>}
         </div>
       ),
     },
@@ -242,13 +251,8 @@ export function EnrichmentPage() {
       ),
     },
     {
-      key: 'result', header: 'Resultado', width: '150px', align: 'center',
-      render: (p) => {
-        const r = results.get(p.id);
-        if (!r) return <span style={{ color: '#d1d5db' }}>—</span>;
-        const ui = STATUS_UI[r.status as RowStatus];
-        return <StatusBadge variant={ui.variant} title={resultHint(r)}>{ui.label}</StatusBadge>;
-      },
+      key: 'result', header: 'Resultado', width: '150px', align: 'center', hideOnMobile: true,
+      render: (p) => renderResult(p.id) ?? <span style={{ color: '#d1d5db' }}>—</span>,
     },
   ];
 
@@ -364,6 +368,8 @@ export function EnrichmentPage() {
         actionsHeader=""
         actionsWidth="150px"
         actionsAlign="right"
+        // En celular se enriquece marcando la fila y usando "Enriquecer seleccionados".
+        hideActionsOnMobile
         fixedLayout
         renderActions={(p) => (
           <Button variant="outline" disabled={running} onClick={() => run([p.id])}>

@@ -2,10 +2,11 @@
  * Componente de Tabla de Atributos
  */
 import { useMemo } from 'react';
-import { DataTable } from '../../../components/ui';
+import { DataTable, AttributeBadge } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { Attribute, AttributeType } from '../types';
 import { getScoreColor } from '../types';
+import { useGoalsAdminView } from '../../../hooks/useGoalsAdminView';
 import { getAttributeDisplayName } from '../../ingredients/types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
@@ -31,6 +32,7 @@ export function AttributeTable({
   validatingId,
   getTypeName,
 }: AttributeTableProps) {
+  const { attributeUsedBy } = useGoalsAdminView();
   const columns = useMemo<DataTableColumn<Attribute>[]>(
     () => [
       {
@@ -48,6 +50,35 @@ export function AttributeTable({
             {getTypeName(attribute.typeId)}
           </span>
         ),
+      },
+      {
+        // Metas (por rol) y Embarazo que usan el atributo; "Auto" si la IA lo asigna sola.
+        key: 'usedBy',
+        header: 'Lo usan',
+        hideOnMobile: true,
+        render: (attribute) => {
+          const usedBy = attributeUsedBy(attribute.id);
+          const auto = !!attribute.aiCriterion || (attribute.keywords?.length ?? 0) > 0;
+          return usedBy.length > 0 || auto ? (
+            <span className="attr-badge-row">
+              {usedBy.map((name) => (
+                <AttributeBadge key={name} label={name} size="small" />
+              ))}
+              {auto && <span className="attr-auto-tag" title="Se asigna solo (criterio para la IA o palabras clave)">Auto</span>}
+            </span>
+          ) : (
+            <span
+              className="score-badge"
+              style={{
+                backgroundColor: '#F5F5F5',
+                color: '#9E9E9E',
+                borderColor: '#BDBDBD',
+              }}
+            >
+              —
+            </span>
+          );
+        },
       },
       {
         key: 'score',
@@ -144,7 +175,7 @@ export function AttributeTable({
         },
       },
     ],
-    [getTypeName, onValidationChange, validatingId]
+    [getTypeName, onValidationChange, validatingId, attributeUsedBy]
   );
 
   const renderActions = useMemo(

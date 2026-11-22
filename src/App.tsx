@@ -24,19 +24,25 @@ const EnrichmentPage = lazy(() => import('./pages/enrichment/EnrichmentPage').th
 const CategoriesPage = lazy(() => import('./pages/categories/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const IngredientsPage = lazy(() => import('./pages/ingredients/IngredientsPage').then(m => ({ default: m.IngredientsPage })));
 const NutritionFactPage = lazy(() => import('./pages/nutrition_facts/NutritionFactPage').then(m => ({ default: m.NutritionFactPage })));
+const GoalsPage = lazy(() => import('./pages/goals/GoalsPage').then(m => ({ default: m.GoalsPage })));
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
 const BillingPlansPage = lazy(() => import('./pages/billing-plans/BillingPlansPage').then(m => ({ default: m.BillingPlansPage })));
+const ScoreFamiliesPage = lazy(() => import('./pages/score-families/ScoreFamiliesPage').then(m => ({ default: m.ScoreFamiliesPage })));
+const ScorePhotosPage = lazy(() => import('./pages/score-photos/ScorePhotosPage').then(m => ({ default: m.ScorePhotosPage })));
 const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default: m.FaqsPage })));
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
 const AttributesPage = lazy(() => import('./pages/attributes/AttributesPage').then(m => ({ default: m.AttributesPage })));
+const TagsPage = lazy(() => import('./pages/tags/TagsPage').then(m => ({ default: m.TagsPage })));
 const NotificationsPage = lazy(() => import('./pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const ProductStatisticsPage = lazy(() => import('./pages/statistics/ProductStatisticsPage').then(m => ({ default: m.ProductStatisticsPage })));
 const UserStatisticsPage = lazy(() => import('./pages/statistics/UserStatisticsPage').then(m => ({ default: m.UserStatisticsPage })));
 const BadgesPage = lazy(() => import('./pages/statistics/BadgesPage').then(m => ({ default: m.BadgesPage })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then(m => ({ default: m.LegalPage })));
+const AppVersionsPage = lazy(() => import('./pages/app-versions/AppVersionsPage').then(m => ({ default: m.AppVersionsPage })));
+const SessionsPage = lazy(() => import('./pages/sessions/SessionsPage').then(m => ({ default: m.SessionsPage })));
 const AccessRequestsPage = lazy(() => import('./pages/access-requests/AccessRequestsPage').then(m => ({ default: m.AccessRequestsPage })));
 const ProfessionalVerificationsPage = lazy(() => import('./pages/professional-verifications/ProfessionalVerificationsPage').then(m => ({ default: m.ProfessionalVerificationsPage })));
 
@@ -136,6 +142,36 @@ function App() {
               }
             />
 
+            {/* Metas: admin y editor de catálogo ven y ajustan; activar / desactivar es solo admin. */}
+            <Route
+              path="/goals"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <GoalsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Familias del puntaje: justificación del máximo de cada familia (la ve el usuario en la explicación del puntaje). */}
+            <Route
+              path="/score-families"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <ScoreFamiliesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fotos para el puntaje: tablas nutricionales que mandan los usuarios cuando el puntaje v4 queda aproximado. */}
+            <Route
+              path="/score-photos"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <ScorePhotosPage />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/users"
               element={
@@ -227,6 +263,15 @@ function App() {
             />
 
             <Route
+              path="/tags"
+              element={
+                <ProtectedRoute roles={CATALOG_ROLES}>
+                  <TagsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/notifications"
               element={
                 <ProtectedRoute>
@@ -267,6 +312,25 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LegalPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/app-versions"
+              element={
+                <ProtectedRoute>
+                  <AppVersionsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/sessions"
+              element={
+                // Sus propias sesiones: cualquier usuario del panel (no solo admin).
+                <ProtectedRoute roles={PANEL_ROLES}>
+                  <SessionsPage />
                 </ProtectedRoute>
               }
             />

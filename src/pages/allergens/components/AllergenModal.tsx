@@ -115,7 +115,6 @@ export function AllergenModal({
       'ILLNESS': 'illness',
       'VOLUNTARY': 'voluntary',
       'INVOLUNTARY': 'involuntary',
-      'GOAL': 'voluntary',
     };
     return typeMap[type] || 'voluntary';
   };

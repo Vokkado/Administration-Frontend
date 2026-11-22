@@ -1,0 +1,92 @@
+/* AttributeBadge - atributo automático de una variante (Metas, Embarazo…) */
+.attr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  border: 1px solid var(--color-warning-darker);
+  background: var(--color-warning-light);
+  color: var(--color-warning-darker);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.attr-badge-regular {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.attr-badge-small {
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+.attr-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Puesto por la IA, sin validar: mismo color, borde punteado */
+.attr-badge-pending {
+  border-style: dashed;
+  background: var(--color-white);
+}
+
+/* Sugerido (todavía no guardado) */
+.attr-badge-suggested {
+  border-style: dashed;
+  border-color: var(--color-primary);
+  background: var(--color-success-light);
+  color: var(--color-primary-dark);
+}
+
+.attr-badge-note {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.attr-badge:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Fila de etiquetas (tablas, filas del wizard) */
+.attr-badge-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+/* "Auto": el atributo se asigna solo (criterio para la IA o palabras clave) */
+.attr-auto-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--color-info-light);
+  color: #1565c0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: default;
+}
+
+/* "Lo usan: Reducir el sodio, Embarazo" (modales) */
+.attr-used-by {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-warning-light);
+  color: var(--color-primary-dark);
+  font-size: 13px;
+}
+
+.attr-auto-section .input-wrapper {
+  margin-top: 12px;
+}

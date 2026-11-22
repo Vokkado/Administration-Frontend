@@ -14,6 +14,7 @@ import {
   ProductCompaniesSection,
   ProductNutritionSection,
   ProductIngredientsSection,
+  ProductTagsSection,
 } from './product-modal';
 import type {
   ProductFormData,
@@ -38,7 +39,7 @@ interface ProductModalProps {
   onValidate?: (id: string, currentState: boolean) => void;
 }
 
-type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'origen';
+type TabId = 'basic' | 'registration' | 'manufacturer' | 'nutrition' | 'ingredients' | 'allergens' | 'tags' | 'origen';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'basic', label: 'Información Básica' },
@@ -47,6 +48,8 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'nutrition', label: 'Información Nutricional' },
   { id: 'ingredients', label: 'Ingredientes' },
   { id: 'allergens', label: 'Alérgenos' },
+  // Necesita el producto ya creado (los tags se guardan al momento): solo al editar.
+  { id: 'tags', label: 'Tags' },
   { id: 'origen', label: 'Origen' },
 ];
 
@@ -66,6 +69,10 @@ export function ProductModal({
   onValidate,
 }: ProductModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('basic');
+  // Categorías creadas desde la sugerencia de la IA (pestaña Tags), hasta que se recargue la lista.
+  const [createdCategories, setCreatedCategories] = useState<Category[]>([]);
+  const allCategories = [...categories, ...createdCategories.filter((c) => !categories.some((x) => x.id === c.id))];
+  const tabs = TABS.filter((t) => t.id !== 'tags' || !!editingProduct);
 
   // Ingredient variants
   const [ingredientVariants, setIngredientVariants] = useState<IngredientVariant[]>([]);
@@ -215,43 +222,44 @@ export function ProductModal({
   };
 
   // ── Ingredient handlers ──
-  const handleIngredientToggle = (variantId: string) => {
-    const newSelected = new Set(selectedIngredients);
-    const newPositions = { ...ingredientPositions };
-    const id = String(variantId);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-      delete newPositions[id];
-    } else {
-      newSelected.add(id);
-      const maxPos = Object.values(newPositions).length > 0 ? Math.max(...Object.values(newPositions)) : 0;
-      newPositions[id] = maxPos + 1;
-    }
-    setSelectedIngredients(newSelected);
+  /** Guarda el orden dado como posiciones 1..N, sin huecos ni repetidos. */
+  const commitIngredientOrder = (orderedIds: string[]) => {
+    const newPositions: Record<string, number> = {};
+    orderedIds.forEach((id, index) => { newPositions[id] = index + 1; });
+    setSelectedIngredients(new Set(orderedIds));
     setIngredientPositions(newPositions);
     onChange({
-      ingredientVariants: Array.from(newSelected).map(vid => ({
-        ingredientVariantId: String(vid),
-        position: newPositions[vid] ?? 1,
-      })),
+      ingredientVariants: orderedIds.map(id => ({ ingredientVariantId: id, position: newPositions[id] })),
     });
   };
 
-  const handleIngredientPositionChange = (variantId: string, position: number) => {
-    if (Number.isNaN(position)) {
-      const newPositions = { ...ingredientPositions };
-      delete newPositions[variantId];
-      setIngredientPositions(newPositions);
-      return;
-    }
-    const newPositions = { ...ingredientPositions, [variantId]: position };
-    setIngredientPositions(newPositions);
-    onChange({
-      ingredientVariants: Array.from(selectedIngredients).map(id => ({
-        ingredientVariantId: String(id),
-        position: newPositions[id] ?? 1,
-      })),
-    });
+  /** Ids elegidos en su orden actual (por posición; los que no tienen número, al final). */
+  const currentIngredientOrder = () =>
+    Array.from(selectedIngredients).sort(
+      (a, b) => (ingredientPositions[a] ?? Infinity) - (ingredientPositions[b] ?? Infinity),
+    );
+
+  const handleIngredientToggle = (variantId: string) => {
+    const id = String(variantId);
+    const order = currentIngredientOrder();
+    commitIngredientOrder(order.includes(id) ? order.filter(x => x !== id) : [...order, id]);
+  };
+
+  /** Cambia una variante por otra conservando su posición. */
+  const handleIngredientReplace = (oldId: string, newId: string) => {
+    const order = currentIngredientOrder();
+    if (order.includes(newId)) return;
+    commitIngredientOrder(order.map(id => (id === oldId ? newId : id)));
+  };
+
+  /**
+   * Recibe el nuevo orden de la lista visible. Si hay elegidas que todavía no están en el
+   * catálogo cargado (no se muestran), se conservan al final en su orden previo.
+   */
+  const handleIngredientsReorder = (orderedIds: string[]) => {
+    const visible = new Set(orderedIds);
+    const hidden = currentIngredientOrder().filter(id => !visible.has(id));
+    commitIngredientOrder([...orderedIds, ...hidden]);
   };
 
   // ── Allergen handlers ──
@@ -294,12 +302,16 @@ export function ProductModal({
         <div className="modal-body">
           {/* Tabs */}
           <div className="product-tabs">
-            {TABS.map(tab => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 type="button"
                 className={`product-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={(e) => {
+                  setActiveTab(tab.id);
+                  // En celular la tira de pestañas se desplaza: la elegida queda a la vista.
+                  e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+                }}
               >
                 {tab.label}
               </button>
@@ -317,7 +329,7 @@ export function ProductModal({
               <>
                 <ProductBasicInfoSection
                   formData={formData}
-                  categories={categories}
+                  categories={allCategories}
                   onChange={onChange}
                 />
                 <ProductSourceImagesSection productId={editingProduct?.id} />
@@ -358,7 +370,8 @@ export function ProductModal({
                 ingredientPositions={ingredientPositions}
                 onChange={onChange}
                 onIngredientToggle={handleIngredientToggle}
-                onIngredientPositionChange={handleIngredientPositionChange}
+                onIngredientsReorder={handleIngredientsReorder}
+                onIngredientReplace={handleIngredientReplace}
                 onVariantsChanged={loadIngredientVariants}
               />
             )}
@@ -415,6 +428,20 @@ export function ProductModal({
               </div>
             )}
           </form>
+
+          {/* Fuera del <form>: sus botones (Sugerir, Agregar…) no son de envío y se guardan solos. */}
+          {activeTab === 'tags' && editingProduct && (
+            <ProductTagsSection
+              productId={editingProduct.id}
+              categoryId={formData.categoryId}
+              onUseCategory={(categoryId) => onChange({ categoryId })}
+              onCategoryCreated={(c) => {
+                setCreatedCategories((list) => [...list, { id: c.id, name: c.name, parentCategoryId: c.parentId, isAssignable: true }]);
+                onChange({ categoryId: c.id });
+              }}
+            />
+          )}
+
         </div>
 
         <div className="modal-footer">

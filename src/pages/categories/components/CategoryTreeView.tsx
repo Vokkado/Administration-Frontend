@@ -24,19 +24,21 @@ export function CategoryTreeView({
     );
   }
 
-  const renderTreeNode = (node: CategoryTree, level: number = 0) => (
-    <div key={node.id} className="tree-node" style={{ marginLeft: `${level * 24}px` }}>
+  const renderTreeNode = (node: CategoryTree) => (
+    <div key={node.id} className="tree-node">
       <div className="tree-node-content">
         <div className="tree-node-info">
           <span className="tree-node-icon">
             {node.children.length > 0 ? '📁' : '📄'}
           </span>
-          <span className="tree-node-name">{node.name}</span>
-          {!node.isAssignable && (
-            <span className="badge badge-secondary" style={{ marginLeft: '8px', fontSize: '11px' }}>
-              Solo agrupa
-            </span>
-          )}
+          <span className="tree-node-label">
+            <span className="tree-node-name">{node.name}</span>
+            {!node.isAssignable && (
+              <span className="badge badge-secondary tree-node-badge">
+                Solo agrupa
+              </span>
+            )}
+          </span>
         </div>
         <div className="tree-node-actions">
           <button
@@ -59,7 +61,7 @@ export function CategoryTreeView({
       </div>
       {node.children.length > 0 && (
         <div className="tree-node-children">
-          {node.children.map(child => renderTreeNode(child, level + 1))}
+          {node.children.map(child => renderTreeNode(child))}
         </div>
       )}
     </div>
@@ -67,7 +69,7 @@ export function CategoryTreeView({
 
   return (
     <div className="tree-container">
-      {categoryTree.map(node => renderTreeNode(node, 0))}
+      {categoryTree.map(node => renderTreeNode(node))}
     </div>
   );
 }

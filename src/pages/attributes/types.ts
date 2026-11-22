@@ -10,6 +10,14 @@ export interface Attribute {
   typeId: string;
   isInspected: boolean;
   restrictionIds?: string[];
+  /**
+   * Asignación automática (atributos de Metas, Embarazo…): criterio que usa la IA para decidir si una
+   * variante lo lleva y palabras clave sin IA ("frase" = palabra completa; "=frase" = nombre exacto).
+   * Sin criterio ni palabras clave, el atributo se asigna solo a mano.
+   */
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +37,10 @@ export interface AttributeFormData {
   typeId: string;
   isInspected: boolean;
   restrictionIds: string[];
+  /** Asignación automática. Las palabras clave se editan separadas por coma. */
+  aiCriterion: string;
+  keywords: string;
+  excludeKeywords: string;
 }
 
 export interface CreateAttributeData {
@@ -38,6 +50,9 @@ export interface CreateAttributeData {
   typeId: string;
   isInspected?: boolean;
   restrictionIds?: string[];
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
 }
 
 export interface UpdateAttributeData {
@@ -47,7 +62,16 @@ export interface UpdateAttributeData {
   typeId?: string;
   isInspected?: boolean;
   restrictionIds?: string[];
+  aiCriterion?: string | null;
+  keywords?: string[];
+  excludeKeywords?: string[];
 }
+
+/** "jamon crudo, salame" → ['jamon crudo', 'salame'] (sin vacías ni repetidas). */
+export function parseKeywords(text: string): string[] {
+  return [...new Set(text.split(',').map((k) => k.trim()).filter(Boolean))];
+}
+
 
 export interface AttributeTypeFormData {
   type: string;

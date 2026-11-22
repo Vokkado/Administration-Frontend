@@ -55,6 +55,16 @@ export function Navbar() {
           <div className="user-badge">
             <span className="user-email">Rol: {rolesLabel}</span>
           </div>
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => {
+              setMenuOpen(false);
+              navigate('/sessions');
+            }}
+          >
+            Mis sesiones
+          </Button>
           <Button variant="outline" size="small" onClick={handleSignOut}>
             Cerrar Sesión
           </Button>
