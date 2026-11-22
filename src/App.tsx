@@ -28,8 +28,7 @@ const GoalsPage = lazy(() => import('./pages/goals/GoalsPage').then(m => ({ defa
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import('./pages/reports/ReportDetailPage').then(m => ({ default: m.ReportDetailPage })));
-const ScoreFamiliesPage = lazy(() => import('./pages/score-families/ScoreFamiliesPage').then(m => ({ default: m.ScoreFamiliesPage })));
-const ScorePhotosPage = lazy(() => import('./pages/score-photos/ScorePhotosPage').then(m => ({ default: m.ScorePhotosPage })));
+const ScorePage = lazy(() => import('./pages/score/ScorePage').then(m => ({ default: m.ScorePage })));
 const FaqsPage = lazy(() => import('./pages/faqs/FaqsPage').then(m => ({ default: m.FaqsPage })));
 const AllergensPage = lazy(() => import('./pages/allergens/AllergensPage').then(m => ({ default: m.AllergensPage })));
 const CompaniesPage = lazy(() => import('./pages/companies/CompaniesPage').then(m => ({ default: m.CompaniesPage })));
@@ -151,25 +150,18 @@ function App() {
               }
             />
 
-            {/* Familias del puntaje: justificación del máximo de cada familia (la ve el usuario en la explicación del puntaje). */}
+            {/* Puntaje: familias (máximo y justificación) y productos con puntaje aproximado. Las fotos de tabla que
+                mandan los usuarios se ven en el asistente de validación de cada producto. */}
             <Route
-              path="/score-families"
+              path="/score"
               element={
                 <ProtectedRoute roles={CATALOG_ROLES}>
-                  <ScoreFamiliesPage />
+                  <ScorePage />
                 </ProtectedRoute>
               }
             />
-
-            {/* Fotos para el puntaje: tablas nutricionales que mandan los usuarios cuando el puntaje v4 queda aproximado. */}
-            <Route
-              path="/score-photos"
-              element={
-                <ProtectedRoute roles={CATALOG_ROLES}>
-                  <ScorePhotosPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/score-families" element={<Navigate to="/score" replace />} />
+            <Route path="/score-photos" element={<Navigate to="/validation?filtro=fotos-tabla" replace />} />
 
             <Route
               path="/users"

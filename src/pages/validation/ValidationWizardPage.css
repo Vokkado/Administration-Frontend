@@ -113,6 +113,21 @@
     padding: 10px;
   }
 
+  /* Foto de la tabla que mandó un usuario (puntaje aproximado) */
+  .vw-score-photos { display: flex; flex-direction: column; gap: 8px; }
+  .vw-score-photos--pending { border-color: #f5c26b; background: #fffaf0; }
+  .vw-score-photos-head { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--color-grey-700); }
+  .vw-score-photos-head strong { color: #8a5a00; font-size: 14px; }
+  .vw-score-photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .vw-score-photos-thumb {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px;
+    border: 1px solid var(--color-grey-200); border-radius: 8px; background: #fff; cursor: zoom-in; font-size: 11px; color: var(--color-grey-600);
+  }
+  .vw-score-photos-thumb img { width: 100%; height: 120px; object-fit: contain; background: #f7f3ec; border-radius: 6px; }
+  .vw-score-photos-thumb--broken { cursor: default; padding: 12px; text-align: center; }
+  .vw-score-photos-actions { display: flex; justify-content: flex-end; }
+  .vw-score-photos-error { font-size: 13px; color: #b91c1c; }
+
   .vw-photo-panel-title {
     font-size: 15px;
     margin: 0 0 12px;
@@ -662,6 +677,7 @@
 
 /* Validado por (migración 289) */
 .vw-needs-photos.vw-validated { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.vq-needs-photos.vq-score-photo { background: #fff7e6; color: #8a5a00; border-color: #f5c26b; }
 .vq-needs-photos.vq-validated { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 
 /* El envase no tiene esa parte (quien cargó salteó la foto, migración 293) */

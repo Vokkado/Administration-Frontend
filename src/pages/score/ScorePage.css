@@ -1,0 +1,38 @@
+:where(.page-score) {
+  .score-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 16px;
+    border-bottom: 1px solid var(--color-grey-200, #e5e7eb);
+    overflow-x: auto;
+  }
+  .score-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--color-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .score-tab:hover { color: var(--color-primary); }
+  .score-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+  /* Aproximados */
+  .ap-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ap-intro { margin: 0; font-size: 14px; color: var(--color-grey-600, #555); max-width: 760px; }
+  .ap-search { min-width: 260px; }
+  .ap-img { width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: #f3f4f6; display: block; }
+  .ap-name { display: flex; flex-direction: column; gap: 2px; }
+  .ap-name span { font-size: 12px; color: var(--color-grey-600, #666); }
+  .ap-score { font-weight: 700; }
+  .ap-reasons { font-size: 13px; color: var(--color-grey-700, #444); }
+  .ap-muted { font-size: 13px; color: var(--color-grey-500, #888); }
+  .vq-needs-photos.vq-score-photo {
+    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: #fff7e6; color: #8a5a00; border: 1px solid #f5c26b; white-space: nowrap;
+  }
+}
