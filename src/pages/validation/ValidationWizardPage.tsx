@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
-import { Button, Input, LoadingSpinner, ConfirmDialog, Modal, OctagonPicker, type MspOctagon } from '../../components/ui';
+import { Button, Input, LoadingSpinner, ConfirmDialog, Modal, OctagonPicker, useToast, type MspOctagon } from '../../components/ui';
 import { ProductCompaniesSection } from '../products/components/product-modal';
 import type { SourcePhotoKey } from '../../hooks/useSourceImages';
 import { ValidationService, type ValidationDetail, type CategoryOption, type CompanyOption, NEEDS_PHOTO_LABELS, needsPhotosText, needsPhotosShort, type NeedsPhotoPart, SKIPPED_TO_PART, skippedPhotosText } from '../../services/validation.service';
@@ -96,8 +96,7 @@ export function ValidationWizardPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState('');
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useToast();
 
   // Encabezado fijo: su alto (cambia al envolverse) corre las fotos fijas de la derecha.
   const headRef = useRef<HTMLDivElement | null>(null);
@@ -181,13 +180,6 @@ export function ValidationWizardPage() {
     return () => window.removeEventListener('mousedown', onDown);
   }, [menuOpen]);
 
-  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
-  const flash = (msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 2500);
-  };
-
   const set = (k: keyof Meta, v: any) => setMeta((m) => (m ? { ...m, [k]: v } : m));
 
   const onCompanySelect = (role: 'manufacturer' | 'distributor' | 'importer', companyId: string) =>
@@ -231,9 +223,9 @@ export function ValidationWizardPage() {
     setError(null);
     try {
       await saveMeta();
-      flash('Guardado');
+      toast.success('Guardado', 'Los cambios del producto quedaron guardados.');
     } catch {
-      setError('No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.');
+      toast.error('No se pudo guardar', 'Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
@@ -244,12 +236,19 @@ export function ValidationWizardPage() {
     try {
       await saveMeta();
       const r = await ValidationService.approve(id, { notifyUploader: notify, notifyMessage: notifyMessage.trim() || undefined });
-      if (notify && r.notification === 'no_devices') window.alert('Validado ✓. No se pudo avisar: quien lo cargó no tiene las notificaciones activadas en su celular.');
-      else if (notify && r.notification === 'failed') window.alert('Validado ✓. No se pudo mandar el aviso (falló el envío); se reintenta la próxima vez que lo valides.');
+      // El aviso queda a la vista ya de vuelta en la lista (el proveedor vive arriba de las páginas).
+      const name = meta?.name || 'El producto';
+      if (notify && r.notification === 'no_devices') {
+        toast.warning('Validado, sin aviso', `${name} quedó validado, pero quien lo cargó no tiene las notificaciones activadas en su celular.`);
+      } else if (notify && r.notification === 'failed') {
+        toast.warning('Validado, sin aviso', `${name} quedó validado, pero falló el envío del aviso. Se reintenta la próxima vez que lo valides.`);
+      } else {
+        toast.success('Producto validado', `${name} salió de la cola.`);
+      }
       navigate('/validation');
     } catch {
       setShowValidate(false);
-      setError('No pudimos validar el producto. Revisá tu conexión e intentá de nuevo.');
+      toast.error('No se pudo validar', 'Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
@@ -261,6 +260,7 @@ export function ValidationWizardPage() {
     try {
       await saveMeta();
       await ValidationService.setNeedsPhotos(id, needsPhotosNote.trim() || undefined, needsParts);
+      toast.info('Fotos pedidas', 'Vuelve a la cola cuando un usuario las saque.');
       navigate('/validation');
     } catch {
       setShowNeedsPhotos(false);
@@ -303,8 +303,8 @@ export function ValidationWizardPage() {
   const onSaveAndLeave = async () => {
     if (imageUrlInvalid) { setShowLeave(false); setError(IMAGE_URL_ERROR); return; }
     setBusy(true);
-    try { await saveMeta(); navigate('/validation'); }
-    catch { setShowLeave(false); setError('No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.'); }
+    try { await saveMeta(); toast.success('Guardado', 'Los cambios del producto quedaron guardados.'); navigate('/validation'); }
+    catch { setShowLeave(false); toast.error('No se pudo guardar', 'Revisá tu conexión e intentá de nuevo.'); }
     finally { setBusy(false); }
   };
 
@@ -908,7 +908,6 @@ export function ValidationWizardPage() {
         onCancel={() => setShowReject(false)}
       />
 
-      {toast && <div className="vw-toast" role="status">{toast}</div>}
     </AdminLayout>
   );
 }
