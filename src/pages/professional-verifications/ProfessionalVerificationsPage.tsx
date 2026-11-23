@@ -1,8 +1,9 @@
 /**
  * Verificaciones profesionales (Admin)
  *
- * El nutricionista carga su registro/matrícula desde la web de nutricionistas. Al aprobar, recibe
- * el rol nutritionist y se crea su organización de un solo miembro.
+ * El nutricionista carga su registro/matrícula desde la web de nutricionistas y en ese momento su
+ * cuenta ya queda habilitada (rol nutritionist y organización; decisión 2026-11-23). Aprobar la
+ * matrícula lo habilita a vincular pacientes con la app de Vokkado (sus datos de salud).
  */
 
 import { useState } from 'react';
@@ -11,7 +12,6 @@ import {
   Button,
   DataTable,
   FilterButtonGroup,
-  Input,
   Modal,
   NotificationBanner,
   PageHeader,
@@ -123,7 +123,6 @@ export function ProfessionalVerificationsPage() {
   } = useProfessionalVerifications();
 
   const [toApprove, setToApprove] = useState<ProfessionalVerification | null>(null);
-  const [organizationName, setOrganizationName] = useState('');
   const [toReject, setToReject] = useState<ProfessionalVerification | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -149,17 +148,16 @@ export function ProfessionalVerificationsPage() {
   const openApprove = (item: ProfessionalVerification) => {
     setSuccess('');
     setActionError('');
-    setOrganizationName(item.organizationName || item.fullName || '');
     setToApprove(item);
   };
-  const closeApprove = () => { setToApprove(null); setOrganizationName(''); setActionError(''); };
+  const closeApprove = () => { setToApprove(null); setActionError(''); };
   const closeReject = () => { setToReject(null); setRejectNote(''); setActionError(''); };
 
   return (
     <AdminLayout className="page-access-requests">
       <PageHeader
         title="Verificaciones Profesionales"
-        description="Nutricionistas que pidieron acceso a la web de nutricionistas. Verificá el registro o la matrícula antes de aprobar: al aprobar recibe el rol Nutricionista y se crea su organización."
+        description="Matrículas de los nutricionistas que usan la web (la cuenta se habilita sola al enviarla). Verificá el registro antes de aprobar: aprobada, pueden vincular pacientes con la app de Vokkado."
         count={total}
         countLabel="verificaciones"
         countLabelSingular="verificación"
@@ -220,8 +218,8 @@ export function ProfessionalVerificationsPage() {
             e.preventDefault();
             if (!toApprove) return;
             runAction(
-              () => approve(toApprove.id, organizationName),
-              `${toApprove.fullName || toApprove.userEmail} ya puede ingresar a la web de nutricionistas.`,
+              () => approve(toApprove.id),
+              `${toApprove.fullName || toApprove.userEmail} ya puede vincular pacientes con la app.`,
               closeApprove
             );
           }}
@@ -229,17 +227,9 @@ export function ProfessionalVerificationsPage() {
           <p>
             <strong>{toApprove?.fullName}</strong> ({toApprove?.userEmail}) — registro{' '}
             <strong>{toApprove?.licenseNumber}</strong>
-            {` (${[toApprove?.licenseIssuer, toApprove?.countryCode].filter(Boolean).join(' · ')})`}. Al aprobar
-            recibe el rol Nutricionista y se crea su organización.
+            {` (${[toApprove?.licenseIssuer, toApprove?.countryCode].filter(Boolean).join(' · ')})`}. Su cuenta ya
+            está habilitada; al aprobar la matrícula puede vincular pacientes con la app de Vokkado.
           </p>
-          <Input
-            label="Nombre de la organización"
-            value={organizationName}
-            onChange={(e) => setOrganizationName(e.target.value)}
-            maxLength={120}
-            placeholder="Ej: Consultorio Ana Pérez"
-            fullWidth
-          />
           <div className="ar-modal-actions" style={{ marginTop: 20 }}>
             <Button type="button" variant="outline" onClick={closeApprove} disabled={actionLoading}>
               Cancelar
@@ -260,8 +250,8 @@ export function ProfessionalVerificationsPage() {
           }}
         >
           <p>
-            Vas a rechazar la verificación de <strong>{toReject?.fullName || toReject?.userEmail}</strong>. La persona
-            va a ver el motivo y podrá enviar una nueva.
+            Vas a rechazar la verificación de <strong>{toReject?.fullName || toReject?.userEmail}</strong>. Su cuenta
+            sigue funcionando, pero no va a poder vincular pacientes con la app; va a ver el motivo y podrá enviar una nueva.
           </p>
           <div className="form-group">
             <label htmlFor="reject-verification-note">Motivo (opcional)</label>

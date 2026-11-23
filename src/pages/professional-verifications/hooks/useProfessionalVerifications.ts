@@ -66,11 +66,10 @@ export function useProfessionalVerifications() {
 
   const refresh = useCallback(() => fetchItems(currentPage, filters), [fetchItems, currentPage, filters]);
 
-  const approve = useCallback(async (id: string, organizationName: string) => {
+  // La organización ya existe (se crea al enviar la verificación): aprobar no la nombra.
+  const approve = useCallback(async (id: string) => {
     try {
-      await apiService.post(`/admin/professional-verifications/${id}/approve`, {
-        organizationName: organizationName.trim() || null,
-      });
+      await apiService.post(`/admin/professional-verifications/${id}/approve`, {});
     } catch (err) {
       throw new Error(errorMessage(err, 'No se pudo aprobar la verificación'));
     }
