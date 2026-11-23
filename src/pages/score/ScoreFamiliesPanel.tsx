@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, DataTable, Modal, NotificationBanner, PageHeader, SearchInput } from '../../components/ui';
+import { Button, DataTable, Modal, NotificationBanner, SearchInput } from '../../components/ui';
 import type { DataTableColumn } from '../../components/ui';
-import { AdminLayout } from '../../components/layout/AdminLayout';
 import { ScoreFamiliesService, REASON_MAX, REASON_MIN } from '../../services/score-families.service';
 import type { ScoreFamily } from '../../services/score-families.service';
 import { getApiMessage } from '../../services/apiError';
 import { matchesSearch } from '../../utils/search';
 import editIcon from '../../../assets/icons/brownPencil.png';
-import './ScoreFamiliesPage.css';
+import './ScoreFamiliesPanel.css';
 
 /**
- * Familias del puntaje: cada producto se compara con los de su familia, que tiene un máximo. Acá se edita la
+ * Pestaña "Familias" de Puntaje: cada producto se compara con los de su familia, que tiene un máximo. Acá se edita la
  * justificación de ese máximo, que el usuario ve en la app al tocar el puntaje ("Arranca en 90 · Es el máximo para \"Especias y hierbas\": …").
  */
-export function ScoreFamiliesPage() {
+export function ScoreFamiliesPanel() {
   const [families, setFamilies] = useState<ScoreFamily[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,15 +86,14 @@ export function ScoreFamiliesPage() {
   ];
 
   return (
-    <AdminLayout className="page-score-families">
-      <PageHeader
-        title="Familias del puntaje"
-        description="Cada producto se compara con los de su familia, que tiene un máximo. Acá se edita por qué: el usuario lo lee al tocar el puntaje."
-        count={filtered.length}
-        countLabel="familias"
-        countLabelSingular="familia"
-        actions={<div className="sf-search"><SearchInput value={search} onChange={setSearch} placeholder="Buscar familia o texto…" /></div>}
-      />
+    <div className="page-score-families">
+      <div className="sf-toolbar">
+        <p className="sf-intro">
+          Cada producto se compara con los de su familia, que tiene un máximo. Acá se edita por qué: el usuario lo lee al tocar el puntaje.
+          {' '}<strong>{filtered.length}</strong> {filtered.length === 1 ? 'familia' : 'familias'}.
+        </p>
+        <div className="sf-search"><SearchInput value={search} onChange={setSearch} placeholder="Buscar familia o texto…" /></div>
+      </div>
 
       <NotificationBanner type="success" message={success} />
       {!editing && <NotificationBanner type="error" message={error} />}
@@ -150,6 +148,6 @@ export function ScoreFamiliesPage() {
           </form>
         )}
       </Modal>
-    </AdminLayout>
+    </div>
   );
 }

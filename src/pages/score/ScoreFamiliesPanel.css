@@ -1,5 +1,7 @@
 :where(.page-score-families) {
   .sf-search { min-width: 260px; }
+  .sf-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sf-intro { margin: 0; font-size: 14px; color: var(--color-grey-600, #555); max-width: 760px; }
 
   .sf-table-container {
     background: #fff;

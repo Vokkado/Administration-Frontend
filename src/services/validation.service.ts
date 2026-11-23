@@ -1,6 +1,7 @@
 /**
  * Validation API service (Admin) — cola "Validar productos".
  */
+import type { ScorePhotoLite } from './score-photos.service';
 import { apiService } from './api.service';
 
 export type LinkColor = 'green' | 'yellow' | 'red';
@@ -41,6 +42,8 @@ export interface ValidationQueueItem {
   /** Quién lo validó y cuándo (filtro "Validados"). */
   validatedAt?: string | null;
   validatedByEmail?: string | null;
+  /** Fotos de tabla que mandaron usuarios (puntaje aproximado) y nadie revisó todavía. */
+  pendingScorePhotos?: number;
 }
 
 export interface ValidationIngredient {
@@ -247,6 +250,8 @@ export interface ValidationDetail {
   nutrition: ValidationNutrition[];
   companies: ValidationCompany[];
   tags: ValidationTag[];
+  /** Fotos de la tabla que mandaron usuarios porque el puntaje quedó aproximado (pendientes primero). */
+  scorePhotos?: ScorePhotoLite[];
 }
 
 export interface CategoryOption { id: string; name: string }
@@ -280,12 +285,15 @@ export class ValidationService {
     uploader?: string,
     /** true = mail exacto (elegido de la lista o tocado en la cola). */
     uploaderExact?: boolean,
+    /** true = los que tienen una foto de tabla nueva (puntaje aproximado), validados o no. */
+    scorePhotos?: boolean,
   ): Promise<{ items: ValidationQueueItem[]; total: number }> {
     const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (uploader) params.append('uploader', uploader);
     if (uploader && uploaderExact) params.append('uploaderExact', 'true');
     if (rejected) params.append('rejected', 'true');
     if (validated) params.append('validated', 'true');
+    if (scorePhotos) params.append('scorePhotos', 'true');
     if (needsPhotos !== undefined) params.append('needsPhotos', String(needsPhotos));
     if (search) params.append('search', search);
     if (sortBy) params.append('sortBy', sortBy);
