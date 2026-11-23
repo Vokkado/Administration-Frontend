@@ -6,6 +6,7 @@
  * guardar se crean los tags nuevos que se aceptaron (validados: los aceptó una persona) y se
  * reemplazan los tags del producto.
  */
+import { IoSparkles } from 'react-icons/io5';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, LoadingSpinner, Modal } from '../../../components/ui';
 import { OPEN_TAG_GROUPS, TagsService } from '../../../services/tags.service';
@@ -157,7 +158,7 @@ function ProductTagsForm({ product, onClose, onSaved }: ProductTagsModalProps & 
       </div>
       <div className="modal-footer">
         <Button type="button" variant="outline" onClick={suggest} loading={suggesting} disabled={busy || !groups}>
-          ✨ Sugerir con IA
+          <IoSparkles aria-hidden style={{ color: '#2563EB', verticalAlign: '-2px' }} /> Sugerir con IA
         </Button>
         <div style={{ flex: 1 }} />
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>

@@ -4,6 +4,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './components/ui/Toast';
 import { ProtectedRoute } from './components/routing/ProtectedRoute';
 import { CATALOG_ROLES, PANEL_ROLES } from './modules/auth/types';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -49,6 +50,8 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* Avisos (toast) de todo el admin: siguen visibles al cambiar de pantalla. */}
+        <ToastProvider>
         <Suspense fallback={null}>
           <Routes>
             {/* Rutas públicas de autenticación */}
@@ -334,6 +337,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

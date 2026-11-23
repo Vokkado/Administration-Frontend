@@ -3,6 +3,7 @@
  * el paso 2 del wizard. Cada item viene con su color (🟢🟡🔴) y acciones: confirmar /
  * corregir / quitar / agregar / validar (rojo) / editar valor (nutrición).
  */
+import { IoSparkles } from 'react-icons/io5';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Button, Modal, AttributeBadge, Tooltip, PositionInput } from '../../components/ui';
 import { useGoalsAdminView } from '../../hooks/useGoalsAdminView';
@@ -1235,7 +1236,7 @@ export function AiSuggestPanel({ productId, categoryId, linkedTagIds, busy, setB
     <div className="vp-sugg">
       <div className="vp-sugg-head">
         <p className="vp-sugg-note">La IA propone categoría y tags mirando la foto de portada y los datos actuales (nombre, marca e ingredientes ya corregidos). Revisalos antes de usarlos.</p>
-        <Button variant="outline" onClick={suggest} loading={loading} disabled={busy || loading}>✨ Sugerir con IA</Button>
+        <Button variant="outline" onClick={suggest} loading={loading} disabled={busy || loading}><IoSparkles aria-hidden style={{ color: '#2563EB', verticalAlign: '-2px' }} /> Sugerir con IA</Button>
       </div>
       {error && <div className="vp-sugg-note" role="alert" style={{ color: 'var(--color-error)' }}>{error}</div>}
       {result && (
