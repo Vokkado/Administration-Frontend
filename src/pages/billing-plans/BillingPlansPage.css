@@ -491,6 +491,29 @@
     max-height: none;
   }
 
+  /* Pestaña Revisiones */
+  .review-section + .review-section {
+    margin-top: 32px;
+  }
+
+  .review-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .review-section .plan-note {
+    margin-bottom: 12px;
+  }
+
+  .review-reason {
+    display: block;
+    max-width: 320px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+
   .coupon-toolbar {
     display: flex;
     justify-content: flex-end;

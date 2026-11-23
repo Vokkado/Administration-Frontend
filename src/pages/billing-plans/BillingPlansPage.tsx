@@ -8,8 +8,10 @@ import { PlanModal } from './components/PlanModal';
 import { PlanTable } from './components/PlanTable';
 import { NutritionistsTab } from './components/NutritionistsTab';
 import { CouponsTab } from './components/CouponsTab';
+import { ReviewsTab } from './components/ReviewsTab';
 import { usePlans } from './hooks/usePlans';
 import { useBillingConfig } from './hooks/useBillingConfig';
+import { useReviews } from './hooks/useReviews';
 import type { BillingPlan, PlanFormData } from './types';
 import './BillingPlansPage.css';
 
@@ -46,15 +48,18 @@ function toForm(plan: BillingPlan, currency: string): PlanFormData {
  * Catálogo de planes de la web de nutricionistas. Los cambios valen para contrataciones nuevas:
  * cada suscripción existente conserva el precio y el límite con que se contrató. Los planes no se
  * borran (los referencian suscripciones): se desactivan. La pestaña "Nutricionistas" muestra qué rige
- * para cada uno y gestiona los accesos de Vokkado (pruebas y accesos gratis).
+ * para cada uno y gestiona los accesos de Vokkado (pruebas y accesos gratis). "Revisiones" lista los cobros
+ * que el backend marcó para que una persona los mire.
  */
-type Tab = 'plans' | 'nutritionists' | 'coupons';
+type Tab = 'plans' | 'nutritionists' | 'coupons' | 'reviews';
 
 export function BillingPlansPage() {
   const [tab, setTab] = useState<Tab>('plans');
   const { plans, loading, error, setError, createPlan, updatePlan, fetchChanges } = usePlans();
   const crud = useCRUDActions();
   const { config: billingConfig, error: configError } = useBillingConfig();
+  // Se carga con la página: la pestaña muestra cuántas revisiones hay abiertas sin tener que abrirla.
+  const reviews = useReviews();
 
   const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<BillingPlan | null>(null);
@@ -128,6 +133,7 @@ export function BillingPlansPage() {
             ['plans', 'Planes'],
             ['nutritionists', 'Nutricionistas'],
             ['coupons', 'Cupones'],
+            ['reviews', reviews.openCount > 0 ? `Revisiones (${reviews.openCount})` : 'Revisiones'],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -151,8 +157,18 @@ export function BillingPlansPage() {
         </>
       ) : tab === 'nutritionists' ? (
         <NutritionistsTab plans={plans} />
-      ) : (
+      ) : tab === 'coupons' ? (
         <CouponsTab plans={plans} billingConfig={billingConfig} />
+      ) : (
+        <ReviewsTab
+          plans={plans}
+          upgrades={reviews.upgrades}
+          charges={reviews.charges}
+          loading={reviews.loading}
+          error={reviews.error}
+          resolveUpgrade={reviews.resolveUpgrade}
+          resolveCharge={reviews.resolveCharge}
+        />
       )}
 
       <PlanModal

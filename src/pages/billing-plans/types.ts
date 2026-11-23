@@ -173,3 +173,34 @@ export interface BillingConfig {
   currency: string;
   minimumCharge: number;
 }
+
+/** Una suba de plan que fue a revisión manual (GET /admin/billing/upgrade-reviews). */
+export interface UpgradeReview {
+  upgradeId: string;
+  subscriptionId: string;
+  ownerEmail: string | null;
+  fromPlanCode: string;
+  toPlanCode: string;
+  toPlanName: string;
+  amount: number;
+  currency: string;
+  /** Por qué fue a revisión (texto del backend). */
+  reason: string;
+  externalReference: string;
+  providerOrderId: string | null;
+  providerPaymentId: string | null;
+  requestedAt: string;
+  flaggedAt: string;
+}
+
+/** "Cobrado y cancelado": cobro aprobado en una suscripción que nunca se activó (GET /admin/billing/reviews). */
+export interface ChargeReview {
+  subscriptionId: string;
+  ownerEmail: string | null;
+  planCode: string;
+  planName: string;
+  status: string;
+  externalReference: string;
+  flaggedAt: string | null;
+  charges: { id: string; amount: number | null; currency: string | null; date: string | null }[];
+}
