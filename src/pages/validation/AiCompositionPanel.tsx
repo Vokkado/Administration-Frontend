@@ -6,6 +6,7 @@
  * Muestra una PROPUESTA comparada con lo que hay; nada se guarda hasta que la persona tilda y aplica.
  * Los ingredientes que no existen en el catálogo NO se crean solos: quedan como "crear a mano".
  */
+import { IoSparkles } from 'react-icons/io5';
 import { useMemo, useState } from 'react';
 import { Button } from '../../components/ui';
 import { ValidationService, type AiProposal, type ValidationDetail } from '../../services/validation.service';
@@ -103,12 +104,12 @@ export function AiCompositionPanel({ productId, detail, busy, setBusy, onChanged
     <div className="vp-sugg" style={{ marginBottom: 16, borderColor: '#c4b5fd', background: '#faf5ff' }}>
       <div className="vp-sugg-head">
         <p className="vp-sugg-note">
-          <strong>✨ Completar con IA</strong> <span style={chip('#ede9fe', '#6d28d9')}>Beta</span>{' '}
+          <strong><IoSparkles aria-hidden style={{ color: '#2563EB', verticalAlign: '-2px' }} /> Completar con IA</strong> <span style={chip('#ede9fe', '#6d28d9')}>Beta</span>{' '}
           Lee la etiqueta (fotos del usuario, sitio de la marca y súper) y propone ingredientes en orden, alérgenos declarados y la tabla.
           No guarda nada: tildá lo que está bien y aplicalo.
         </p>
         <Button variant="outline" onClick={run} loading={working && step !== 'apply'} disabled={busy || working}>
-          {proposal ? '↻ Volver a analizar' : '✨ Completar con IA'}
+          {proposal ? '↻ Volver a analizar' : <><IoSparkles aria-hidden style={{ color: '#2563EB', verticalAlign: '-2px' }} /> Completar con IA</>}
         </Button>
       </div>
       {working && <div className="vp-sugg-note">⏳ {STEP_LABEL[step]}</div>}
