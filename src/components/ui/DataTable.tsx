@@ -48,6 +48,11 @@ interface DataTableProps<T> {
   loading?: boolean;
   loadingMessage?: string;
   emptyMessage?: string;
+  /**
+   * Texto bajo el título del estado vacío. Sin él se muestra el genérico de EmptyState ("ajustar los
+   * filtros…"), que no tiene sentido en una tabla sin filtros: pasarlo en esas.
+   */
+  emptyDescription?: string;
   emptyIcon?: string;
   keyExtractor?: (item: T) => string;
   renderActions?: (item: T) => React.ReactNode;
@@ -196,6 +201,7 @@ export function DataTable<T>({
   loading = false,
   loadingMessage = 'Cargando...',
   emptyMessage = 'No se encontraron resultados',
+  emptyDescription,
   emptyIcon,
   keyExtractor = (item: any) => item.id,
   renderActions,
@@ -222,7 +228,7 @@ export function DataTable<T>({
 
   // Vacío de verdad (ya cargó y no hay nada).
   if (!loading && data.length === 0) {
-    return <EmptyState icon={emptyIcon} title={emptyMessage} />;
+    return <EmptyState icon={emptyIcon} title={emptyMessage} message={emptyDescription} />;
   }
 
   const hasActions = !!renderActions;

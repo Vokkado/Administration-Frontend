@@ -67,6 +67,7 @@ export function CouponsTab({ plans, billingConfig }: { plans: BillingPlan[]; bil
         loading={loading}
         loadingMessage="Cargando cupones..."
         emptyMessage="Todavía no hay cupones"
+        emptyDescription="Creá el primero con + Nuevo cupón."
         keyExtractor={(c) => c.id}
         className="plan-table-container"
         actionsHeader="Acciones"

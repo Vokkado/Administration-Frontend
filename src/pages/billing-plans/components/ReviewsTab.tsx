@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DataTable, NotificationBanner } from '../../../components/ui';
+import { DataTable, FilterButtonGroup, NotificationBanner } from '../../../components/ui';
 import type { DataTableColumn } from '../../../components/ui';
 import type { BillingPlan, ChargeReview, UpgradeReview } from '../types';
 import { formatDate } from './accessFormat';
@@ -17,15 +17,21 @@ interface ReviewsTabProps {
   resolveCharge: (subscriptionId: string, note: string | null) => Promise<void>;
 }
 
+type View = 'upgrades' | 'charges';
+
 const who = (email: string | null) => email ?? 'titular sin email';
 
 /**
  * Pestaña "Revisiones" de Planes: cobros que el backend marcó para que una persona los mire (nunca se
- * resuelven solos con plata). Cada fila trae la referencia con la que se busca el cobro en Mercado Pago.
+ * resuelven solos con plata). Los dos casos van por separado, uno a la vez; cada fila trae la referencia
+ * con la que se busca el cobro en Mercado Pago.
  */
 export function ReviewsTab({ plans, upgrades, charges, loading, error, resolveUpgrade, resolveCharge }: ReviewsTabProps) {
+  const [chosen, setChosen] = useState<View | null>(null);
   const [resolving, setResolving] = useState<ReviewToResolve | null>(null);
   const [success, setSuccess] = useState('');
+  // Hasta que se elija, abre en el caso que tiene algo para revisar.
+  const view: View = chosen ?? (upgrades.length === 0 && charges.length > 0 ? 'charges' : 'upgrades');
 
   const upgradeColumns: DataTableColumn<UpgradeReview>[] = [
     { key: 'owner', header: 'Nutricionista', render: (r) => who(r.ownerEmail) },
@@ -44,7 +50,7 @@ export function ReviewsTab({ plans, upgrades, charges, loading, error, resolveUp
     { key: 'reason', header: 'Motivo', render: (r) => <span className="review-reason">{r.reason}</span> },
     {
       key: 'reference',
-      header: 'Para buscarlo en Mercado Pago',
+      header: 'En Mercado Pago',
       hideOnMobile: true,
       render: (r) => (
         <div className="plan-cell">
@@ -78,80 +84,87 @@ export function ReviewsTab({ plans, upgrades, charges, loading, error, resolveUp
     },
     {
       key: 'reference',
-      header: 'Para buscarlo en Mercado Pago',
+      header: 'En Mercado Pago',
       hideOnMobile: true,
       render: (r) => <span className="plan-code">Referencia {r.externalReference}</span>,
     },
     { key: 'since', header: 'Desde', render: (r) => (r.flaggedAt ? formatDate(r.flaggedAt) : '—') },
   ];
 
+  const closeButton = (review: ReviewToResolve) => (
+    <button className="action-btn history-btn" onClick={() => setResolving(review)}>
+      Cerrar
+    </button>
+  );
+
   return (
     <>
       <NotificationBanner type="success" message={success} />
       <NotificationBanner type="error" message={error} />
 
-      <section className="review-section">
-        <h3 className="review-title">Subas de plan</h3>
-        <p className="plan-note">
-          El cobro de una suba salió distinto de lo esperado: se devolvió, se cobró otro monto, quedó sin resultado o la suscripción cambió
-          mientras se cobraba. La suscripción sigue en el plan mayor; si corresponde volver al anterior o devolver la diferencia, se hace a
-          mano.
-        </p>
-        <DataTable<UpgradeReview>
-          columns={upgradeColumns}
-          data={upgrades}
-          loading={loading}
-          loadingMessage="Cargando revisiones..."
-          emptyMessage="No hay subas para revisar"
-          keyExtractor={(r) => r.upgradeId}
-          className="plan-table-container"
-          actionsHeader="Acciones"
-          renderActions={(r) => (
-            <button
-              className="action-btn history-btn"
-              onClick={() =>
-                setResolving({
-                  summary: `suba de ${planNames([r.fromPlanCode], plans)} a ${r.toPlanName} de ${who(r.ownerEmail)}`,
-                  resolve: (note) => resolveUpgrade(r.upgradeId, note),
-                })
-              }
-            >
-              Cerrar
-            </button>
-          )}
+      <div className="review-switch">
+        <FilterButtonGroup
+          value={view}
+          onChange={(v) => setChosen(v as View)}
+          options={[
+            { value: 'upgrades', label: `Subas de plan (${upgrades.length})` },
+            { value: 'charges', label: `Cobrado sin plan (${charges.length})` },
+          ]}
         />
-      </section>
+      </div>
 
-      <section className="review-section">
-        <h3 className="review-title">Cobrado sin plan</h3>
-        <p className="plan-note">
-          Mercado Pago cobró una suscripción que nunca se activó: pagó y no tiene el plan. No hay devolución automática: devolvé el dinero
-          desde Mercado Pago. Si Mercado Pago lo devuelve solo, la revisión se cierra sola.
-        </p>
-        <DataTable<ChargeReview>
-          columns={chargeColumns}
-          data={charges}
-          loading={loading}
-          loadingMessage="Cargando revisiones..."
-          emptyMessage="No hay cobros sin plan"
-          keyExtractor={(r) => r.subscriptionId}
-          className="plan-table-container"
-          actionsHeader="Acciones"
-          renderActions={(r) => (
-            <button
-              className="action-btn history-btn"
-              onClick={() =>
-                setResolving({
-                  summary: `cobro sin plan (${r.planName}) de ${who(r.ownerEmail)}`,
-                  resolve: (note) => resolveCharge(r.subscriptionId, note),
-                })
-              }
-            >
-              Cerrar
-            </button>
-          )}
-        />
-      </section>
+      {view === 'upgrades' ? (
+        <>
+          <p className="plan-note review-intro">
+            El cobro de una suba salió distinto de lo esperado (se devolvió, se cobró otro monto, quedó sin resultado o la suscripción
+            cambió mientras se cobraba). La suscripción sigue en el plan mayor: si corresponde volver al anterior o devolver la
+            diferencia, se hace a mano.
+          </p>
+          <DataTable<UpgradeReview>
+            columns={upgradeColumns}
+            data={upgrades}
+            loading={loading}
+            loadingMessage="Cargando revisiones..."
+            emptyIcon="✅"
+            emptyMessage="No hay subas para revisar"
+            emptyDescription="Cuando el cobro de una suba salga distinto de lo esperado, aparece acá."
+            keyExtractor={(r) => r.upgradeId}
+            className="plan-table-container"
+            actionsHeader="Acciones"
+            renderActions={(r) =>
+              closeButton({
+                summary: `suba de ${planNames([r.fromPlanCode], plans)} a ${r.toPlanName} de ${who(r.ownerEmail)}`,
+                resolve: (note) => resolveUpgrade(r.upgradeId, note),
+              })
+            }
+          />
+        </>
+      ) : (
+        <>
+          <p className="plan-note review-intro">
+            Mercado Pago cobró una suscripción que nunca se activó: pagó y no tiene el plan. No hay devolución automática: devolvé el
+            dinero desde Mercado Pago. Si Mercado Pago lo devuelve solo, la revisión se cierra sola.
+          </p>
+          <DataTable<ChargeReview>
+            columns={chargeColumns}
+            data={charges}
+            loading={loading}
+            loadingMessage="Cargando revisiones..."
+            emptyIcon="✅"
+            emptyMessage="No hay cobros sin plan"
+            emptyDescription="Si Mercado Pago cobra una suscripción que nunca se activó, aparece acá."
+            keyExtractor={(r) => r.subscriptionId}
+            className="plan-table-container"
+            actionsHeader="Acciones"
+            renderActions={(r) =>
+              closeButton({
+                summary: `cobro sin plan (${r.planName}) de ${who(r.ownerEmail)}`,
+                resolve: (note) => resolveCharge(r.subscriptionId, note),
+              })
+            }
+          />
+        </>
+      )}
 
       <ResolveReviewModal
         review={resolving}

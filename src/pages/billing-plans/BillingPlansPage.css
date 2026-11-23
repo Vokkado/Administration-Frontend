@@ -491,20 +491,17 @@
     max-height: none;
   }
 
-  /* Pestaña Revisiones */
-  .review-section + .review-section {
-    margin-top: 32px;
-  }
-
-  .review-title {
-    margin: 0 0 8px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-
-  .review-section .plan-note {
+  /* Pestaña Revisiones: un caso a la vez, con el selector arriba. */
+  .review-switch {
     margin-bottom: 12px;
+  }
+
+  .review-switch .filter-button-group {
+    margin-bottom: 0;
+  }
+
+  .review-intro {
+    margin-bottom: 16px;
   }
 
   .review-reason {
