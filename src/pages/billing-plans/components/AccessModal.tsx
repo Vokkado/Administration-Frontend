@@ -70,7 +70,8 @@ export function AccessModal({ row, plans, onClose, onGrant, onExtend, onRevoke, 
   if (!row) return null;
   const who = row.name ?? row.email ?? 'este nutricionista';
   const chosen = grantable.find((p) => p.code === planCode) ?? null;
-  const paid = row.paidSubscription && ['active', 'past_due'].includes(row.paidSubscription.status) ? row.paidSubscription : null;
+  // "Se le sigue cobrando" lo decide el backend (incluye la pausada por meses gratis y la pendiente).
+  const paid = row.paidSubscription?.charging ? row.paidSubscription : null;
   const paidPlan = paid ? plans.find((p) => p.code === paid.planCode) ?? null : null;
   const endsAt = duration === 'indefinite' ? null : endOfDayMontevideo(endDate);
   const dateInvalid = action !== 'revoke' && duration === 'until' && (!endDate || endDate < tomorrow());

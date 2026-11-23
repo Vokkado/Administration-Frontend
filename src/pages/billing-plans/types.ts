@@ -74,6 +74,8 @@ export interface NutritionistRow {
     planCode: string;
     planName: string;
     status: 'pending' | 'active' | 'past_due' | 'paused' | 'cancelled' | 'expired';
+    /** Se le sigue cobrando (lo decide el backend). */
+    charging: boolean;
     currentPeriodEnd: string | null;
     cancelledAt: string | null;
     /** Todavía no empezó: el día del primer cobro. */
