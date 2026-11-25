@@ -1,0 +1,88 @@
+/* Campo "Estado" del alta: dos opciones lado a lado. La elegida toma el color de su estado
+   (ámbar = pendiente, verde = validado), como los chips de la tabla. */
+
+.csf {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.csf-legend {
+  margin-bottom: 10px;
+  padding: 0;
+  color: var(--color-primary-dark);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.csf-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--color-grey-100);
+}
+
+.csf-option {
+  --csf-dot: var(--color-grey-400);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: var(--color-grey-600);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.csf-option:hover { color: var(--color-primary-dark); }
+
+.csf-option.is-on {
+  background: var(--color-white, #fff);
+  color: var(--color-primary-dark);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.08), 0 1px 6px rgba(17, 24, 39, 0.06);
+}
+.csf-option--pending.is-on { --csf-dot: #D97706; }
+.csf-option--validated.is-on { --csf-dot: var(--color-primary); }
+
+.csf-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--csf-dot);
+  transition: background-color 0.15s ease;
+}
+
+/* El radio real queda invisible pero accesible (teclado y lector de pantalla). */
+.csf-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.csf-option:has(.csf-input:focus-visible) {
+  outline: 3px solid rgba(91, 136, 6, 0.45);
+  outline-offset: 1px;
+}
+
+.csf:disabled .csf-option { cursor: default; opacity: 0.6; }
+
+.csf-hint {
+  margin: 8px 0 0;
+  color: var(--color-grey-500);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .csf-option, .csf-dot { transition: none; }
+}

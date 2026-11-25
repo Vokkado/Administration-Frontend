@@ -139,7 +139,8 @@ export function IngredientsPage() {
         ingredientId: variantFormData.ingredientId,
         name: variantFormData.name,
         attributeIds: variantFormData.attributeIds,
-        ...(editingVariant ? {} : { isInspected: true }),
+        // Al crear nace sin validar, salvo que se marque "Crear validada".
+        ...(editingVariant ? {} : { isInspected: variantFormData.isInspected }),
       };
 
       if (editingVariant) {
@@ -260,7 +261,8 @@ export function IngredientsPage() {
         reason: formData.reason || undefined,
         isNutritive: formData.isNutritive,
         restrictionIds: formData.restrictionIds || [],
-        ...(editingIngredient ? {} : { isInspected: true }) // Solo al crear, siempre validado
+        // Al crear nace sin validar, salvo que se marque "Crear validado".
+        ...(editingIngredient ? {} : { isInspected: formData.isInspected }),
       };
 
       if (editingIngredient) {
