@@ -54,8 +54,8 @@ export function IngredientEditorModal({ initialName = '', onClose, onSaved }: In
         reason: formData.reason || undefined,
         isNutritive: formData.isNutritive,
         restrictionIds: formData.restrictionIds || [],
-        // Creado a mano por un admin: nace validado, igual que en la página de Ingredientes.
-        isInspected: true,
+        // Nace sin validar, salvo que se marque "Crear validado" (igual que en la página de Ingredientes).
+        isInspected: formData.isInspected,
       });
       onSaved({ id: res.data?.id ?? '', name });
       onClose();

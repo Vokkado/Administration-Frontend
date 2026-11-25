@@ -1,0 +1,75 @@
+/* Avisos (toast): fondo suave y un poco traslúcido del color del tipo, barra recta a la izquierda,
+   ícono, título en negrita, mensaje y ✕. Los cuatro tipos comparten forma; cambia solo el color. */
+
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  /* Por encima de los modales (z-index 1000), así un error se ve aunque haya uno abierto. */
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  --toast-bg: rgba(234, 243, 222, 0.82);
+  --toast-bar: #5B8806;
+  --toast-ink: #1F3A12;
+  --toast-icon: #4D7505;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 10px 14px 16px;
+  border-left: 5px solid var(--toast-bar);
+  border-radius: 0 10px 10px 0;
+  background: var(--toast-bg);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  color: var(--toast-ink);
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12), 0 1px 2px rgba(17, 24, 39, 0.06);
+  font-size: 14px;
+  line-height: 1.4;
+  pointer-events: auto;
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast--success { --toast-bg: rgba(234, 243, 222, 0.82); --toast-bar: #5B8806; --toast-ink: #1F3A12; --toast-icon: #4D7505; }
+.toast--error   { --toast-bg: rgba(253, 236, 236, 0.82); --toast-bar: #DC2626; --toast-ink: #7F1D1D; --toast-icon: #B91C1C; }
+.toast--warning { --toast-bg: rgba(254, 244, 220, 0.82); --toast-bar: #D97706; --toast-ink: #713F12; --toast-icon: #B45309; }
+.toast--info    { --toast-bg: rgba(230, 240, 252, 0.82); --toast-bar: #2563EB; --toast-ink: #1E3A8A; --toast-icon: #1D4ED8; }
+
+.toast-icon { flex-shrink: 0; margin-top: 1px; color: var(--toast-icon); }
+.toast-body { flex: 1; min-width: 0; padding-top: 1px; overflow-wrap: anywhere; }
+.toast-title { display: block; font-size: 15px; font-weight: 700; }
+.toast-message { display: block; margin-top: 2px; opacity: 0.9; }
+
+.toast-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-top: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--toast-ink);
+  opacity: 0.7;
+  cursor: pointer;
+}
+.toast-close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
+.toast-close:focus-visible { opacity: 1; outline: 3px solid rgba(91, 136, 6, 0.45); outline-offset: 1px; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}

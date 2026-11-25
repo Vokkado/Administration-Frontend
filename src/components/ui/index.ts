@@ -27,6 +27,9 @@ export { SearchInput } from './SearchInput';
 export { StatCard } from './StatCard';
 export { StatTile } from './StatTile';
 export { StatusBadge } from './StatusBadge';
+export { ToastProvider } from './Toast';
+export { useToast } from './toastContext';
+export type { ToastApi, ToastOptions, ToastType } from './toastContext';
 export { AttributeBadge } from './AttributeBadge';
 export { Tooltip } from './Tooltip';
 

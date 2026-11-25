@@ -19,6 +19,7 @@ import {
 } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
+import { CreateStatusField } from './CreateStatusField';
 
 interface IngredientModalProps {
   show: boolean;
@@ -255,6 +256,15 @@ export function IngredientModal({
                   Indica si este ingrediente aporta valor nutricional
                 </small>
               </div>
+
+              {!editingIngredient && (
+                <CreateStatusField
+                  noun="ingrediente"
+                  validated={formData.isInspected}
+                  disabled={isValidating}
+                  onChange={(isInspected) => onChange({ isInspected })}
+                />
+              )}
             </div>
 
             {/* Columna Derecha - Restricciones */}
@@ -421,7 +431,7 @@ export function IngredientModal({
               </Button>
             )}
             <Button type="submit" variant="primary" form="ingredient-form" disabled={isValidating}>
-              {editingIngredient ? 'Guardar Cambios' : 'Crear Ingrediente'}
+              {editingIngredient ? 'Guardar Cambios' : 'Crear ingrediente'}
             </Button>
           </div>
         </div>

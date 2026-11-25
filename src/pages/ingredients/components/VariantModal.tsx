@@ -19,6 +19,7 @@ import type {
 import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName } from '../types';
 import type { RiskLevel } from '../types';
 import { OriginBadge } from './OriginBadge';
+import { CreateStatusField } from './CreateStatusField';
 import { matchesSearch } from '../../../utils/search';
 import { apiService } from '../../../services/api.service';
 
@@ -436,6 +437,15 @@ export function VariantModal({
               <small className="form-hint">
                 {formData.name.length}/255 caracteres
               </small>
+
+              {!editingVariant && (
+                <CreateStatusField
+                  noun="variante"
+                  validated={formData.isInspected}
+                  disabled={isValidating}
+                  onChange={(isInspected) => onChange({ isInspected })}
+                />
+              )}
             </div>
 
             {/* Right Column - Attributes + Inherited Restrictions */}
@@ -650,7 +660,7 @@ export function VariantModal({
             </Button>
           )}
           <Button type="submit" variant="primary" form="variant-form" disabled={isValidating}>
-            {editingVariant ? 'Guardar Cambios' : 'Crear Variante'}
+            {editingVariant ? 'Guardar Cambios' : 'Crear variante'}
           </Button>
         </div>
       </div>
