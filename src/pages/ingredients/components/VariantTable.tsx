@@ -5,6 +5,7 @@
 import { useMemo } from 'react';
 import { DataTable, ColumnFilter, AttributeBadge } from '../../../components/ui';
 import { ProductCountCell } from './ProductCountCell';
+import { ValidationStatus, ValidatedBy } from './ValidationStatus';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { IngredientVariant } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
@@ -168,8 +169,8 @@ export function VariantTable({
       {
         key: 'validated',
         header: 'Validado',
-        align: 'center',
-        width: '140px',
+        align: 'left',
+        width: '130px',
         headerAction: (
           <ColumnFilter
             value={filterInspected}
@@ -181,26 +182,24 @@ export function VariantTable({
         render: (variant) => {
           const isValidated = variant.isInspected === true;
           return (
-            <button
-              className={`badge badge-clickable ${isValidated ? 'validated-yes' : 'validated-no'}`}
-              onClick={() => onValidationChange(variant.id, isValidated)}
+            <ValidationStatus
+              isValidated={isValidated}
+              loading={validatingId === variant.id}
               disabled={validatingId !== null}
-              title={
-                isValidated
-                  ? 'Clic para marcar como sin validar'
-                  : 'Clic para validar'
-              }
-            >
-              {validatingId === variant.id ? (
-                <span className="badge-loading">⏳</span>
-              ) : isValidated ? (
-                'Validado'
-              ) : (
-                'Sin validar'
-              )}
-            </button>
+              onClick={() => onValidationChange(variant.id, isValidated)}
+            />
           );
         },
+      },
+      {
+        key: 'validatedBy',
+        header: 'Validado por',
+        align: 'left',
+        hideOnMobile: true,
+        width: '140px',
+        render: (variant) => (
+          <ValidatedBy isValidated={variant.isInspected === true} email={variant.validatedByEmail} at={variant.validatedAt} />
+        ),
       },
     ],
     [
