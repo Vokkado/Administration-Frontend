@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react';
 import { UploaderFilter } from './UploaderFilter';
+import { ValidatorCountsModal } from './ValidatorCountsModal';
 import { validatedByText } from '../../utils/validatedBy';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../components/layout/AdminLayout';
@@ -57,6 +58,8 @@ export function ValidationListPage() {
   const [uploader, setUploader] = useState('');
   const [uploaderExact, setUploaderExact] = useState(false);
   const pickUploader = (email: string, exact: boolean) => { setUploader(email); setUploaderExact(exact); setCurrentPage(1); };
+  // "Cuántos" (solo en Validados): cuántos validó cada persona.
+  const [showCounts, setShowCounts] = useState(false);
   const fetchFn = useCallback(
     (params: PaginatedFetchParams) =>
       ValidationService.getQueue(
@@ -192,6 +195,12 @@ export function ValidationListPage() {
               <option value="validated">✅ Validados</option>
               <option value="scorePhotos">📷 Foto de tabla nueva</option>
             </select>
+            {needsFilter === 'validated' && (
+              <button type="button" className="vq-filter vq-counts-btn" onClick={() => setShowCounts(true)}
+                title="Cuántos productos validó cada persona">
+                📊 Cuántos
+              </button>
+            )}
             <UploaderFilter value={uploader} exact={uploaderExact} onChange={pickUploader} />
             <div className="header-search">
               <SearchInput
@@ -220,6 +229,7 @@ export function ValidationListPage() {
         renderActions={(p) => <Button variant="primary" onClick={() => navigate(`/validation/${p.id}`)}>Revisar →</Button>}
       />
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      <ValidatorCountsModal show={showCounts} onClose={() => setShowCounts(false)} />
     </AdminLayout>
   );
 }
