@@ -16,11 +16,11 @@ export function useIngredients() {
   const [filterRisk, setFilterRisk] = useState<string>('ALL');
   const [filterInspected, setFilterInspected] = useState<string>('ALL');
   const [filterReason, setFilterReason] = useState<string>('ALL');
-  // Por defecto, solo lo cargado o aprobado por personas: lo que creó la IA se aprueba con su producto.
-  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('HUMAN');
+  // Por defecto, todos (cargados por personas y generados por IA).
+  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('ALL');
   // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
-  // (ordenar solo la página visible daría un resultado engañoso).
-  const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
+  // (ordenar solo la página visible daría un resultado engañoso). Por defecto, lo más nuevo arriba.
+  const [sort, setSort] = useState<DataTableSort>({ key: 'createdAt', direction: 'desc' });
 
   // Derived API params
   const toxicityLevel = filterRisk === 'ALL' ? undefined : filterRisk;

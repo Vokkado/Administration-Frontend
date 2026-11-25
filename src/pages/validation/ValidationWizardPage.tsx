@@ -38,15 +38,16 @@ import './ValidationWizardPage.css';
 /** Mismo texto por defecto que el Backend (ProductValidationService.DEFAULT_APPROVAL_MESSAGE). */
 const DEFAULT_APPROVAL_MESSAGE = 'Vokkado validó tu producto. ¡Gracias por ayudar a las personas a elegir mejor!';
 
-type Tab = 'portada' | 'ingredientes' | 'tabla' | 'etiquetas' | 'mas';
+type Tab = 'portada' | 'ingredientes' | 'alergenos' | 'tabla' | 'etiquetas' | 'mas';
 /**
  * Pestañas en el orden en que se valida. `photo`: la foto del usuario que conviene tener al lado
- * (la portada para nombre y etiquetas; la lista de ingredientes también para "Más datos", porque
- * el registro y la razón social suelen estar impresos al lado).
+ * (la portada para nombre y etiquetas; la lista de ingredientes también para los alérgenos y "Más
+ * datos", porque los alérgenos, el registro y la razón social suelen estar impresos al lado).
  */
 const TABS: Array<{ key: Tab; label: string; photo: SourcePhotoKey }> = [
   { key: 'portada', label: 'Portada', photo: 'cover' },
   { key: 'ingredientes', label: 'Ingredientes', photo: 'ingredients' },
+  { key: 'alergenos', label: 'Alérgenos', photo: 'ingredients' },
   { key: 'tabla', label: 'Tabla nutricional', photo: 'nutritionFacts' },
   { key: 'etiquetas', label: 'Etiquetas', photo: 'cover' },
   { key: 'mas', label: 'Más datos', photo: 'ingredients' },
@@ -335,8 +336,12 @@ export function ValidationWizardPage() {
       hint: 'Portada del usuario o sin portada, y avisos sobre el nombre',
     },
     ingredientes: {
-      n: detail.ingredients.filter((i) => i.color !== 'green').length + detail.allergens.filter((a) => a.color !== 'green').length,
-      hint: 'Ingredientes y alérgenos para revisar',
+      n: detail.ingredients.filter((i) => i.color !== 'green').length,
+      hint: 'Ingredientes para revisar',
+    },
+    alergenos: {
+      n: detail.allergens.filter((a) => a.color !== 'green').length,
+      hint: 'Alérgenos para revisar',
     },
     tabla: {
       n: detail.nutrition.filter((n) => n.color !== 'green').length + (meta.servingSizeAmount && meta.servingSizeUnit ? 0 : 1),
@@ -597,12 +602,20 @@ export function ValidationWizardPage() {
               </div>
             )}
 
-            {/* INGREDIENTES (con la propuesta de la IA y los alérgenos) */}
+            {/* INGREDIENTES (con la propuesta de la IA, que también propone los alérgenos) */}
             {tab === 'ingredientes' && (
               // La leyenda va dentro de la card para que ésta arranque a la misma altura que las fotos.
               <div className="vw-card">
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
                 <CompositionStep part="ingredients" productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
+              </div>
+            )}
+
+            {/* ALÉRGENOS (contiene y puede contener) */}
+            {tab === 'alergenos' && (
+              <div className="vw-card">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}><Legend /></div>
+                <CompositionStep part="allergens" productId={id} detail={detail} busy={busy} setBusy={setBusy} onChanged={loadDetail} />
               </div>
             )}
 
