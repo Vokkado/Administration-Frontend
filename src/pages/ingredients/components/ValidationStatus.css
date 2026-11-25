@@ -1,0 +1,45 @@
+/* Columnas "Validado" y "Validado por" de ingredientes y variantes. */
+
+/* Chip del tamaño del prototipo (12px, borde de 2px). Con doble clase para ganarle al .badge chico de la
+   página (10px). Los dos del mismo ancho: "Validado" y "Sin validar" arrancan y terminan en el mismo lugar. */
+.badge.validation-chip {
+  min-width: 92px;
+  padding: 6px 12px;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Usuario arriba y fecha abajo, en el alto del chip (~30px), así todas las filas miden lo mismo. */
+.validated-by {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  border-radius: 4px;
+  /* El bloque arranca en el borde de la columna; la fecha queda centrada debajo del nombre. */
+  text-align: center;
+}
+.validated-by:focus-visible { outline: 3px solid rgba(91, 136, 6, 0.45); outline-offset: 2px; }
+
+.validated-by-who {
+  display: block;
+  color: var(--color-primary-dark);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+}
+
+.validated-by-when {
+  display: block;
+  color: var(--color-grey-500);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.validated-by-empty {
+  color: var(--color-grey-400);
+  font-size: 12px;
+}

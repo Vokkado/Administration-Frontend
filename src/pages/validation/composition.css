@@ -1124,4 +1124,7 @@
 .vp-icon-btn:hover:not(:disabled) { background: var(--color-grey-100); color: var(--color-grey-800); }
 .vp-icon-btn.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
 .vp-icon-btn:disabled { opacity: 0.4; cursor: default; }
+/* Cambiar variante: las flechas ⇄ del modal de producto; queda marcado mientras se elige la otra. */
+.vp-swap-btn { font-size: 18px; line-height: 1; }
+.vp-swap-btn.is-active, .vp-swap-btn.is-active:hover:not(:disabled) { background: rgba(91, 136, 6, 0.12); color: var(--color-primary-dark); }
 .vp-row-actions { align-items: center; }

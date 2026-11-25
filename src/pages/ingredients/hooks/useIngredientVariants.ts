@@ -18,8 +18,8 @@ export function useIngredientVariants() {
   /** ALL | WITH | WITHOUT: variantes con o sin algún atributo automático (Metas, Embarazo…). */
   const [filterAuto, setFilterAuto] = useState<string>('ALL');
   const autoAttributes = filterAuto === 'WITH' ? 'with' : filterAuto === 'WITHOUT' ? 'without' : undefined;
-  // Por defecto, solo lo cargado o aprobado por personas: lo que creó la IA se aprueba con su producto.
-  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('HUMAN');
+  // Por defecto, todos (cargados por personas y generados por IA).
+  const [filterOrigin, setFilterOrigin] = useState<OriginFilterValue>('ALL');
   const origin = filterOrigin === 'ALL' ? undefined : filterOrigin;
 
   // Lookup data
@@ -33,8 +33,8 @@ export function useIngredientVariants() {
     : filterInspected === 'VALIDATED';
 
   // Orden: lo resuelve el backend, porque la lista está paginada del lado del servidor
-  // (ordenar solo la página visible daría un resultado engañoso).
-  const [sort, setSort] = useState<DataTableSort>({ key: 'name', direction: 'asc' });
+  // (ordenar solo la página visible daría un resultado engañoso). Por defecto, lo más nuevo arriba.
+  const [sort, setSort] = useState<DataTableSort>({ key: 'createdAt', direction: 'desc' });
 
   // Fetch function wrapped in useCallback depending on [inspected, sort]
   const fetchFn = useCallback(

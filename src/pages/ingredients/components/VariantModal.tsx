@@ -16,9 +16,10 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName } from '../types';
+import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName, MAX_NAME_LENGTH } from '../types';
 import type { RiskLevel } from '../types';
 import { OriginBadge } from './OriginBadge';
+import { CreateStatusField } from './CreateStatusField';
 import { matchesSearch } from '../../../utils/search';
 import { apiService } from '../../../services/api.service';
 
@@ -428,14 +429,22 @@ export function VariantModal({
                     }
                   }}
                   rows={2}
-                  maxLength={255}
-                  title="El nombre no puede exceder 255 caracteres"
+                  maxLength={MAX_NAME_LENGTH}
                   required
                 />
               </div>
               <small className="form-hint">
-                {formData.name.length}/255 caracteres
+                {formData.name.length}/{MAX_NAME_LENGTH} caracteres
               </small>
+
+              {!editingVariant && (
+                <CreateStatusField
+                  noun="variante"
+                  validated={formData.isInspected}
+                  disabled={isValidating}
+                  onChange={(isInspected) => onChange({ isInspected })}
+                />
+              )}
             </div>
 
             {/* Right Column - Attributes + Inherited Restrictions */}
@@ -650,7 +659,7 @@ export function VariantModal({
             </Button>
           )}
           <Button type="submit" variant="primary" form="variant-form" disabled={isValidating}>
-            {editingVariant ? 'Guardar Cambios' : 'Crear Variante'}
+            {editingVariant ? 'Guardar Cambios' : 'Crear variante'}
           </Button>
         </div>
       </div>

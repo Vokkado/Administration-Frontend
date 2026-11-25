@@ -149,8 +149,8 @@ export function VariantEditorModal({
         ingredientId: formData.ingredientId,
         name,
         attributeIds: formData.attributeIds,
-        // Al crear desde acá se da por validada, igual que en la página de Ingredientes.
-        ...(variantId ? {} : { isInspected: true }),
+        // Al crear nace sin validar, salvo que se marque "Crear validada" (igual que en Ingredientes).
+        ...(variantId ? {} : { isInspected: formData.isInspected }),
       };
       if (variantId) {
         await apiService.put(`/ingredient-variants/${variantId}`, payload);

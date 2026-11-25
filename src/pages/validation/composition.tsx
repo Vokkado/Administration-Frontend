@@ -703,9 +703,11 @@ function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant
         <div className="vp-row-actions">
           {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario o ícono. */}
           {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          <button type="button" className="vp-icon-btn" onClick={() => setCorrecting((c) => !c)} disabled={busy}
-            title="Corregir: la IA vinculó la variante equivocada" aria-label={`Corregir ${ing.variantName}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          {/* Mismas flechas que "Cambiar por otra variante" en el modal de producto. */}
+          <button type="button" className={`vp-icon-btn vp-swap-btn${correcting ? ' is-active' : ''}`} onClick={() => setCorrecting((c) => !c)} disabled={busy}
+            title={correcting ? 'Cancelar el cambio' : 'Cambiar por otra variante (la IA vinculó la equivocada)'}
+            aria-label={`Cambiar ${ing.variantName} por otra variante`} aria-pressed={correcting}>
+            <span aria-hidden="true">⇄</span>
           </button>
           <button type="button" className="vp-icon-btn is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
             title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>

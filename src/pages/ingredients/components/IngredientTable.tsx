@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import { DataTable, ColumnFilter } from '../../../components/ui';
 import { ProductCountCell } from './ProductCountCell';
+import { ValidationStatus, ValidatedBy } from './ValidationStatus';
 import type { DataTableColumn, DataTableSort, ColumnFilterOption } from '../../../components/ui';
 import type { Ingredient } from '../types';
 import editIcon from '../../../../assets/icons/brownPencil.png';
@@ -224,8 +225,8 @@ export function IngredientTable({
     {
       key: 'isInspected',
       header: 'Validado',
-      align: 'center',
-      width: '140px',
+      align: 'left',
+      width: '130px',
       headerAction: (
         <ColumnFilter
           value={filterInspected}
@@ -237,22 +238,24 @@ export function IngredientTable({
       render: (ingredient) => {
         const isValidated = ingredient.isInspected === true;
         return (
-          <button
-            className={`badge badge-clickable ${isValidated ? 'validated-yes' : 'validated-no'}`}
-            onClick={() => onValidationChange(ingredient.id, isValidated)}
+          <ValidationStatus
+            isValidated={isValidated}
+            loading={validatingId === ingredient.id}
             disabled={validatingId !== null}
-            title={isValidated ? 'Click para marcar como sin validar' : 'Click para validar'}
-          >
-            {validatingId === ingredient.id ? (
-              <span className="badge-loading">⏳</span>
-            ) : (
-              <>
-                {isValidated ? 'Validado' : 'Sin validar'}
-              </>
-            )}
-          </button>
+            onClick={() => onValidationChange(ingredient.id, isValidated)}
+          />
         );
       },
+    },
+    {
+      key: 'validatedBy',
+      header: 'Validado por',
+      align: 'left',
+      hideOnMobile: true,
+      width: '140px',
+      render: (ingredient) => (
+        <ValidatedBy isValidated={ingredient.isInspected === true} email={ingredient.validatedByEmail} at={ingredient.validatedAt} />
+      ),
     },
   ], [
     onValidationChange, validatingId, onViewProducts,
