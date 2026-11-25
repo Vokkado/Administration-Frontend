@@ -16,6 +16,18 @@ export interface UploaderSummary {
   validated: number;
 }
 
+/**
+ * Cuántos validó y cuántos marcó como "Falta información" cada persona. `reviewed` = productos distintos entre las dos
+ * cosas. `unknown` = validados antes de que se guardara quién (sin persona ni fecha).
+ */
+export interface ValidatorCounts {
+  totals: { validated: number; needsPhotos: number; reviewed: number; unknown: number };
+  items: Array<{
+    userId: string; email: string; name: string | null;
+    validated: number; needsPhotos: number; reviewed: number; lastAt: string | null;
+  }>;
+}
+
 export interface ValidationQueueItem {
   /** Mail de quien lo cargó desde la app (null = importado o del equipo). */
   uploaderEmail?: string | null;
@@ -266,6 +278,15 @@ export class ValidationService {
     if (search) params.append('search', search);
     const res: any = await apiService.get(`${BASE}/uploaders?${params.toString()}`);
     return res?.data?.data ?? res?.data ?? [];
+  }
+
+  /** Cuántos validó y marcó como "Falta información" cada persona; con rango, por fecha de cada acción. */
+  static async validatorCounts(from?: Date, to?: Date): Promise<ValidatorCounts> {
+    const params = new URLSearchParams();
+    if (from) params.append('from', from.toISOString());
+    if (to) params.append('to', to.toISOString());
+    const res = await apiService.get<{ data?: ValidatorCounts }>(`${BASE}/validators?${params.toString()}`);
+    return res?.data ?? { totals: { validated: 0, needsPhotos: 0, reviewed: 0, unknown: 0 }, items: [] };
   }
 
   static async getQueue(
