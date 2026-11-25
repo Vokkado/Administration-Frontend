@@ -16,6 +16,7 @@ import {
   RISK_DESCRIPTIONS,
   SCORE_HINT,
   RESTRICTION_TYPE_LABELS,
+  MAX_NAME_LENGTH,
 } from '../types';
 import { apiService } from '../../../services/api.service';
 import { matchesSearch } from '../../../utils/search';
@@ -173,17 +174,29 @@ export function IngredientModal({
               {/* Columna Izquierda - Información Básica */}
               <div className="modal-form-left">
               <h3 className="modal-column-title">Información básica</h3>
-              <Input
-                type="text"
-                label="Nombre *"
-                placeholder="Ej: Glucosa"
-                value={formData.name}
-                onChange={(e) => onChange({ name: e.target.value })}
-                maxLength={255}
-                title="El nombre no puede exceder 255 caracteres"
-                required
-                fullWidth
-              />
+              <div className="form-group">
+                <label htmlFor="ingredient-name">Nombre *</label>
+                <textarea
+                  id="ingredient-name"
+                  className="textarea textarea-autosize"
+                  placeholder="Ej: Glucosa"
+                  value={formData.name}
+                  onChange={(e) => onChange({ name: e.target.value.replace(/\s*\n\s*/g, ' ') })}
+                  onKeyDown={(e) => {
+                    // Es un nombre, no un texto libre: Enter guarda como en un input, no agrega renglones.
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.currentTarget.form?.requestSubmit();
+                    }
+                  }}
+                  rows={2}
+                  maxLength={MAX_NAME_LENGTH}
+                  required
+                />
+                <small className="form-hint">
+                  {formData.name.length}/{MAX_NAME_LENGTH} caracteres
+                </small>
+              </div>
 
               <div className="form-group">
                 <label>Nivel de Riesgo *</label>

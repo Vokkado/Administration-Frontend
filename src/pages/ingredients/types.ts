@@ -535,3 +535,7 @@ export const normalizeIngredientCategory = (category: string | null | undefined)
   const normalized = categoryMap[category.toLowerCase()] || category.toUpperCase() as IngredientCategory;
   return normalized;
 };
+
+/** Tope de largo del nombre de ingrediente y variante: el mismo que la API (MAX_NAME_LENGTH del backend).
+ *  La base ya no tiene tope (migración 290): los compuestos se cargan enteros con su paréntesis. */
+export const MAX_NAME_LENGTH = 2000;

@@ -16,7 +16,7 @@ import type {
   Restriction,
   RestrictionType,
 } from '../types';
-import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName } from '../types';
+import { RESTRICTION_TYPE_LABELS, RISK_LABELS, getAttributeDisplayName, MAX_NAME_LENGTH } from '../types';
 import type { RiskLevel } from '../types';
 import { OriginBadge } from './OriginBadge';
 import { CreateStatusField } from './CreateStatusField';
@@ -429,13 +429,12 @@ export function VariantModal({
                     }
                   }}
                   rows={2}
-                  maxLength={255}
-                  title="El nombre no puede exceder 255 caracteres"
+                  maxLength={MAX_NAME_LENGTH}
                   required
                 />
               </div>
               <small className="form-hint">
-                {formData.name.length}/255 caracteres
+                {formData.name.length}/{MAX_NAME_LENGTH} caracteres
               </small>
 
               {!editingVariant && (
