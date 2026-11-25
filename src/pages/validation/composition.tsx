@@ -730,8 +730,10 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
         ⠿
       </span>
       <div className="vp-li-card">
-        <button type="button" className="vp-li-head" onClick={onToggle} aria-expanded={open} title={open ? 'Cerrar' : 'Ver ingrediente, metas y acciones'}>
-          <span className="vp-li-num">{index + 1}</span>
+        <div className="vp-li-head">
+          {/* La posición se escribe acá mismo (Enter o al salir); Esc descarta. */}
+          <PositionInput className="vp-li-num" value={index + 1} max={count} name={ing.variantName} disabled={busy} onCommit={(pos) => sortable.move(index, pos - 1)} />
+          <button type="button" className="vp-li-toggle" onClick={onToggle} aria-expanded={open} title={open ? 'Cerrar' : 'Ver ingrediente, metas y acciones'}>
           <Dot color={ing.color} />
           <span className="vp-li-name">{ing.variantName}</span>
           <span className="vp-li-end">
@@ -742,7 +744,8 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
             )}
             <svg className="vp-li-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
           </span>
-        </button>
+          </button>
+        </div>
 
         {open && (
           <div className="vp-li-detail">
