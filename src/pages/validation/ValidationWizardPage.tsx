@@ -38,7 +38,7 @@ import './ValidationWizardPage.css';
 /** Mismo texto por defecto que el Backend (ProductValidationService.DEFAULT_APPROVAL_MESSAGE). */
 const DEFAULT_APPROVAL_MESSAGE = 'Vokkado validó tu producto. ¡Gracias por ayudar a las personas a elegir mejor!';
 
-type Tab = 'portada' | 'ingredientes' | 'alergenos' | 'tabla' | 'etiquetas' | 'mas';
+type Tab = 'portada' | 'ingredientes' | 'alergenos' | 'tabla' | 'octogonos' | 'etiquetas' | 'mas';
 /**
  * Pestañas en el orden en que se valida. `photo`: la foto del usuario que conviene tener al lado
  * (la portada para nombre y etiquetas; la lista de ingredientes también para los alérgenos y "Más
@@ -49,6 +49,8 @@ const TABS: Array<{ key: Tab; label: string; photo: SourcePhotoKey }> = [
   { key: 'ingredientes', label: 'Ingredientes', photo: 'ingredients' },
   { key: 'alergenos', label: 'Alérgenos', photo: 'ingredients' },
   { key: 'tabla', label: 'Tabla nutricional', photo: 'nutritionFacts' },
+  // Los octógonos se marcan mirando el frente del envase (el decreto los calcula con la tabla).
+  { key: 'octogonos', label: 'Sellos', photo: 'cover' },
   { key: 'etiquetas', label: 'Etiquetas', photo: 'cover' },
   { key: 'mas', label: 'Más datos', photo: 'ingredients' },
 ];
@@ -347,6 +349,7 @@ export function ValidationWizardPage() {
       n: detail.nutrition.filter((n) => n.color !== 'green').length + (meta.servingSizeAmount && meta.servingSizeUnit ? 0 : 1),
       hint: 'Valores para revisar y porción sin cargar',
     },
+    octogonos: { n: 0, hint: 'Octógonos que el decreto da por seguros y no están marcados' },
     etiquetas: { n: meta.categoryId ? 0 : 1, hint: 'Falta la categoría' },
     mas: { n: 0, hint: '' },
   };
@@ -363,6 +366,7 @@ export function ValidationWizardPage() {
   });
   const suggestedOctagons: Partial<Record<MspOctagon, boolean>> = {};
   for (const f of decree.findings) if (f.status === 'exceso') suggestedOctagons[OCTAGON_OF[f.key]] = true;
+  pending.octogonos.n = (Object.keys(suggestedOctagons) as MspOctagon[]).filter((o) => !meta[OCTAGON_FIELD[o]]).length;
 
   const status = p.isRejected
     ? { text: 'Rechazado', cls: 'vw-status--rejected', title: 'No aparece en la cola ni en la app' }
@@ -619,7 +623,7 @@ export function ValidationWizardPage() {
               </div>
             )}
 
-            {/* TABLA NUTRICIONAL (porción, tabla, octógonos y ultraprocesado) */}
+            {/* TABLA NUTRICIONAL (porción, tabla y chequeo de calorías) */}
             {tab === 'tabla' && (
               <div className="vw-card">
                 <CompositionStep
@@ -661,6 +665,13 @@ export function ValidationWizardPage() {
                     </div>
                   }
                 />
+                <KcalPanel detail={detail} />
+              </div>
+            )}
+
+            {/* SELLOS (octógonos MSP con el chequeo del decreto, sellos argentinos y ultraprocesado) */}
+            {tab === 'octogonos' && (
+              <div className="vw-card">
                 <section className="vp-section">
                   <div className="vp-section-head">
                     <h3 className="vp-section-title">Octógonos (MSP)</h3>
@@ -674,7 +685,6 @@ export function ValidationWizardPage() {
                         suggested={suggestedOctagons}
                       />
                     </div>
-                    <KcalPanel detail={detail} />
                     <DecreePanel
                       detail={detail}
                       name={meta.name}

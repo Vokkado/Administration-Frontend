@@ -648,6 +648,13 @@
 /* Chequeo del decreto 34/021 (paso Más info) */
 .dc-panel { margin-top: 12px; border: 1px solid var(--color-grey-200, #e5e7eb); border-radius: 10px; padding: 12px 14px; background: #fafafa; font-size: 14px; }
 .dc-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 8px; }
+/* Chequeo del decreto cerrado: solo el encabezado, sin espacio abajo. */
+.dc-panel.dc-collapsible:not(.is-open) .dc-head { margin-bottom: 0; }
+/* Encabezado desplegable: todo el renglón abre y cierra el detalle. */
+.dc-toggle { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; flex: 1 1 auto; min-width: 0; padding: 2px 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.dc-toggle:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.dc-chev { color: #9ca3af; transition: transform 0.15s ease; }
+.dc-panel.is-open .dc-chev { transform: rotate(180deg); }
 .dc-sub { color: #6b7280; font-size: 13px; }
 .dc-apply { margin-left: auto; font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--color-primary, #4d7c0f); background: var(--color-primary, #4d7c0f); color: #fff; cursor: pointer; }
 .dc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }

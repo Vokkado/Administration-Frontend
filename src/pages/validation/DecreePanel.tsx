@@ -2,8 +2,10 @@
  * Panel "Decreto 34/021" del paso Más info: hace la cuenta del rotulado frontal uruguayo con la tabla,
  * la porción y los ingredientes, y la compara con los octógonos marcados. Solo sugiere: los botones
  * marcan/desmarcan, la persona decide (y si el envase trae el octógono, gana el envase).
+ *
+ * Arranca cerrado: el encabezado ya dice si coincide o cuántos hay para revisar, y se despliega a pedido.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { checkDecree, type DecreeFinding, type DecreeKey } from './decreeCheck';
 import type { ValidationDetail } from '../../services/validation.service';
 
@@ -23,6 +25,7 @@ export function DecreePanel(props: {
   onSet: (key: DecreeKey, v: boolean) => void;
 }) {
   const { detail, name, servingSizeAmount, servingSizeUnit, values, onSet } = props;
+  const [open, setOpen] = useState(false);
   const result = useMemo(() => checkDecree({
     ingredients: [...detail.ingredients]
       .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
@@ -45,20 +48,24 @@ export function DecreePanel(props: {
   const doubtful = result.findings.filter((f) => f.status === 'probable' && !values[f.key]);
 
   return (
-    <div className="dc-panel">
+    <div className={`dc-panel dc-collapsible${open ? ' is-open' : ''}`}>
       <div className="dc-head">
-        <strong>📜 Chequeo del decreto 34/021 (MSP)</strong>
-        <span className="dc-sub">
-          {result.liquid == null ? 'Falta la porción' : `Por ${result.liquid ? '100 ml (líquido)' : '100 g (sólido)'}`}
-          {' · '}
-          {sure.length === 0 && doubtful.length === 0 ? '✅ coincide con lo marcado' : `⚠️ ${sure.length + doubtful.length} para revisar`}
-        </span>
+        <button type="button" className="dc-toggle" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <strong>📜 Chequeo del decreto 34/021 (MSP)</strong>
+          <span className="dc-sub">
+            {result.liquid == null ? 'Falta la porción' : `Por ${result.liquid ? '100 ml (líquido)' : '100 g (sólido)'}`}
+            {' · '}
+            {sure.length === 0 && doubtful.length === 0 ? '✅ coincide con lo marcado' : `⚠️ ${sure.length + doubtful.length} para revisar`}
+          </span>
+          <svg className="dc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
         {sure.length > 0 && (
           <button type="button" className="dc-apply" onClick={() => sure.forEach((f) => onSet(f.key, f.status === 'exceso'))}>
             Aplicar lo seguro ({sure.length})
           </button>
         )}
       </div>
+      {open && (<>
       <ul className="dc-list">
         {result.findings.map((f) => {
           const marked = values[f.key];
@@ -97,6 +104,7 @@ export function DecreePanel(props: {
       <div className="dc-foot">
         Solo va el octógono del nutriente que se agregó (sal, azúcar, grasas) y cuando supera el límite. Si el frente del envase trae el octógono, gana el envase.
       </div>
+      </>)}
     </div>
   );
 }
