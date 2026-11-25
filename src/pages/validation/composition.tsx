@@ -230,15 +230,25 @@ function SortableRow<T>({ sortable, item, index, count, name, busy, children }: 
   );
 }
 
+/** Filtros de la lista de ingredientes: resaltan lo que hay que mirar y atenúan el resto. */
+type IngredientFilter = 'all' | 'review' | 'pending' | 'other-name';
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+const INGREDIENT_FILTERS: { key: IngredientFilter; label: string; hint: string; test: (i: ValidationIngredient) => boolean }[] = [
+  { key: 'all', label: 'Todos', hint: 'Todos los ingredientes', test: () => true },
+  { key: 'review', label: 'Para revisar', hint: 'Los que la IA no está segura de haber vinculado bien o creó ella', test: (i) => i.color !== 'green' },
+  { key: 'pending', label: 'Metas sin validar', hint: 'Con atributos de metas o embarazo que puso la IA o el clasificador y nadie validó', test: (i) => (i.autoAttributes ?? []).some((a) => !a.inspected) },
+  { key: 'other-name', label: 'Ingrediente con otro nombre', hint: 'La variante de la etiqueta pertenece a un ingrediente que se llama distinto (ej. leche en polvo → Leche)', test: (i) => !sameName(i.variantName, i.ingredientName) },
+];
+
 export function CompositionStep({ productId, detail, busy, setBusy, onChanged, nutritionTop, part = 'all' }: {
   productId: string; detail: ValidationDetail; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void;
   /** Va arriba de la tabla nutricional (la porción, que es un dato del producto y la guarda el wizard). */
   nutritionTop?: React.ReactNode;
   /**
-   * Qué mostrar: el wizard tiene una pestaña para ingredientes (con la propuesta de la IA y
-   * los alérgenos, que salen de la misma parte de la etiqueta) y otra para la tabla.
+   * Qué mostrar: el wizard tiene una pestaña para ingredientes (con la propuesta de la IA), otra
+   * para los alérgenos y otra para la tabla.
    */
-  part?: 'all' | 'ingredients' | 'nutrition';
+  part?: 'all' | 'ingredients' | 'allergens' | 'nutrition';
 }) {
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
   // Fichas abiertas en los modales compartidos con la página de Ingredientes.
@@ -251,6 +261,9 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
   const [showHelp, setShowHelp] = useState(false);
   // Nutriente elegido en el buscador y todavía sin valor (fila en edición arriba de la lista).
   const [nutritionDraft, setNutritionDraft] = useState<Picked | null>(null);
+  // Lista de ingredientes: qué fila está desplegada y qué filtro resalta (los demás se atenúan).
+  const [openIngredientId, setOpenIngredientId] = useState<string | null>(null);
+  const [ingredientFilter, setIngredientFilter] = useState<IngredientFilter>('all');
 
   // Orden de la etiqueta (ingredientes y tabla nutricional). Se muestra al instante
   // (optimista) y se guarda en el backend; si falla, vuelve al orden que vino del servidor.
@@ -303,7 +316,7 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
 
   return (
     <>
-      {part !== 'nutrition' && (<>
+      {(part === 'all' || part === 'ingredients') && (<>
       <AiCompositionPanel productId={productId} detail={detail} busy={busy} setBusy={setBusy} onChanged={onChanged} />
       <Section
         title={`Ingredientes (${detail.ingredients.length})`}
@@ -348,30 +361,47 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
         {ordered.length === 0 && <Muted>Sin ingredientes vinculados.</Muted>}
         {ordered.length > 1 && (
           <p className="vp-order-hint">
-            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde ⠿, escribí la posición y Enter, o usá las flechas.
+            Dejalos en el mismo orden que la etiqueta (el primero es el que más hay): arrastrá desde ⠿, o abrí uno y movelo con las flechas o escribiendo su posición.
           </p>
         )}
-        {ordered.map((ing, idx) => (
-          <SortableRow
-            key={ing.variantId}
-            sortable={ingredientsSortable}
-            item={ing}
-            index={idx}
-            count={ordered.length}
-            name={ing.variantName}
-            busy={busy}
-          >
-            <IngredientRow
-              productId={productId}
-              ing={ing}
-              busy={busy}
-              setBusy={setBusy}
-              onChanged={onChanged}
-              onEditVariant={() => setVariantEditor({ id: ing.variantId })}
-              onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
-            />
-          </SortableRow>
-        ))}
+        {ordered.length > 0 && (
+          <div className="vp-li-filters" role="group" aria-label="Resaltar ingredientes">
+            {INGREDIENT_FILTERS.map((f) => {
+              const n = ordered.filter(f.test).length;
+              const on = ingredientFilter === f.key;
+              return (
+                <button key={f.key} type="button" className={`vp-li-filter${on ? ' is-on' : ''}`} onClick={() => setIngredientFilter(f.key)} aria-pressed={on} title={f.hint}>
+                  {f.label} <span className="vp-li-filter-n">{n}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="vp-li-list">
+          {ordered.map((ing, idx) => {
+            const filter = INGREDIENT_FILTERS.find((f) => f.key === ingredientFilter)!;
+            return (
+              <IngredientRow
+                key={ing.variantId}
+                productId={productId}
+                ing={ing}
+                index={idx}
+                count={ordered.length}
+                sortable={ingredientsSortable}
+                open={openIngredientId === ing.variantId}
+                dim={ingredientFilter !== 'all' && !filter.test(ing)}
+                busy={busy}
+                setBusy={setBusy}
+                onChanged={onChanged}
+                onToggle={() => setOpenIngredientId((cur) => (cur === ing.variantId ? null : ing.variantId))}
+                onPrev={idx > 0 ? () => setOpenIngredientId(ordered[idx - 1].variantId) : undefined}
+                onNext={idx < ordered.length - 1 ? () => setOpenIngredientId(ordered[idx + 1].variantId) : undefined}
+                onEditVariant={() => setVariantEditor({ id: ing.variantId })}
+                onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
+              />
+            );
+          })}
+        </div>
       </Section>
 
       {variantEditor && (
@@ -399,11 +429,13 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
       )}
 
       {showHelp && <CompositionHelp onClose={() => setShowHelp(false)} />}
-
-      <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
       </>)}
 
-      {part !== 'ingredients' && (
+      {(part === 'all' || part === 'allergens') && (
+        <AllergensSection productId={productId} allergens={detail.allergens} busy={busy} run={run} />
+      )}
+
+      {(part === 'all' || part === 'nutrition') && (
 
       <Section title={`Nutrición (${detail.nutrition.length})`}
         adder={<AdderButton label="+ Agregar nutriente"
@@ -547,7 +579,8 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         <span className="vp-help-note">
           Por ejemplo, <strong>cuajo (origen animal)</strong> → <span className="vp-help-muted">enzimas
           coagulantes</span>: la etiqueta dice “cuajo (origen animal)” y eso es una variante del
-          ingrediente “enzimas coagulantes”. Clickeá cualquiera de los dos para editarlo.
+          ingrediente “enzimas coagulantes”. En la lista se ve la variante; al abrir la fila
+          aparecen los dos, cada uno con su ✎ Editar.
         </span>
       </p>
 
@@ -566,12 +599,12 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         <dd>Crea un alias nuevo de un ingrediente que ya existe, y lo vincula al producto.</dd>
         <dt>✓ Está bien</dt>
         <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Solo aparece en las que no lo están.</dd>
-        <dt>✎ Corregir</dt>
-        <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior.</dd>
+        <dt>⇄ Cambiar por otra</dt>
+        <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior, en la misma posición.</dd>
         <dt>✕ Quitar</dt>
         <dd>Desvincula la variante <strong>de este producto</strong>. La ficha sigue existiendo en el catálogo.</dd>
         <dt>Validar ingrediente</dt>
-        <dd>Solo en ingredientes sin validar (debajo del nombre): abre el panel de puntaje y toxicidad. Al validar se guardan los valores que revisaste y la ficha queda aprobada.</dd>
+        <dd>Solo en ingredientes sin validar (al abrir la fila): abre el panel de puntaje y toxicidad. Al validar se guardan los valores que revisaste y la ficha queda aprobada.</dd>
       </dl>
 
       <h4 className="vp-help-title">De dónde salió cada vínculo</h4>
@@ -650,152 +683,191 @@ function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: Validat
   );
 }
 
-function IngredientRow({ productId, ing, busy, setBusy, onChanged, onEditVariant, onEditIngredient }: { productId: string; ing: ValidationIngredient; busy: boolean; setBusy: (b: boolean) => void; onChanged: () => void; onEditVariant: () => void; onEditIngredient: () => void }) {
+/**
+ * Ingrediente del producto en la lista compacta: una línea (posición, punto de estado y la variante tal
+ * como la dice la etiqueta) que se despliega al tocarla. El desplegable trae lo que antes estaba siempre a
+ * la vista: el ingrediente padre y la variante (cada uno con su ficha), las metas, la posición y las
+ * acciones. Se reordena arrastrando desde ⠿ (en la fila) o, abierta, con las flechas o escribiendo la posición.
+ */
+function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy, setBusy, onChanged, onToggle, onPrev, onNext, onEditVariant, onEditIngredient }: {
+  productId: string;
+  ing: ValidationIngredient;
+  index: number;
+  count: number;
+  sortable: ReturnType<typeof useSortableList<ValidationIngredient>>;
+  open: boolean;
+  /** Un filtro está activo y esta fila no lo cumple: se atenúa. */
+  dim: boolean;
+  busy: boolean;
+  setBusy: (b: boolean) => void;
+  onChanged: () => void;
+  onToggle: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onEditVariant: () => void;
+  onEditIngredient: () => void;
+}) {
   const [score, setScore] = useState<number>(ing.score ?? 5);
   const [tox, setTox] = useState<string>(ing.toxicityLevel ?? 'MEDIUM');
   const [correcting, setCorrecting] = useState(false);
   // El panel de puntaje/toxicidad ocupa mucho: arranca cerrado y se abre con el botón.
   const [reviewing, setReviewing] = useState(false);
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); onChanged(); } finally { setBusy(false); } };
-  return (
-    <div style={{ ...rowBox(ing.color), flexDirection: 'column', alignItems: 'stretch' }}>
-      {/* Título a la izquierda y acciones a la derecha; el panel de la IA va debajo, a todo el ancho. */}
-      <div className="vp-row-head">
-        <div className="vp-row-title">
-          {/* Cada nombre abre SU ficha: la variante es lo que se vincula al producto,
-              el ingrediente es la entidad canónica a la que esa variante apunta. */}
-          <div><Dot color={ing.color} hint />{' '}
-            <button
-              type="button"
-              className="vp-variant-link"
-              onClick={onEditVariant}
-              title="Editar la variante (ingrediente base, nombre y atributos)"
-            >
-              {ing.variantName} <span aria-hidden>✎</span>
-            </button>
-            <span style={{ color: '#6b7280', fontSize: 13 }}> → </span>
-            <button
-              type="button"
-              className="vp-ingredient-link"
-              onClick={onEditIngredient}
-              title="Editar la ficha del ingrediente (riesgo, puntaje, restricciones)"
-            >
-              {ing.ingredientName} <span aria-hidden>✎</span>
-            </button>
-            <TierBadge tier={ing.matchTier} />
-          </div>
-          <IngredientAutoAttributes attributes={ing.autoAttributes} onEdit={onEditVariant} />
-          {/* Ingrediente sin validar: queda la marca a la vista, pero el panel se abre a pedido. */}
-          {!ing.ingredientInspected && (
-            <button
-              type="button"
-              className={`vp-ai-toggle${ing.color === 'red' ? '' : ' vp-ai-toggle--pending'}${reviewing ? ' is-open' : ''}`}
-              onClick={() => setReviewing((r) => !r)}
-              aria-expanded={reviewing}
-              title={reviewing ? 'Ocultar puntaje y toxicidad' : 'Revisar puntaje y toxicidad para validarlo'}
-            >
-              <span className="vp-ai-toggle-tag">{ing.color === 'red' ? 'Creado por la IA' : 'Sin validar'}</span>
-              {reviewing ? 'Ocultar' : 'Validar ingrediente'}
-              <span className="vp-ai-toggle-caret" aria-hidden>▾</span>
-            </button>
-          )}
-        </div>
-        <div className="vp-row-actions">
-          {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario o ícono. */}
-          {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-          {/* Mismas flechas que "Cambiar por otra variante" en el modal de producto. */}
-          <button type="button" className={`vp-icon-btn vp-swap-btn${correcting ? ' is-active' : ''}`} onClick={() => setCorrecting((c) => !c)} disabled={busy}
-            title={correcting ? 'Cancelar el cambio' : 'Cambiar por otra variante (la IA vinculó la equivocada)'}
-            aria-label={`Cambiar ${ing.variantName} por otra variante`} aria-pressed={correcting}>
-            <span aria-hidden="true">⇄</span>
-          </button>
-          <button type="button" className="vp-icon-btn is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
-            title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-          </button>
-        </div>
-      </div>
 
-      {/* Ingrediente sin validar: si lo creó la IA (rojo) o si ya existía y nadie lo revisó (amarillo). */}
-      {!ing.ingredientInspected && reviewing && (
-        <div className={`vp-ai-panel ${ing.color === 'red' ? '' : 'vp-ai-panel--pending'}`}>
-          <div className="vp-ai-head">
-            {ing.color === 'red' ? (
-              <Tooltip content={AI_TAG_HINT}>
-                <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
-              </Tooltip>
-            ) : (
-              <Tooltip content={UNVALIDATED_TAG_HINT}>
-                <span className="vp-ai-tag vp-ai-tag--pending" tabIndex={0}>Sin validar</span>
+  const { className: dragClass, ...row } = sortable.rowProps(ing, index);
+  const attrs = ing.autoAttributes ?? [];
+  const pendingAttrs = attrs.some((a) => !a.inspected);
+  const tone = ing.color === 'green' ? '' : ` is-${ing.color}`;
+
+  return (
+    <div {...row} className={`vp-order-row vp-li${tone}${open ? ' is-open' : ''}${dim ? ' is-dim' : ''} ${dragClass}`}>
+      <span
+        className={`vp-order-grip${busy ? ' is-disabled' : ''}`}
+        title="Arrastrar para cambiar el orden"
+        aria-hidden="true"
+        {...sortable.gripProps(ing)}
+      >
+        ⠿
+      </span>
+      <div className="vp-li-card">
+        <button type="button" className="vp-li-head" onClick={onToggle} aria-expanded={open} title={open ? 'Cerrar' : 'Ver ingrediente, metas y acciones'}>
+          <span className="vp-li-num">{index + 1}</span>
+          <Dot color={ing.color} />
+          <span className="vp-li-name">{ing.variantName}</span>
+          <span className="vp-li-end">
+            {attrs.length > 0 && (
+              <Tooltip content={<><strong>Metas / embarazo{pendingAttrs ? ' (falta validar)' : ''}</strong>{attrs.map((a) => a.attributeName).join(', ')}</>}>
+                <span className={`vp-li-mk${pendingAttrs ? ' is-pending' : ''}`} aria-label={pendingAttrs ? 'Tiene metas sin validar' : 'Tiene metas'} />
               </Tooltip>
             )}
-            <span className="vp-ai-hint">
-              {ing.color === 'red'
-                ? 'Revisá el puntaje y la toxicidad antes de validarlo.'
-                : 'Ya existía en el catálogo, pero todavía no está validado: revisá su puntaje y toxicidad.'}
-            </span>
-          </div>
+            <svg className="vp-li-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </button>
 
-          {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
-
-          <div className="vp-ai-fields">
-            <div className="vp-field">
-              <span className="vp-field-name">Puntaje</span>
-              <div className="vp-score-input">
-                <button
-                  type="button"
-                  className="vp-score-step"
-                  onClick={() => setScore((s) => clampScore(s - 1))}
-                  disabled={busy || score <= MIN_SCORE}
-                  aria-label="Bajar puntaje"
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  min={MIN_SCORE}
-                  max={MAX_SCORE}
-                  value={score}
-                  onChange={(e) => setScore(clampScore(Number(e.target.value)))}
-                  disabled={busy}
-                  aria-label="Puntaje"
-                />
-                <span className="vp-score-suffix">/10</span>
-                <button
-                  type="button"
-                  className="vp-score-step"
-                  onClick={() => setScore((s) => clampScore(s + 1))}
-                  disabled={busy || score >= MAX_SCORE}
-                  aria-label="Subir puntaje"
-                >
-                  +
-                </button>
-              </div>
+        {open && (
+          <div className="vp-li-detail">
+            <div className="vp-li-pos" aria-label="Posición en la etiqueta">
+              <button type="button" className="vp-li-mv" onClick={() => sortable.move(index, index - 1)} disabled={busy || index === 0} aria-label={`Subir ${ing.variantName}`} title="Subir">
+                <Chevron dir="up" />
+              </button>
+              <PositionInput className="vp-li-posnum" value={index + 1} max={count} name={ing.variantName} disabled={busy} onCommit={(pos) => sortable.move(index, pos - 1)} />
+              <button type="button" className="vp-li-mv" onClick={() => sortable.move(index, index + 1)} disabled={busy || index === count - 1} aria-label={`Bajar ${ing.variantName}`} title="Bajar">
+                <Chevron dir="down" />
+              </button>
             </div>
 
-            <div className="vp-field">
-              <span className="vp-field-name">Toxicidad</span>
-              <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
-                {TOX_OPTIONS.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`}
-                    onClick={() => setTox(o.value)}
-                    disabled={busy}
-                  >
-                    {o.label}
-                  </button>
-                ))}
+            <div className="vp-li-body">
+              {ing.color !== 'green' && (
+                <div className={`vp-li-note is-${ing.color}`}><strong>{COLORS[ing.color].label}.</strong> {COLORS[ing.color].hint}</div>
+              )}
+
+              {/* Ingrediente padre → variante: cada uno abre SU ficha. La variante es lo que se vincula al
+                  producto (como lo dice la etiqueta); el ingrediente es la entidad canónica que la agrupa. */}
+              <div className="vp-li-tree">
+                <div className="vp-li-tree-row">
+                  <span className="vp-li-tree-k">Ingrediente</span>
+                  <span className="vp-li-tree-v">{ing.ingredientName}</span>
+                  <button type="button" className="vp-li-tree-edit" onClick={onEditIngredient} title="Editar la ficha del ingrediente (riesgo, puntaje, restricciones)">✎ Editar ingrediente</button>
+                </div>
+                <div className="vp-li-tree-row is-child">
+                  <span className="vp-li-tree-k">Variante</span>
+                  <span className="vp-li-tree-v">{ing.variantName}</span>
+                  <button type="button" className="vp-li-tree-edit" onClick={onEditVariant} title="Editar la variante (ingrediente base, nombre y atributos)">✎ Editar variante</button>
+                </div>
+                {/* Qué es cada uno lo explica la "i" del título (CompositionHelp). */}
+                <div className="vp-li-tree-foot">Vínculo: <TierBadge tier={ing.matchTier} /></div>
+              </div>
+
+              {attrs.length > 0 ? (
+                <IngredientAutoAttributes attributes={attrs} onEdit={onEditVariant} />
+              ) : (
+                <div className="vp-signals"><span className="vp-signals-label">Metas / embarazo:</span><span className="vp-li-none">Ninguna</span></div>
+              )}
+
+              {/* Ingrediente sin validar: si lo creó la IA (rojo) o si ya existía y nadie lo revisó (amarillo). */}
+              {!ing.ingredientInspected && (
+                <button
+                  type="button"
+                  className={`vp-ai-toggle${ing.color === 'red' ? '' : ' vp-ai-toggle--pending'}${reviewing ? ' is-open' : ''}`}
+                  onClick={() => setReviewing((r) => !r)}
+                  aria-expanded={reviewing}
+                  title={reviewing ? 'Ocultar puntaje y toxicidad' : 'Revisar puntaje y toxicidad para validarlo'}
+                >
+                  <span className="vp-ai-toggle-tag">{ing.color === 'red' ? 'Creado por la IA' : 'Sin validar'}</span>
+                  {reviewing ? 'Ocultar' : 'Validar ingrediente'}
+                  <span className="vp-ai-toggle-caret" aria-hidden>▾</span>
+                </button>
+              )}
+              {!ing.ingredientInspected && reviewing && (
+                <div className={`vp-ai-panel ${ing.color === 'red' ? '' : 'vp-ai-panel--pending'}`}>
+                  <div className="vp-ai-head">
+                    {ing.color === 'red' ? (
+                      <Tooltip content={AI_TAG_HINT}>
+                        <span className="vp-ai-tag" tabIndex={0}>Creado por la IA</span>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip content={UNVALIDATED_TAG_HINT}>
+                        <span className="vp-ai-tag vp-ai-tag--pending" tabIndex={0}>Sin validar</span>
+                      </Tooltip>
+                    )}
+                    <span className="vp-ai-hint">
+                      {ing.color === 'red'
+                        ? 'Revisá el puntaje y la toxicidad antes de validarlo.'
+                        : 'Ya existía en el catálogo, pero todavía no está validado: revisá su puntaje y toxicidad.'}
+                    </span>
+                  </div>
+
+                  {ing.reason && <p className="vp-ai-reason">{ing.reason}</p>}
+
+                  <div className="vp-ai-fields">
+                    <div className="vp-field">
+                      <span className="vp-field-name">Puntaje</span>
+                      <div className="vp-score-input">
+                        <button type="button" className="vp-score-step" onClick={() => setScore((s) => clampScore(s - 1))} disabled={busy || score <= MIN_SCORE} aria-label="Bajar puntaje">−</button>
+                        <input type="number" min={MIN_SCORE} max={MAX_SCORE} value={score} onChange={(e) => setScore(clampScore(Number(e.target.value)))} disabled={busy} aria-label="Puntaje" />
+                        <span className="vp-score-suffix">/10</span>
+                        <button type="button" className="vp-score-step" onClick={() => setScore((s) => clampScore(s + 1))} disabled={busy || score >= MAX_SCORE} aria-label="Subir puntaje">+</button>
+                      </div>
+                    </div>
+
+                    <div className="vp-field">
+                      <span className="vp-field-name">Toxicidad</span>
+                      <div className="vp-tox-group" role="group" aria-label="Nivel de toxicidad">
+                        {TOX_OPTIONS.map((o) => (
+                          <button key={o.value} type="button" className={`vp-tox vp-tox-${o.value.toLowerCase()} ${tox === o.value ? 'is-active' : ''}`} onClick={() => setTox(o.value)} disabled={busy}>
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
+                      Validar ingrediente
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="vp-li-actions">
+                {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario. */}
+                {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
+                <button type="button" className="vp-li-action" onClick={() => setCorrecting(true)} disabled={busy}
+                  title="Cambiar por otra variante (la IA vinculó la equivocada)" aria-label={`Cambiar ${ing.variantName} por otra variante`}>
+                  <span className="vp-li-swap" aria-hidden="true">⇄</span> Cambiar por otra
+                </button>
+                <button type="button" className="vp-li-action is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
+                  title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg> Quitar
+                </button>
+                <span className="vp-li-nav">
+                  <button type="button" className="vp-li-navbtn" onClick={onPrev} disabled={!onPrev} title="Ingrediente anterior" aria-label="Ingrediente anterior">‹</button>
+                  <button type="button" className="vp-li-navbtn" onClick={onNext} disabled={!onNext} title="Ingrediente siguiente" aria-label="Ingrediente siguiente">›</button>
+                </span>
               </div>
             </div>
-
-            <Button variant="primary" onClick={() => run(() => ValidationService.validateIngredient(ing.ingredientId, { score, toxicityLevel: tox }))} disabled={busy}>
-              Validar ingrediente
-            </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {correcting && (
         <Modal show title="Corregir ingrediente" onClose={() => setCorrecting(false)} maxWidth="560px">
