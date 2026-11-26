@@ -28,6 +28,12 @@ export interface ValidatorCounts {
   }>;
 }
 
+/** Un producto que validó o marcó una persona. `at` es null en los validados antes del 9/11/2026. */
+export interface ValidatorProduct {
+  id: string; name: string; brand: string | null; image: string | null;
+  kind: 'validated' | 'needsPhotos'; at: string | null; stillNeedsPhotos: boolean; isRejected: boolean;
+}
+
 export interface ValidationQueueItem {
   /** Mail de quien lo cargó desde la app (null = importado o del equipo). */
   uploaderEmail?: string | null;
@@ -287,6 +293,15 @@ export class ValidationService {
     if (to) params.append('to', to.toISOString());
     const res = await apiService.get<{ data?: ValidatorCounts }>(`${BASE}/validators?${params.toString()}`);
     return res?.data ?? { totals: { validated: 0, needsPhotos: 0, reviewed: 0, unknown: 0 }, items: [] };
+  }
+
+  static async validatorProducts(userId: string, kind?: ValidatorProduct['kind'], from?: Date, to?: Date): Promise<ValidatorProduct[]> {
+    const params = new URLSearchParams();
+    if (kind) params.append('kind', kind);
+    if (from) params.append('from', from.toISOString());
+    if (to) params.append('to', to.toISOString());
+    const res = await apiService.get<{ data?: ValidatorProduct[] }>(`${BASE}/validators/${encodeURIComponent(userId)}/products?${params.toString()}`);
+    return res?.data ?? [];
   }
 
   static async getQueue(
