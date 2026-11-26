@@ -98,6 +98,26 @@
     padding: 6px;
   }
 
+  /* Puntaje estimado de un producto IA sin validar: destellos azules arriba a la derecha (como en la app) */
+  .badge-score-has-ai {
+    position: relative;
+  }
+
+  .badge-score-ai-corner {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563EB;
+    border: 1.5px solid var(--color-surface, #fff);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   /* ========================= */
   /* Action Buttons             */
   /* ========================= */
