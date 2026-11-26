@@ -394,8 +394,6 @@ export function CompositionStep({ productId, detail, busy, setBusy, onChanged, n
                 setBusy={setBusy}
                 onChanged={onChanged}
                 onToggle={() => setOpenIngredientId((cur) => (cur === ing.variantId ? null : ing.variantId))}
-                onPrev={idx > 0 ? () => setOpenIngredientId(ordered[idx - 1].variantId) : undefined}
-                onNext={idx < ordered.length - 1 ? () => setOpenIngredientId(ordered[idx + 1].variantId) : undefined}
                 onEditVariant={() => setVariantEditor({ id: ing.variantId })}
                 onEditIngredient={() => setEditingIngredientId(ing.ingredientId)}
               />
@@ -689,7 +687,7 @@ function IngredientAutoAttributes({ attributes, onEdit }: { attributes?: Validat
  * la vista: el ingrediente padre y la variante (cada uno con su ficha), las metas, la posición y las
  * acciones. Se reordena arrastrando desde ⠿ (en la fila) o, abierta, con las flechas o escribiendo la posición.
  */
-function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy, setBusy, onChanged, onToggle, onPrev, onNext, onEditVariant, onEditIngredient }: {
+function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy, setBusy, onChanged, onToggle, onEditVariant, onEditIngredient }: {
   productId: string;
   ing: ValidationIngredient;
   index: number;
@@ -702,8 +700,6 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
   setBusy: (b: boolean) => void;
   onChanged: () => void;
   onToggle: () => void;
-  onPrev?: () => void;
-  onNext?: () => void;
   onEditVariant: () => void;
   onEditIngredient: () => void;
 }) {
@@ -745,6 +741,17 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
             <svg className="vp-li-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
           </span>
           </button>
+          {/* Cambiar y quitar, a la vista sin abrir la fila (lo más común después de revisar el orden). */}
+          <span className="vp-li-rowactions">
+          <button type="button" className={`vp-li-rowbtn is-swap${correcting ? ' is-active' : ''}`} onClick={() => setCorrecting(true)} disabled={busy}
+            title="Cambiar por otra variante (la IA vinculó la equivocada)" aria-label={`Cambiar ${ing.variantName} por otra variante`}>
+            <span aria-hidden="true">⇄</span>
+          </button>
+          <button type="button" className="vp-li-rowbtn is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
+            title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+          </span>
         </div>
 
         {open && (
@@ -851,22 +858,12 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
                 </div>
               )}
 
-              <div className="vp-li-actions">
-                {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario. */}
-                {ing.color !== 'green' && <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>}
-                <button type="button" className="vp-li-action" onClick={() => setCorrecting(true)} disabled={busy}
-                  title="Cambiar por otra variante (la IA vinculó la equivocada)" aria-label={`Cambiar ${ing.variantName} por otra variante`}>
-                  <span className="vp-li-swap" aria-hidden="true">⇄</span> Cambiar por otra
-                </button>
-                <button type="button" className="vp-li-action is-danger" onClick={() => run(() => ValidationService.removeIngredient(productId, ing.variantId))} disabled={busy}
-                  title="Quitar del producto" aria-label={`Quitar ${ing.variantName}`}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg> Quitar
-                </button>
-                <span className="vp-li-nav">
-                  <button type="button" className="vp-li-navbtn" onClick={onPrev} disabled={!onPrev} title="Ingrediente anterior" aria-label="Ingrediente anterior">‹</button>
-                  <button type="button" className="vp-li-navbtn" onClick={onNext} disabled={!onNext} title="Ingrediente siguiente" aria-label="Ingrediente siguiente">›</button>
-                </span>
-              </div>
+              {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario. */}
+              {ing.color !== 'green' && (
+                <div className="vp-li-actions">
+                  <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>
+                </div>
+              )}
             </div>
           </div>
         )}

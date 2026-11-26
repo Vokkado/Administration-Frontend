@@ -1160,7 +1160,16 @@
 .vp-li.is-open.is-red .vp-li-card { background: #fef2f2; box-shadow: inset 0 0 0 1px #fecaca; }
 
 /* Fila: posición (se puede escribir) | punto | nombre (entero, varias líneas si hace falta) | metas y flecha */
-.vp-li-head { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; column-gap: 2px; padding-left: 4px; border-radius: 10px; }
+.vp-li-head { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: start; column-gap: 2px; padding-left: 4px; border-radius: 10px; }
+.vp-li-rowactions { display: flex; align-items: center; gap: 2px; margin: 5px 6px 0 0; }
+.vp-li-rowbtn {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
+  border: 0; border-radius: 8px; background: none; color: var(--color-grey-400); cursor: pointer;
+}
+.vp-li-rowbtn.is-swap { font-size: 17px; line-height: 1; }
+.vp-li-rowbtn.is-swap:hover:not(:disabled), .vp-li-rowbtn.is-swap.is-active { background: rgba(91, 136, 6, 0.12); color: var(--color-primary-dark); }
+.vp-li-rowbtn.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
+.vp-li-rowbtn:disabled { opacity: 0.4; cursor: default; }
 .vp-li:not(.is-open) .vp-li-head:hover { background: #F6F8F3; }
 .vp-li.is-yellow:not(.is-open) .vp-li-head:hover { background: #fef3c7; }
 .vp-li.is-red:not(.is-open) .vp-li-head:hover { background: #fee2e2; }
@@ -1236,22 +1245,6 @@
 
 /* Acciones */
 .vp-li-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.vp-li-action {
-  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px;
-  border: 0; border-radius: 8px; background: none; color: var(--color-grey-600);
-  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-}
-.vp-li-action:hover:not(:disabled) { background: #EEF2E8; color: var(--color-primary-dark); }
-.vp-li-action.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
-.vp-li-action:disabled { opacity: 0.4; cursor: default; }
-.vp-li-swap { font-size: 16px; line-height: 1; }
-.vp-li-nav { display: flex; gap: 2px; margin-left: auto; }
-.vp-li-navbtn {
-  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: none;
-  color: var(--color-grey-400); font-size: 18px; line-height: 1; cursor: pointer;
-}
-.vp-li-navbtn:hover:not(:disabled) { background: #EEF2E8; color: var(--color-primary-dark); }
-.vp-li-navbtn:disabled { opacity: 0.3; cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {
   .vp-li-card, .vp-li-chev, .vp-li-filter { transition: none; }
