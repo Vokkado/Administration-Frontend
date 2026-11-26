@@ -45,11 +45,11 @@ export function ValidationListPage() {
   // Orden: lo resuelve el backend, porque la cola está paginada del lado del servidor
   // (ordenar solo la página visible daría un resultado engañoso).
   //
-  // Por defecto se ordena por ÚLTIMA MODIFICACIÓN, no por creación: un producto que
-  // venía del catálogo de referencia conserva la fecha de creación del día que se
-  // importó, así que al enriquecerlo quedaría enterrado al fondo de la cola en vez de
-  // arriba, que es donde lo busca quien acaba de enriquecerlo.
-  const [sort, setSort] = useState<DataTableSort>({ key: 'updatedAt', direction: 'desc' });
+  // Por defecto, los creados más recientemente primero (pedido del equipo, 2026-11-25): la última
+  // modificación los movía arriba con cualquier guardado. Ojo: un producto que venía del catálogo de
+  // referencia conserva la fecha del día que se importó, así que queda más abajo; "Actualizado" sigue
+  // a un clic en el encabezado.
+  const [sort, setSort] = useState<DataTableSort>({ key: 'createdAt', direction: 'desc' });
   // Filtro "info insuficiente": todos / solo esperando fotos / sin esa marca.
   const [needsFilter, setNeedsFilter] = useState<'all' | 'yes' | 'no' | 'rejected' | 'validated' | 'scorePhotos'>(
     () => (new URLSearchParams(window.location.search).get('filtro') === 'fotos-tabla' ? 'scorePhotos' : 'all'),
