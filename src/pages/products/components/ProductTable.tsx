@@ -208,8 +208,11 @@ export function ProductTable({
         align: 'center',
         width: '115px',
         render: (product) => {
-          if (product.aiGenerated && !product.inspected) {
-            return <span className="badge-score badge-score-ai" title="Producto IA sin inspeccionar"><IoSparkles size={16} /></span>;
+          // Cargado por IA y sin validar: el puntaje es estimado (con los datos que leyó la IA). Como en la app:
+          // el número con destellos azules arriba a la derecha; sin número todavía, solo los destellos.
+          const byAi = !!product.aiGenerated && !product.inspected;
+          if (byAi && (product.score ?? null) === null && !(product.alcoholGraduation && product.alcoholGraduation > 0)) {
+            return <span className="badge-score badge-score-ai" title="Producto IA sin validar, todavía sin puntaje"><IoSparkles size={16} /></span>;
           }
           if (product.alcoholGraduation && product.alcoholGraduation > 0) {
             // Alcohol no se puntúa (no hay nivel de consumo libre de riesgo, OMS):
@@ -223,6 +226,14 @@ export function ProductTable({
           }
           const score = product.score ?? null;
           const color = getScoreColor(score);
+          if (byAi) {
+            return (
+              <span className="badge-score badge-score-has-ai" style={{ background: color }} title="Puntaje estimado: producto cargado por IA, sin validar">
+                {score}
+                <span className="badge-score-ai-corner" aria-label="puntaje estimado por IA"><IoSparkles size={9} /></span>
+              </span>
+            );
+          }
           return (
             <span className="badge-score" style={{ background: color }}>
               {score !== null ? score : '—'}
