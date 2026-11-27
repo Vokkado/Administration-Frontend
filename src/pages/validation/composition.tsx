@@ -597,7 +597,7 @@ function CompositionHelp({ onClose }: { onClose: () => void }) {
         <dt>+ Variante</dt>
         <dd>Crea un alias nuevo de un ingrediente que ya existe, y lo vincula al producto.</dd>
         <dt>✓ Está bien</dt>
-        <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Solo aparece en las que no lo están.</dd>
+        <dd>Confirma que el vínculo que hizo la IA es correcto: la fila pasa a verde. Está en la fila, sin abrirla, y solo aparece en las que no están en verde.</dd>
         <dt>⇄ Cambiar por otra</dt>
         <dd>La IA vinculó la variante equivocada: acá elegís la correcta y reemplaza a la anterior, en la misma posición.</dd>
         <dt>✕ Quitar</dt>
@@ -742,8 +742,15 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
             <svg className="vp-li-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
           </span>
           </button>
-          {/* Cambiar y quitar, a la vista sin abrir la fila (lo más común después de revisar el orden). */}
+          {/* Confirmar, cambiar y quitar, a la vista sin abrir la fila (lo más común después de revisar el orden).
+              ✓ solo en las que no están en verde; va primero para que ⇄ y ✕ queden siempre en el mismo lugar. */}
           <span className="vp-li-rowactions">
+          {ing.color !== 'green' && (
+            <button type="button" className="vp-li-rowbtn is-ok" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}
+              title="Está bien: el vínculo es correcto (pasa a verde)" aria-label={`Confirmar ${ing.variantName}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+            </button>
+          )}
           <button type="button" className={`vp-li-rowbtn is-swap${correcting ? ' is-active' : ''}`} onClick={() => setCorrecting(true)} disabled={busy}
             title="Cambiar por otra variante (la IA vinculó la equivocada)" aria-label={`Cambiar ${ing.variantName} por otra variante`}>
             <span aria-hidden="true">⇄</span>
@@ -856,13 +863,6 @@ function IngredientRow({ productId, ing, index, count, sortable, open, dim, busy
                       Validar ingrediente
                     </Button>
                   </div>
-                </div>
-              )}
-
-              {/* Un solo primario por pantalla (Validar, arriba): acá todo es secundario. */}
-              {ing.color !== 'green' && (
-                <div className="vp-li-actions">
-                  <Button variant="outline" onClick={() => run(() => ValidationService.confirmIngredient(productId, ing.variantId))} disabled={busy}>✓ Está bien</Button>
                 </div>
               )}
             </div>

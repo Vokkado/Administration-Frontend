@@ -1169,6 +1169,9 @@
 .vp-li-rowbtn.is-swap { font-size: 17px; line-height: 1; }
 .vp-li-rowbtn.is-swap:hover:not(:disabled), .vp-li-rowbtn.is-swap.is-active { background: rgba(91, 136, 6, 0.12); color: var(--color-primary-dark); }
 .vp-li-rowbtn.is-danger:hover:not(:disabled) { background: #fef2f2; color: #b91c1c; }
+/* Confirmar: es la acción esperada en una fila amarilla/roja, así que se ve en verde sin hover. */
+.vp-li-rowbtn.is-ok { color: var(--color-primary-dark); }
+.vp-li-rowbtn.is-ok:hover:not(:disabled) { background: rgba(91, 136, 6, 0.14); }
 .vp-li-rowbtn:disabled { opacity: 0.4; cursor: default; }
 .vp-li:not(.is-open) .vp-li-head:hover { background: #F6F8F3; }
 .vp-li.is-yellow:not(.is-open) .vp-li-head:hover { background: #fef3c7; }
@@ -1244,7 +1247,6 @@
 .vp-li-none { color: var(--color-grey-400); font-size: 12px; }
 
 /* Acciones */
-.vp-li-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
   .vp-li-card, .vp-li-chev, .vp-li-filter { transition: none; }
