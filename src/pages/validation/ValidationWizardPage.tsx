@@ -249,9 +249,11 @@ export function ValidationWizardPage() {
         toast.success('Producto validado', `${name} salió de la cola.`);
       }
       navigate('/validation');
-    } catch {
+    } catch (err: unknown) {
       setShowValidate(false);
-      toast.error('No se pudo validar', 'Revisá tu conexión e intentá de nuevo.');
+      // El backend explica por qué no deja validar (ej. falta el tipo de producto o el puntaje no lo reconoce).
+      const reason = (err as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+      toast.error('No se pudo validar', typeof reason === 'string' && reason ? reason : 'Revisá tu conexión e intentá de nuevo.');
     } finally { setBusy(false); }
   };
 
@@ -326,6 +328,9 @@ export function ValidationWizardPage() {
 
   const p = detail.product;
   const blindIngredients = detail.ingredients.filter((i) => i.hasVerdictData === false);
+  // Tipo de producto obligatorio: sin él, el puntaje cae en "Sin clasificar" (vara genérica, puntaje ≈).
+  const productTypes = (detail.tags ?? []).filter((t) => t.tagGroupName === 'Tipo de producto');
+  const missingType = productTypes.length === 0;
   // La portada no puede ser la foto que sacó el usuario (es privada, R41).
   const userCover = p.labelSources?.userPhotos?.cover ?? null;
   const isUserPhoto = !!meta.image && (meta.image === userCover || meta.image.includes(`/products/${id}/cover`));
@@ -828,6 +833,13 @@ export function ValidationWizardPage() {
           Se guardan los cambios y el producto sale de la cola: pasa a usar las tablas estructuradas y quien lo cargó recibe sus puntos.
           Los ingredientes sin validar siguen así hasta que alguien les cargue restricciones y atributos en Ingredientes.
         </p>
+        {missingType && (
+          <div className="vw-blind" role="alert">
+            <strong>Falta el "Tipo de producto".</strong>
+            {' '}Es obligatorio: sin él, el puntaje usa una vara genérica ("Sin clasificar") y sale aproximado. Elegilo en
+            Más info → Tags (por ejemplo Aderezo, Jugo, Galleta, Plato preparado) y volvé a validar.
+          </div>
+        )}
         {blindIngredients.length > 0 && (
           <div className="vw-blind" role="alert">
             <strong>Ojo: {blindIngredients.length === 1 ? 'este ingrediente no tiene' : 'estos ingredientes no tienen'} restricciones ni atributos.</strong>
@@ -874,7 +886,7 @@ export function ValidationWizardPage() {
         </div>
         <div className="vw-dialog-actions">
           <Button variant="outline" onClick={() => setShowValidate(false)} disabled={busy}>Cancelar</Button>
-          <Button variant="primary" onClick={onValidate} disabled={busy || (blindIngredients.length > 0 && !validateAnyway)}>Validar</Button>
+          <Button variant="primary" onClick={onValidate} disabled={busy || missingType || (blindIngredients.length > 0 && !validateAnyway)}>Validar</Button>
         </div>
         </div>
       </Modal>
