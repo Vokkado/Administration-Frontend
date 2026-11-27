@@ -286,9 +286,10 @@ export function MergeIngredientsModal({
                 <div className="confirmation-warning">
                   <span className="warning-icon">⚠️</span>
                   <p>
-                    <strong>Advertencia:</strong> Todas las relaciones de productos y restricciones
-                    serán transferidas al ingrediente padre. Los ingredientes seleccionados serán
-                    eliminados. <strong>Esta acción es irreversible.</strong>
+                    <strong>Advertencia:</strong> Las variantes de los seleccionados pasan al ingrediente padre (si ya
+                    tiene una con el mismo nombre, se unifican y sus productos conservan la posición). Las restricciones
+                    se suman solo si el padre NO está validado; lo que validó la nutricionista no cambia. Los ingredientes
+                    seleccionados se eliminan. <strong>Esta acción es irreversible.</strong>
                   </p>
                 </div>
               </div>

@@ -55,12 +55,12 @@ export function MergeIngredientVariantsModal({
     matchesSearch(getIngredientName(variant.ingredientId), searchTerm)
   );
 
-  // Solo permitir unificar variantes del mismo ingrediente
+  // Se puede unificar con variantes de OTRO ingrediente (los duplicados que crea la IA, ej. "Vitamina B6" →
+  // "B6 piridoxina"). Primero se listan las del mismo ingrediente.
   const availableChildren = selectedParent
-    ? variants.filter(v => 
-        v.id !== selectedParent.id && 
-        v.ingredientId === selectedParent.ingredientId
-      )
+    ? variants
+        .filter(v => v.id !== selectedParent.id)
+        .sort((a, b) => Number(b.ingredientId === selectedParent.ingredientId) - Number(a.ingredientId === selectedParent.ingredientId))
     : [];
 
   const filteredChildrenVariants = availableChildren.filter(variant =>
@@ -198,8 +198,9 @@ export function MergeIngredientVariantsModal({
                 <div className="summary-label">Variante padre:</div>
                 <div className="summary-value">{selectedParent.name}</div>
                 <p className="summary-hint">
-                  Esta variante mantiene su identidad. Las variantes seleccionadas abajo
-                  serán unificadas con esta (solo del mismo ingrediente: <strong>{getIngredientName(selectedParent.ingredientId)}</strong>).
+                  Esta variante mantiene su identidad (ingrediente <strong>{getIngredientName(selectedParent.ingredientId)}</strong>).
+                  Las variantes seleccionadas abajo se unifican con esta, aunque sean de otro ingrediente: primero
+                  aparecen las del mismo.
                 </p>
               </div>
 
@@ -226,7 +227,7 @@ export function MergeIngredientVariantsModal({
                 {filteredChildrenVariants.length === 0 ? (
                   <div className="merge-empty">
                     {availableChildren.length === 0
-                      ? 'No hay otras variantes del mismo ingrediente disponibles'
+                      ? 'No hay otras variantes disponibles'
                       : 'No se encontraron variantes con los filtros aplicados'}
                   </div>
                 ) : (
@@ -300,9 +301,10 @@ export function MergeIngredientVariantsModal({
                 <div className="confirmation-warning">
                   <span className="warning-icon">⚠️</span>
                   <p>
-                    <strong>Advertencia:</strong> Todas las relaciones de productos y atributos
-                    serán transferidas a la variante padre. Las variantes seleccionadas serán
-                    eliminadas. <strong>Esta acción es irreversible.</strong>
+                    <strong>Advertencia:</strong> Los productos pasan a la variante padre en la misma posición de su
+                    lista de ingredientes. Si la variante padre está validada, sus atributos no cambian; si no, recibe
+                    los de las seleccionadas (sin validar). Las variantes seleccionadas se eliminan, y los ingredientes
+                    creados por IA que queden vacíos también. <strong>Esta acción es irreversible.</strong>
                   </p>
                 </div>
               </div>
