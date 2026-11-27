@@ -270,6 +270,8 @@ export interface ValidationDetail {
   tags: ValidationTag[];
   /** Fotos de la tabla que mandaron usuarios porque el puntaje quedó aproximado (pendientes primero). */
   scorePhotos?: ScorePhotoLite[];
+  /** Aviso (no frena): el tipo elegido no lo reconoce el puntaje y el producto cae en "Sin clasificar". */
+  typeWarning?: string | null;
 }
 
 export interface CategoryOption { id: string; name: string }
