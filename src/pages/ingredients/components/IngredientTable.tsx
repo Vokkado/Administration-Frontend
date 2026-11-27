@@ -213,6 +213,23 @@ export function IngredientTable({
       ),
     },
     {
+      key: 'variantCount',
+      header: 'Variantes',
+      sortable: true,
+      align: 'center',
+      width: '110px',
+      render: (ingredient) => ingredient.variantCount === undefined
+        ? <span className="product-count is-empty">—</span>
+        : (
+          <span
+            className={`product-count${ingredient.variantCount === 0 ? ' is-empty' : ''}`}
+            title={ingredient.variantCount === 0 ? 'No tiene variantes' : `${ingredient.variantCount} forma${ingredient.variantCount === 1 ? '' : 's'} de escribirlo en las etiquetas`}
+          >
+            {ingredient.variantCount.toLocaleString('es-UY')}
+          </span>
+        ),
+    },
+    {
       key: 'createdAt',
       header: 'Creado',
       sortable: true,
