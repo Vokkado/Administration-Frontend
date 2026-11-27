@@ -376,7 +376,7 @@ export function VariantModal({
                             <span className="autocomplete-item-meta">
                               {ing.score} · {RISK_LABELS[ing.toxicityLevel as RiskLevel] ?? '—'}
                             </span>
-                            <OriginBadge createdByAi={ing.createdByAi} inspected={ing.isInspected} />
+                            <OriginBadge createdByAi={ing.createdByAi} inspected={ing.isInspected} approved={ing.inValidatedProduct} />
                           </span>
                         </div>
                       ))}

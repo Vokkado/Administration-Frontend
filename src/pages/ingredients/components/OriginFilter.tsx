@@ -2,10 +2,10 @@
  * Filtro de origen de ingredientes / variantes (arriba de la tabla, porque por defecto oculta algo).
  *
  * - Todos (por defecto).
- * - Aprobados por personas: los cargó una persona, o los creó la IA y alguien ya los
- *   aprobó (validarlos acá, o aprobar en "Validar productos" un producto que los usa).
- * - Generados por IA: los creó la IA al cargar un producto y nadie los aprobó todavía. Lo normal es
- *   aprobarlos desde el producto, no uno por uno acá.
+ * - Aprobados por personas: los cargó una persona, o los creó la IA y (a) alguien los validó acá o
+ *   (b) están en un producto que una persona validó en "Validar productos". Aprobado NO es validado:
+ *   validar es cargarle restricciones, atributos y puntaje (eso se hace acá).
+ * - Generados por IA: los creó la IA al cargar un producto y no están en ningún producto validado.
  *
  * El filtro "Validado" de la columna se combina con este.
  */
@@ -34,8 +34,9 @@ export function OriginFilter({ value, onChange, noun }: OriginFilterProps) {
       <FilterButtonGroup options={OPTIONS} value={value} onChange={(v) => onChange(v as OriginFilterValue)} />
       {value === 'AI' && (
         <small className="origin-filter-hint">
-          Los creó la IA al cargar productos y nadie los aprobó todavía. Al aprobar el producto en "Validar productos",
-          sus {noun} pasan a "Aprobados por personas".
+          Los creó la IA al cargar productos y nadie los aprobó todavía. Al validar en "Validar productos" un producto
+          que los usa, sus {noun} pasan a "Aprobados por personas", pero siguen sin validar hasta que alguien les cargue
+          restricciones y atributos acá.
         </small>
       )}
     </div>

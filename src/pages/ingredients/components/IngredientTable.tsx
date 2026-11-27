@@ -91,8 +91,11 @@ export function IngredientTable({
       render: (ingredient) => (
         <span className="td-name-cell">
           <span className="td-name" title={ingredient.name}>{ingredient.name}</span>
-          {ingredient.createdByAi && !ingredient.isInspected && (
+          {ingredient.createdByAi && !ingredient.isInspected && !ingredient.inValidatedProduct && (
             <span className="badge-ai" title="Lo creó la IA al cargar un producto y nadie lo aprobó todavía">IA</span>
+          )}
+          {ingredient.createdByAi && !ingredient.isInspected && ingredient.inValidatedProduct && (
+            <span className="badge-ai is-approved" title="Lo creó la IA y está en un producto validado: aprobado por personas, falta validarlo (restricciones y atributos)">IA ✓</span>
           )}
         </span>
       ),
