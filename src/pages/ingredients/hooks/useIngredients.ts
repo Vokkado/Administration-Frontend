@@ -89,12 +89,8 @@ export function useIngredients() {
   };
 
   const deleteIngredient = async (id: string) => {
-    try {
-      await apiService.delete(`/ingredients/${id}`);
-      await refetch();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar ingrediente');
-    }
+    await apiService.delete(`/ingredients/${id}`);
+    await refetch();
   };
 
   const validateIngredient = async (id: string, inspectedValue: boolean) => {
@@ -128,5 +124,6 @@ export function useIngredients() {
     deleteIngredient,
     validateIngredient,
     fetchAllIngredients,
+    refetch,
   };
 }

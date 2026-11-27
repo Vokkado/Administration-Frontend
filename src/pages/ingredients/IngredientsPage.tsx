@@ -2,7 +2,7 @@
  * Página de Gestión de Ingredientes y Variantes
  */
 import { useState } from 'react';
-import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner } from '../../components/ui';
+import { Button, ConfirmDialog, Pagination, PageHeader, NotificationBanner, useToast } from '../../components/ui';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 import { SearchInput } from '../../components/ui';
 import { IngredientTable } from './components/IngredientTable';
@@ -50,7 +50,14 @@ export function IngredientsPage() {
     deleteIngredient,
     validateIngredient,
     fetchAllIngredients,
+    refetch: refetchIngredients,
   } = useIngredients();
+  // Avisos de las acciones (guardar, validar, eliminar, unificar): los mismos toasts que Validar producto.
+  // Los errores de carga de la lista siguen en el banner de la página; los del formulario, en el modal.
+  const toast = useToast();
+  const apiError = (err: any) => err?.response?.data?.message || 'Revisá tu conexión e intentá de nuevo.';
+  const ingredientName = (id: string) => ingredients.find((i) => i.id === id)?.name ?? 'El ingrediente';
+  const variantName = (id: string) => variantsHook.variants.find((v) => v.id === id)?.name ?? 'La variante';
 
   // All ingredients for merge modal (lazy loaded)
   const [allIngredients, setAllIngredients] = useState<Ingredient[]>([]);
@@ -145,10 +152,10 @@ export function IngredientsPage() {
 
       if (editingVariant) {
         await variantsHook.updateVariant(editingVariant.id, payload);
-        crud.showSuccess('✅ Variante actualizada exitosamente');
+        toast.success('Variante guardada', payload.name);
       } else {
         await variantsHook.createVariant(payload);
-        crud.showSuccess('✅ Variante creada exitosamente');
+        toast.success('Variante creada', `${payload.name} quedó ${payload.isInspected ? 'validada' : 'sin validar'}.`);
       }
 
       closeVariantModal();
@@ -165,13 +172,14 @@ export function IngredientsPage() {
   const handleConfirmVariantDelete = async () => {
     if (!variantCrud.deletingId) return;
 
+    const name = variantName(variantCrud.deletingId);
     try {
       await variantsHook.deleteVariant(variantCrud.deletingId);
       variantCrud.completeDelete();
-      crud.showSuccess('✅ Variante eliminada exitosamente');
+      toast.success('Variante eliminada', name);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al eliminar variante:', err);
-      variantsHook.setError(err.response?.data?.message || 'Error al eliminar variante');
+      toast.error('No se pudo eliminar la variante', apiError(err));
       variantCrud.completeDelete();
     }
   };
@@ -182,13 +190,10 @@ export function IngredientsPage() {
       const newState = !currentState;
       await variantsHook.validateVariant(id, newState);
       setEditingVariant(prev => (prev ? { ...prev, isInspected: newState } : null));
-      const message = newState
-        ? '✅ Variante validada exitosamente'
-        : '✅ Variante marcada como sin validar';
-      crud.showSuccess(message);
+      toast.success(newState ? 'Variante validada' : 'Variante sin validar', editingVariant?.name ?? variantName(id));
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al cambiar estado de validación:', err);
-      variantsHook.setError(err.response?.data?.message || 'Error al cambiar estado de validación');
+      toast.error('No se pudo cambiar la validación', apiError(err));
     } finally {
       variantCrud.setIsValidating(false);
     }
@@ -200,14 +205,12 @@ export function IngredientsPage() {
     variantCrud.setIsValidating(true);
     try {
       const newState = !variantCrud.validatingItem.currentState;
+      const name = variantName(variantCrud.validatingItem.id);
       await variantsHook.validateVariant(variantCrud.validatingItem.id, newState);
-      const message = newState
-        ? '✅ Variante validada exitosamente'
-        : '✅ Variante marcada como sin validar';
-      crud.showSuccess(message);
+      toast.success(newState ? 'Variante validada' : 'Variante sin validar', name);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al cambiar estado de validación:', err);
-      variantsHook.setError(err.response?.data?.message || 'Error al cambiar estado de validación');
+      toast.error('No se pudo cambiar la validación', apiError(err));
     } finally {
       variantCrud.completeValidation();
     }
@@ -267,10 +270,10 @@ export function IngredientsPage() {
 
       if (editingIngredient) {
         await updateIngredient(editingIngredient.id, payload);
-        crud.showSuccess('✅ Ingrediente actualizado exitosamente');
+        toast.success('Ingrediente guardado', payload.name);
       } else {
         await createIngredient(payload);
-        crud.showSuccess('✅ Ingrediente creado exitosamente');
+        toast.success('Ingrediente creado', `${payload.name} quedó ${payload.isInspected ? 'validado' : 'sin validar'}.`);
       }
 
       closeModal();
@@ -287,13 +290,14 @@ export function IngredientsPage() {
   const handleConfirmDelete = async () => {
     if (!crud.deletingId) return;
 
+    const name = ingredientName(crud.deletingId);
     try {
       await deleteIngredient(crud.deletingId);
       crud.completeDelete();
-      crud.showSuccess('✅ Ingrediente eliminado exitosamente');
+      toast.success('Ingrediente eliminado', name);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al eliminar ingrediente:', err);
-      setError(err.response?.data?.message || 'Error al eliminar ingrediente');
+      toast.error('No se pudo eliminar el ingrediente', apiError(err));
       crud.completeDelete();
     }
   };
@@ -304,13 +308,10 @@ export function IngredientsPage() {
       const newState = !currentState;
       await validateIngredient(id, newState);
       setEditingIngredient(prev => (prev ? { ...prev, isInspected: newState } : null));
-      const message = newState
-        ? '✅ Ingrediente validado exitosamente'
-        : '✅ Ingrediente marcado como sin validar';
-      crud.showSuccess(message);
+      toast.success(newState ? 'Ingrediente validado' : 'Ingrediente sin validar', editingIngredient?.name ?? ingredientName(id));
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al cambiar estado de validación:', err);
-      setError(err.response?.data?.message || 'Error al cambiar estado de validación');
+      toast.error('No se pudo cambiar la validación', apiError(err));
     } finally {
       crud.setIsValidating(false);
     }
@@ -322,14 +323,12 @@ export function IngredientsPage() {
     crud.setIsValidating(true);
     try {
       const newState = !crud.validatingItem.currentState;
+      const name = ingredientName(crud.validatingItem.id);
       await validateIngredient(crud.validatingItem.id, newState);
-      const message = newState
-        ? '✅ Ingrediente validado exitosamente'
-        : '✅ Ingrediente marcado como sin validar';
-      crud.showSuccess(message);
+      toast.success(newState ? 'Ingrediente validado' : 'Ingrediente sin validar', name);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al cambiar estado de validación:', err);
-      setError(err.response?.data?.message || 'Error al cambiar estado de validación');
+      toast.error('No se pudo cambiar la validación', apiError(err));
     } finally {
       crud.completeValidation();
     }
@@ -351,10 +350,10 @@ export function IngredientsPage() {
         parentId,
         childrenIds
       });
-      crud.showSuccess('✅ Ingredientes unificados exitosamente');
+      const parent = allIngredients.find((i) => i.id === parentId)?.name;
       setShowMergeModal(false);
-      // Reload to refresh paginated data
-      window.location.reload();
+      await refetchIngredients();
+      toast.success('Ingredientes unificados', `${childrenIds.length} ${childrenIds.length === 1 ? 'pasó' : 'pasaron'} a ${parent ?? 'el ingrediente elegido'}.`);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al unificar ingredientes:', err);
       throw new Error(err.response?.data?.message || 'Error al unificar ingredientes');
@@ -390,11 +389,12 @@ export function IngredientsPage() {
   const handleMergeVariants = async (parentId: string, childrenIds: string[]) => {
     try {
       await variantsHook.mergeIngredientVariants(parentId, childrenIds);
-      crud.showSuccess('✅ Variantes unificadas exitosamente');
       setShowVariantMergeModal(false);
+      const parent = allVariants.find((v) => v.id === parentId)?.name;
+      toast.success('Variantes unificadas', `${childrenIds.length} ${childrenIds.length === 1 ? 'pasó' : 'pasaron'} a ${parent ?? 'la variante elegida'}.`);
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('Error al unificar variantes:', err);
-      variantsHook.setError(err.response?.data?.message || 'Error al unificar variantes');
+      toast.error('No se pudieron unificar las variantes', apiError(err));
     }
   };
 
@@ -461,9 +461,6 @@ export function IngredientsPage() {
 
   return (
     <AdminLayout className="page-ingredients">
-        {/* Success Message */}
-        <NotificationBanner type="success" message={crud.successMessage} />
-
         {/* Pestañas arriba del título; título, contador, buscador y botones en una línea. */}
         {activeTab === 'ingredients' ? (
           <PageHeader title="Ingredientes" aboveTitle={tabs} actions={headerActions} />
