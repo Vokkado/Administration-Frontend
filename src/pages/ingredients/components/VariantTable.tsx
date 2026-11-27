@@ -81,8 +81,11 @@ export function VariantTable({
         render: (variant) => (
           <span className="td-name-cell">
             <span className="td-name" title={variant.name}>{variant.name}</span>
-            {variant.createdByAi && !variant.isInspected && (
+            {variant.createdByAi && !variant.isInspected && !variant.inValidatedProduct && (
               <span className="badge-ai" title="La creó la IA al cargar un producto y nadie la aprobó todavía">IA</span>
+            )}
+            {variant.createdByAi && !variant.isInspected && variant.inValidatedProduct && (
+              <span className="badge-ai is-approved" title="La creó la IA y está en un producto validado: aprobada por personas, falta validarla (atributos)">IA ✓</span>
             )}
           </span>
         ),

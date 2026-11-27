@@ -250,6 +250,13 @@
     letter-spacing: 0.3px;
   }
 
+  /* Creado por IA y aprobado por personas (está en un producto validado), pero sin validar. */
+  .badge-ai.is-approved {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+
   /* Cantidad de productos (clic → lista). */
   .product-count {
     min-width: 36px;

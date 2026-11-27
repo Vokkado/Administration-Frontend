@@ -90,13 +90,14 @@ function VariantPickerInfo({ v }: { v: IngredientVariant }) {
   const sameName = v.ingredientName && v.ingredientName.trim().toLowerCase() === v.name.trim().toLowerCase();
   // El estado del ingrediente solo se muestra si no es el mismo que el de la variante (evita repetir).
   const ingredientDiffers = v.ingredientInspected !== undefined
-    && originLabel(v.ingredientCreatedByAi, v.ingredientInspected).text !== originLabel(v.createdByAi, v.isInspected).text;
+    && originLabel(v.ingredientCreatedByAi, v.ingredientInspected, v.ingredientInValidatedProduct).text
+      !== originLabel(v.createdByAi, v.isInspected, v.inValidatedProduct).text;
   return (
     <span className="vp-picker-item-extra">
       {v.ingredientName && !sameName && <span className="vp-picker-item-parent">→ {v.ingredientName}</span>}
-      <OriginBadge createdByAi={v.createdByAi} inspected={v.isInspected} />
+      <OriginBadge createdByAi={v.createdByAi} inspected={v.isInspected} approved={v.inValidatedProduct} />
       {v.ingredientName && !sameName && v.ingredientInspected !== undefined && ingredientDiffers && (
-        <OriginBadge prefix="ingr.:" createdByAi={v.ingredientCreatedByAi} inspected={v.ingredientInspected} />
+        <OriginBadge prefix="ingr.:" createdByAi={v.ingredientCreatedByAi} inspected={v.ingredientInspected} approved={v.ingredientInValidatedProduct} />
       )}
       {v.productCount !== undefined && <span className="vp-picker-item-count">{v.productCount} prod.</span>}
     </span>

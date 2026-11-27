@@ -19,6 +19,8 @@ export interface Ingredient {
   createdByAi?: boolean;
   /** Productos distintos que lo usan (por cualquiera de sus variantes). Viene en el listado. */
   productCount?: number;
+  /** Está en al menos un producto validado: aprobado por personas aunque no esté validado. Viene en el listado. */
+  inValidatedProduct?: boolean;
   isNutritive: boolean;
   restrictionIds?: string[];
   createdAt: string;
@@ -37,10 +39,13 @@ export interface IngredientVariant {
   createdByAi?: boolean;
   /** Productos distintos que la usan. Viene en el listado. */
   productCount?: number;
+  /** Está en al menos un producto validado: aprobada por personas aunque no esté validada. Viene en el listado. */
+  inValidatedProduct?: boolean;
   /** Solo en el listado admin: el ingrediente al que apunta y su estado (para el buscador). */
   ingredientName?: string;
   ingredientInspected?: boolean;
   ingredientCreatedByAi?: boolean;
+  ingredientInValidatedProduct?: boolean;
   attributeIds?: string[];
   createdAt: string;
   updatedAt: string;
