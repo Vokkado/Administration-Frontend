@@ -4,9 +4,10 @@
  * marcado que después se validó cuenta solo como validado). Los validados antes de la migración 289 van como "Sin registro".
  */
 import { useEffect, useState } from 'react';
-import { IoCameraOutline, IoCheckmarkDoneCircleOutline, IoLayersOutline, IoPeopleOutline } from 'react-icons/io5';
+import { Link } from 'react-router-dom';
+import { IoCameraOutline, IoCheckmarkDoneCircleOutline, IoChevronBack, IoLayersOutline, IoPeopleOutline } from 'react-icons/io5';
 import { Modal, LoadingSpinner, DateRangePicker, FilterButtonGroup, StatTile, type DateRange } from '../../components/ui';
-import { ValidationService, type ValidatorCounts } from '../../services/validation.service';
+import { ValidationService, type ValidatorCounts, type ValidatorProduct } from '../../services/validation.service';
 
 type View = 'all' | 'validated' | 'needsPhotos';
 type Row = ValidatorCounts['items'][number];
@@ -19,10 +20,76 @@ const VIEWS = [
 ];
 const fmtDate = (v: string | null) => (v ? new Date(v).toLocaleDateString('es-UY') : '—');
 const pctOf = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
+const handle = (r: Row) => r.email.split('@')[0];
+const initial = (r: Row) => (r.name || r.email).trim().charAt(0).toUpperCase();
+
+/** Los productos que validó o marcó una persona, con el mismo rango y vista que el ranking. */
+function PersonProducts({ person, range, view, onBack }: { person: Row; range: DateRange | null; view: View; onBack: () => void }) {
+  const kind = view === 'all' ? undefined : view;
+  const key = `${person.userId}|${kind ?? ''}|${range ? `${range.from.toISOString()}|${range.to.toISOString()}` : ''}`;
+  const [result, setResult] = useState<{ key: string; items: ValidatorProduct[] | null; error: string | null } | null>(null);
+  const loading = result?.key !== key;
+  const items = result?.items ?? null;
+
+  useEffect(() => {
+    let alive = true;
+    ValidationService.validatorProducts(person.userId, kind, range?.from, range?.to)
+      .then((r) => { if (alive) setResult({ key, items: r, error: null }); })
+      .catch(() => { if (alive) setResult((prev) => ({ key, items: prev?.items ?? null, error: 'No se pudieron traer los productos.' })); });
+    return () => { alive = false; };
+  }, [person.userId, kind, range, key]);
+
+  const empty = view === 'needsPhotos' ? 'No marcó productos con falta de información' : view === 'validated' ? 'No validó productos' : 'No validó ni marcó productos';
+
+  return (
+    <div className="vc-person">
+      <div className="vc-person-head">
+        <button type="button" className="vc-back" onClick={onBack}><IoChevronBack aria-hidden /> Todos</button>
+        <span className="vc-avatar" aria-hidden>{initial(person)}</span>
+        <div className="vc-who">
+          <strong title={person.email}>{handle(person)}</strong>
+          <span className="vc-sub">{person.name ? `${person.name} · ` : ''}{person.email}</span>
+        </div>
+        <div className="vc-nums">
+          {view !== 'needsPhotos' && <span className="vc-num vc-num-ok">✅ {person.validated}</span>}
+          {view !== 'validated' && <span className="vc-num vc-num-np">📷 {person.needsPhotos}</span>}
+          {loading && items && <span className="vc-updating">Actualizando…</span>}
+        </div>
+      </div>
+
+      {result?.key === key && result.error && <p className="vc-empty">{result.error}</p>}
+      {loading && !items ? (
+        <LoadingSpinner message="Buscando productos..." />
+      ) : items && items.length === 0 ? (
+        <p className="vc-empty">{empty}{range ? ' en estas fechas.' : '.'}</p>
+      ) : items && (
+        <ul className="vc-products">
+          {items.map((p) => (
+            <li key={`${p.kind}-${p.id}`}>
+              <Link to={`/validation/${p.id}`} target="_blank" rel="noopener" className="vc-product" title="Abrir el producto en otra pestaña">
+                {p.image ? <img src={p.image} alt="" loading="lazy" /> : <span className="vc-product-noimg" aria-hidden>📦</span>}
+                <span className="vc-product-name">
+                  <strong>{p.name}</strong>
+                  <span className="vc-sub">{p.brand || 'Sin marca'}</span>
+                </span>
+                <span className={`vc-chip ${p.kind === 'validated' ? 'vc-chip-ok' : 'vc-chip-np'}`}>
+                  {p.kind === 'validated' ? '✅ Validado' : p.isRejected ? '🚫 Rechazado' : p.stillNeedsPhotos ? '📷 Falta información' : '📷 Marcado'}
+                </span>
+                <span className="vc-product-date">{p.at ? fmtDate(p.at) : 'sin fecha'}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function ValidatorCountsModal({ show, onClose }: { show: boolean; onClose: () => void }) {
   const [range, setRange] = useState<DateRange | null>(null);
   const [view, setView] = useState<View>('all');
+  const [person, setPerson] = useState<Row | null>(null);
+  const close = () => { setPerson(null); onClose(); };
   // El resultado lleva la clave del pedido (rango): "cargando" = la clave guardada no es la actual.
   const key = range ? `${range.from.toISOString()}|${range.to.toISOString()}` : 'all';
   const [result, setResult] = useState<{ key: string; data: ValidatorCounts | null; error: string | null } | null>(null);
@@ -47,7 +114,7 @@ export function ValidatorCountsModal({ show, onClose }: { show: boolean; onClose
   const max = Math.max(1, ...rows.map(metric), showUnknown ? t?.unknown ?? 0 : 0);
 
   return (
-    <Modal show={show} title="¿Cuántos revisó cada uno?" onClose={onClose} error={error ?? undefined} maxWidth="820px">
+    <Modal show={show} title="¿Cuántos revisó cada uno?" onClose={close} error={error ?? undefined} maxWidth="820px">
       <div className="modal-body vc-body">
         <div className="vc-daterow">
           <DateRangePicker label="Fecha:" value={range} onChange={setRange} />
@@ -55,7 +122,9 @@ export function ValidatorCountsModal({ show, onClose }: { show: boolean; onClose
           {loading && data && <span className="vc-updating">Actualizando…</span>}
         </div>
 
-        {loading && !data ? (
+        {person ? (
+          <PersonProducts person={data?.items.find((r) => r.userId === person.userId) ?? { ...person, validated: 0, needsPhotos: 0, reviewed: 0 }} range={range} view={view} onBack={() => setPerson(null)} />
+        ) : loading && !data ? (
           <LoadingSpinner message="Contando..." />
         ) : t && (
           <>
@@ -79,11 +148,11 @@ export function ValidatorCountsModal({ show, onClose }: { show: boolean; onClose
                   return (
                     <li key={r.userId} className="vc-row">
                       <span className="vc-pos" aria-label={`Puesto ${idx + 1}`}>{MEDALS[idx] ?? idx + 1}</span>
-                      <span className="vc-avatar" aria-hidden>{(r.name || r.email).trim().charAt(0).toUpperCase()}</span>
-                      <div className="vc-who">
-                        <strong title={r.email}>{r.email.split('@')[0]}</strong>
+                      <span className="vc-avatar" aria-hidden>{initial(r)}</span>
+                      <button type="button" className="vc-who vc-who-btn" title={`Ver los productos de ${r.email}`} onClick={() => setPerson(r)}>
+                        <strong>{handle(r)}</strong>
                         <span className="vc-sub">{r.name ? `${r.name} · ` : ''}último: {fmtDate(r.lastAt)}</span>
-                      </div>
+                      </button>
                       <div className="vc-bar" aria-hidden>
                         {view !== 'needsPhotos' && <span className="vc-seg-ok" style={{ width: `${(r.validated / max) * 100}%` }} />}
                         {view !== 'validated' && <span className="vc-seg-np" style={{ width: `${(r.needsPhotos / max) * 100}%` }} />}
