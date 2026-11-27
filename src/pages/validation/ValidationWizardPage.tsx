@@ -840,6 +840,10 @@ export function ValidationWizardPage() {
             Más info → Tags (por ejemplo Aderezo, Jugo, Galleta, Plato preparado) y volvé a validar.
           </div>
         )}
+        {!missingType && detail.typeWarning && (
+          // Solo avisa: un tipo que el puntaje no reconoce no frena la validación.
+          <div className="vw-blind" role="note">{detail.typeWarning}</div>
+        )}
         {blindIngredients.length > 0 && (
           <div className="vw-blind" role="alert">
             <strong>Ojo: {blindIngredients.length === 1 ? 'este ingrediente no tiene' : 'estos ingredientes no tienen'} restricciones ni atributos.</strong>
