@@ -18,7 +18,7 @@ import { getAttributeTypeLabel } from '../pages/attributes/types';
 export type GoalGroup = 'OBJECTIVES' | 'REDUCE' | 'INCREASE' | 'LIFESTYLE';
 export type NutrientCode = 'SODIUM' | 'SUGARS' | 'SATURATED_FAT' | 'PROTEIN' | 'FIBER' | 'ENERGY' | 'CARBS';
 /** Rol de atributos de una meta (qué cuenta como fuente de algo cuando falta la tabla). */
-export type GoalAttributeRole = 'SUGARS' | 'SODIUM' | 'SATURATED_FAT';
+export type GoalAttributeRole = 'SUGARS' | 'SODIUM' | 'SATURATED_FAT' | 'ULTRAPROCESSED' | 'ULTRAPROCESSED_MILD';
 
 export interface PerBasisValue {
   g: number;
@@ -141,6 +141,8 @@ export const ROLE_LABELS: Record<GoalAttributeRole, string> = {
   SUGARS: 'Fuentes de azúcar',
   SODIUM: 'Fuentes de sodio',
   SATURATED_FAT: 'Fuentes de grasas saturadas',
+  ULTRAPROCESSED: 'Marcadores de ultraprocesado',
+  ULTRAPROCESSED_MILD: 'Aditivos de ultraprocesado leve',
 };
 
 export class GoalsService {
