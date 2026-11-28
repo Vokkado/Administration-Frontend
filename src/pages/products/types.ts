@@ -81,6 +81,9 @@ export interface Product {
     restrictions?: ProductRestrictionsSnapshot | null;
     score?: number | null;
     scoreCalculatedAt?: string | null;
+    /** Quién lo validó y cuándo. Viene en el listado. */
+    validatedByEmail?: string | null;
+    validatedAt?: string | null;
     createdAt: string;
     updatedAt: string;
 }

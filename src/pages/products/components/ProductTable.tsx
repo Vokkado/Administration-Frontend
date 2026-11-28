@@ -10,6 +10,7 @@ import { GiWineBottle } from 'react-icons/gi';
 import editIcon from '../../../../assets/icons/brownPencil.png';
 import deleteIcon from '../../../../assets/icons/trashcan.png';
 import { AdminOnly } from '../../../components/routing/AdminOnly';
+import { ValidatedBy } from '../../ingredients/components/ValidationStatus';
 
 function getScoreColor(score: number | null): string {
   if (score === null) return '#9E9E9E';
@@ -292,6 +293,21 @@ export function ProductTable({
                   : 'Sin validar'}
             </button>
           ),
+      },
+      {
+        // Como en Ingredientes: usuario y, debajo, la fecha. Email completo y hora en el tooltip.
+        key: 'validatedBy',
+        header: 'Validado por',
+        align: 'center',
+        hideOnMobile: true,
+        width: '140px',
+        render: (product) => (
+          <ValidatedBy
+            isValidated={product.inspected && !product.isReference}
+            email={product.validatedByEmail}
+            at={product.validatedAt}
+          />
+        ),
       },
     ],
     [
