@@ -716,10 +716,10 @@ export function ValidationWizardPage() {
                   </div>
                   <div className="vp-section-body">
                     <div className="vw-checks">
-                      <Check label="Es ultraprocesado (NOVA 4)" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
+                      <Check label="Respaldo: ultraprocesado según la etiqueta" hint={NOVA4_HINT} v={meta.isUltraProcessed} on={(v) => set('isUltraProcessed', v)} />
                     </div>
                     <NovaPanel
-                      ingredientNames={detail.ingredients.map((i) => i.variantName || i.ingredientName)}
+                      ingredients={detail.ingredients}
                       value={meta.isUltraProcessed}
                       onSet={(v) => set('isUltraProcessed', v)}
                     />
